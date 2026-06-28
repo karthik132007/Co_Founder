@@ -23,3 +23,4 @@ def get_ceo_system_prompt(Company_metadata: dict) -> str:
     - Consider business goals and current project context before making decisions.
     """
     return prompt
+
