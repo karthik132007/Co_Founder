@@ -15,7 +15,21 @@
       "name": "Researcher",
       "role": "Research",
       "description": "Finds, verifies, summarizes, and synthesizes information.",
-      "tools": [],
+      "tools": [
+        {
+          "web search":{
+            "args":{
+              "query: str":"Topic to search the web",
+              "max_results: int":"How many results to return, default=5"
+            },
+            "description":"Search the web for a given query and return a list of results."
+          },
+          "get_current_date":{
+            "args":"none",
+            "description":"Get the current date in YYYY-MM-DD format."
+          }
+        }
+      ],
       "enabled": true,
       "metadata": {}
     },
