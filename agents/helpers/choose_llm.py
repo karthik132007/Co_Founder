@@ -1,6 +1,8 @@
 from enum import Enum
 from typing import Iterable
 
+from agents.helpers.CreateLLM import create_llm
+
 
 class Task(str, Enum):
     CODING = "coding"
@@ -32,7 +34,7 @@ TASK_TO_MODEL = {
 DEFAULT_MODEL = Model.DEEPSEEK
 
 
-def get_best_llm(tasks: Iterable[Task]) -> str:
+def get_best_llm(tasks: Iterable[Task]):
     """
     Return the most suitable model for a list of tasks.
     Higher-priority tasks win.
@@ -51,6 +53,6 @@ def get_best_llm(tasks: Iterable[Task]) -> str:
 
     for task in priority:
         if task in task_set:
-            return TASK_TO_MODEL[task]
+            return create_llm(TASK_TO_MODEL[task].value)
 
-    return DEFAULT_MODEL.value
+    return create_llm(DEFAULT_MODEL.value)
