@@ -41,4 +41,24 @@ Return your findings in well-structured Markdown using headings, bullet points, 
 Your goal is to provide high-quality research that enables the CEO Agent to make informed decisions.
 """
     return prompt
-    return prompt
+
+def get_researcher_reflection_prompt(prompt_from_CEO,draft,critique,suggestions,):
+    reflection_prompt = f"""
+    Original research task:
+    {prompt_from_CEO}
+
+    Your previous answer:
+    {draft}
+
+    A judge reviewed your answer and found issues:
+    Critique:
+    {critique}
+
+    Suggestions:
+    {suggestions}
+
+    Rewrite the research answer. Improve factual coverage, source quality,
+    recency, clarity, and uncertainty handling. Return only the improved final
+    research report in markdown.
+    """
+    return reflection_prompt
