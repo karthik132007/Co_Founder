@@ -3,7 +3,7 @@ from agents.researcher.researcher_agent_tools import search_web,get_current_date
 from agents.helpers.choose_llm import get_best_llm,Task
 from langchain.agents import create_agent
 from agents.researcher.researcher_propmts import get_researcher_system_prompt,get_researcher_reflection_prompt
-from agents.judge.llm_as_judge import judge_output
+from agents.judge.llm_as_judge import judge_output_to_researcher
 tools = [search_web,get_current_date]
 
 researcher_agent=create_agent(
@@ -13,7 +13,7 @@ researcher_agent=create_agent(
     tools=tools,
 )
 
-def _extrac_content(response):
+def _extract_content(response):
     return response["messages"][-1].content
 
 def _run_research_agent(prompt: str):
@@ -27,9 +27,9 @@ def _run_research_agent(prompt: str):
             ]
         }
     )
-    return _extrac_content(response)
+    return _extract_content(response)
 
-def do_research(prompt_from_CEO: str,max_reflections:int = 2,pass_score:int = 8) -> str:
+def do_research(prompt_from_CEO:str,max_reflections:int = 2,pass_score:int = 8) -> str:
     """
     Execute a research task assigned by the CEO agent.
     Returns the research findings as markdown.
@@ -37,11 +37,7 @@ def do_research(prompt_from_CEO: str,max_reflections:int = 2,pass_score:int = 8)
     try:
         draft = _run_research_agent(prompt_from_CEO)
         for _ in range(max_reflections):
-            judgement = judge_output(
-                model="openai/gpt-oss-120b",
-                v1=draft,
-                task = prompt_from_CEO
-            )
+            judgement = judge_output_to_researcher(model="openai/gpt-oss-120b", v1=draft, task=prompt_from_CEO)
             try:
                 judgement_json = json.loads(judgement)
             except json.decoder.JSONDecodeError:
@@ -49,11 +45,11 @@ def do_research(prompt_from_CEO: str,max_reflections:int = 2,pass_score:int = 8)
             score = judgement_json.get("score", 0)
             critique = judgement_json.get("critique", "")
             suggestions = judgement_json.get("suggestions", "")
-            if score > pass_score:
+            if score >= pass_score:
                 break
             reflection_prompt = get_researcher_reflection_prompt(prompt_from_CEO,draft,critique,suggestions)
             draft = _run_research_agent(reflection_prompt)
-            return draft
+        return draft
     except Exception as e:
         return f"Research task failed!, cause: {e}"
 
