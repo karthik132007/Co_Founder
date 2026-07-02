@@ -1,0 +1,7 @@
+sqlalchemy
+python-dotenv
+fastapi
+pydantic
+langchain
+langchain-openrouter
+openai

@@ -19,43 +19,39 @@ const features = [
 export default function Features() {
   return (
     <section id="features" className="py-24 px-6 relative">
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-1/4 -left-32 w-[600px] h-[600px] bg-peach-100 rounded-full blur-3xl opacity-30 animate-blob" />
-      </div>
-
-      <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-16 relative z-10">
+      <div className="max-w-6xl mx-auto relative z-10">
         
-        {/* Left Side: Sticky Header */}
-        <div className="lg:w-1/3 lg:sticky lg:top-32 lg:self-start">
-          <div className="inline-flex items-center px-3 py-1 rounded-full bg-gray-100 text-gray-600 text-[11px] font-bold uppercase tracking-wider mb-4">
+        {/* Centered Header */}
+        <div className="text-center max-w-2xl mx-auto mb-16">
+          <div className="inline-flex items-center px-4 py-1.5 rounded-full clay-pill text-[12px] font-bold text-bold-primary uppercase tracking-widest mb-4">
             Platform Features
           </div>
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
-            Everything you need to <span className="gradient-text">build & scale</span>
+          <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-bold-primary mt-2">
+            Everything you need to <span className="text-bold-accent">scale</span>
           </h2>
-          <p className="mt-4 text-gray-500 text-base leading-relaxed">
+          <p className="mt-6 text-gray-600 font-medium text-lg leading-relaxed">
             A comprehensive toolkit that replaces dozens of disconnected apps with one unified AI platform.
           </p>
         </div>
 
-        {/* Right Side: Features Grid */}
-        <div className="lg:w-2/3 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Features Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 justify-center">
           {features.map((feature, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, y: 15 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              whileInView={{ opacity: 1, scale: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.4, delay: (i % 5) * 0.1 }}
-              className="glass rounded-2xl p-6 hover:-translate-y-1 transition-transform duration-300 group"
+              transition={{ duration: 0.4, delay: (i % 4) * 0.1 }}
+              className="neu-flat rounded-3xl p-7 hover:-translate-y-2 transition-transform duration-300 group flex flex-col items-center text-center bg-white/40"
             >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-50 to-peach-50 flex items-center justify-center mb-4 border border-pink-100">
-                <feature.icon className="w-5 h-5 text-pink-500" />
+              <div className="w-14 h-14 rounded-full neu-pressed flex items-center justify-center mb-5 group-hover:scale-110 transition-transform bg-white/50">
+                <feature.icon className={`w-6 h-6 text-[var(--color-accent-${i % 2 === 0 ? 'primary' : 'secondary'})]`} />
               </div>
-              <h3 className="text-[15px] font-bold text-foreground">
+              <h3 className="text-[16px] font-bold text-bold-primary">
                 {feature.title}
               </h3>
-              <p className="text-sm text-gray-500 mt-2 leading-relaxed">
+              <p className="text-[13px] text-gray-600 font-medium mt-3 leading-relaxed">
                 {feature.desc}
               </p>
             </motion.div>
