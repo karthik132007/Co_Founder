@@ -1,13 +1,5 @@
 import type { Metadata } from "next";
-import { Arvo } from "next/font/google";
 import "./globals.css";
-
-const arvo = Arvo({
-  variable: "--font-arvo",
-  weight: ["400", "700"],
-  subsets: ["latin"],
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "Co-founder.ai — Your AI Startup Team",
@@ -21,14 +13,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${arvo.variable} antialiased`}>
-      <body>
-        <div className="fixed inset-0 pointer-events-none z-[-1] overflow-hidden bg-[#fafcff]">
-          {/* Subtle Dynamic Background Circles in Corners */}
-          <div className="absolute -top-[10%] -left-[10%] w-[35vw] h-[35vw] bg-[#ffb3c6]/20 rounded-full blur-[140px] animate-blob mix-blend-multiply" />
-          <div className="absolute top-[0%] -right-[10%] w-[40vw] h-[40vw] bg-[#a0c4ff]/15 rounded-full blur-[150px] animate-blob animation-delay-2000 mix-blend-multiply" />
-          <div className="absolute -bottom-[20%] -right-[10%] w-[45vw] h-[45vw] bg-[#caf0f8]/25 rounded-full blur-[140px] animate-blob animation-delay-4000 mix-blend-multiply" />
-          <div className="absolute -bottom-[10%] -left-[10%] w-[30vw] h-[30vw] bg-[#90e0ef]/10 rounded-full blur-[120px] animate-blob animation-delay-6000 mix-blend-multiply" />
+    <html lang="en" className="antialiased">
+      <body className="bg-[#f8faff] text-[#111827]">
+        {/* Ambient background orbs */}
+        <div className="fixed inset-0 pointer-events-none z-[-1] overflow-hidden">
+          <div className="absolute -top-[15%] -right-[10%] w-[40vw] h-[40vw] bg-[#635BFF]/[0.06] rounded-full blur-[180px]" />
+          <div className="absolute top-[40%] -left-[5%] w-[35vw] h-[35vw] bg-[#8B85FF]/[0.04] rounded-full blur-[160px]" />
+          <div className="absolute -bottom-[10%] right-[5%] w-[30vw] h-[30vw] bg-[#635BFF]/[0.05] rounded-full blur-[150px]" />
         </div>
         {children}
       </body>

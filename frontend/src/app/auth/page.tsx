@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2 } from "lucide-react";
+import { Loader2, Brain, ArrowRight } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { API_BASE_URL, readApiError } from "@/lib/api";
 import { parseSessionUser, saveSession } from "@/lib/session";
@@ -59,76 +60,123 @@ export default function AuthPage() {
   };
 
   return (
-    <main className="min-h-screen bg-white flex text-gray-900 font-sans">
+    <main className="min-h-screen bg-[#f8faff] flex text-[#111827]" style={{ fontFamily: "SF Mono, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace" }}>
       
-      {/* Left Column - Marketing & Visuals */}
-      <div className="hidden lg:flex lg:w-1/2 bg-[#f8faff] flex-col relative px-12 py-10 overflow-hidden border-r border-gray-100">
+      {/* Left Column — Branding */}
+      <div className="hidden lg:flex lg:w-1/2 flex-col relative px-12 py-10 overflow-hidden">
         
-        {/* Top left logo */}
-        <div className="flex items-center gap-3 z-10">
-          <Image src="/logo.png" alt="Logo" width={32} height={32} className="w-8 h-8 object-contain" />
-          <span className="font-bold text-xl tracking-tight">
-            Cofounder.ai
-          </span>
-        </div>
+        {/* Ambient orbs */}
+        <div className="absolute -top-[20%] -left-[10%] w-[50vw] h-[50vw] bg-[#635BFF]/[0.05] rounded-full blur-[180px] pointer-events-none" />
+        <div className="absolute -bottom-[10%] right-[0%] w-[40vw] h-[40vw] bg-[#8B85FF]/[0.04] rounded-full blur-[150px] pointer-events-none" />
 
-        {/* Content */}
-        <div className="flex-1 flex flex-col justify-center mt-12 z-10 max-w-[750px] mx-auto w-full">
-          <h1 className="text-5xl font-extrabold leading-tight tracking-tight mb-10 text-[#111827]">
-            AI Agents.<br />
-            <span className="text-[#635BFF]">Real Growth.</span><br />
-            Together.
-          </h1>
-
-          <div className="relative w-[115%] -left-[7.5%] mb-8">
-            <Image 
-              src="/hero_image.png" 
-              alt="AI Robots Working Together" 
-              width={800}
-              height={600}
-              className="w-full h-auto object-contain"
-              priority
-            />
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-3 z-10 group shrink-0">
+          <div className="w-10 h-10 neu-circle rounded-full flex items-center justify-center group-hover:scale-105 transition-transform overflow-hidden">
+            <Image src="/logo.png" alt="Logo" width={32} height={32} className="w-8 h-8 object-contain" />
           </div>
+          <span className="font-bold text-xl tracking-tight text-[#111827]">
+            Cofounder<span style={{ color: "#635BFF" }}>.ai</span>
+          </span>
+        </Link>
 
+        {/* Hero content */}
+        <div className="flex-1 flex flex-col justify-center z-10 w-full">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <span className="neu-label">
+              {isLogin ? "Welcome Back" : "Get Started"}
+            </span>
+          </motion.div>
+
+          <motion.h1
+            key={isLogin ? "login-headline" : "signup-headline"}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="mt-5 text-[clamp(2rem,4vw,3.5rem)] font-extrabold leading-[1.1] tracking-tight text-[#111827]"
+          >
+            {isLogin ? (
+              <>AI Agents.<br /><span className="text-gradient">Real Growth.</span><br />Together.</>
+            ) : (
+              <>Start building.<br /><span className="text-gradient">Your AI team</span><br />is ready.</>
+            )}
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="mt-4 text-sm text-[#6B7280] font-medium max-w-md leading-relaxed"
+          >
+            {isLogin
+              ? "Pick up where you left off. Your AI founding team is waiting to execute."
+              : "Describe your idea and our multi-agent AI team handles strategy, marketing, finance & dev."}
+          </motion.p>
+
+          {/* Visual — full-width hero image */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.7, delay: 0.3 }}
+            className="mt-8 flex-1 flex items-center justify-center min-h-0"
+          >
+            <div className="relative w-full h-full flex items-center justify-center">
+              <Image 
+                src="/hero_image.png" 
+                alt="AI Robots Working Together" 
+                width={900}
+                height={675}
+                className="w-full max-w-[110%] h-auto object-contain"
+                priority
+              />
+            </div>
+          </motion.div>
         </div>
-        
-        {/* Decorative background blob */}
-        <div className="absolute top-1/4 -right-32 w-96 h-96 bg-[#e0e7ff]/40 rounded-full blur-3xl pointer-events-none" />
       </div>
 
-      {/* Right Column - Auth Form */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 sm:p-12">
-        <div className="w-full max-w-[420px]">
-          
-          <div className="flex flex-col items-center mb-8">
-             <div className="flex items-center gap-3 mb-2">
-                <Image src="/logo.png" alt="Logo" width={40} height={40} className="w-10 h-10 object-contain" />
-                <span className="font-bold text-2xl tracking-tight text-gray-900">
-                  Cofounder.ai
-                </span>
-             </div>
-             <p className="text-sm text-gray-500 font-medium">Your AI Co-Founder</p>
+      {/* Right Column — Auth Form */}
+      <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 sm:p-12 bg-white lg:bg-transparent">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.15 }}
+          className="w-full max-w-[420px]"
+        >
+          {/* Logo (mobile) */}
+          <div className="flex flex-col items-center mb-8 lg:hidden">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 neu-circle rounded-full flex items-center justify-center overflow-hidden">
+                <Image src="/logo.png" alt="Logo" width={32} height={32} className="w-8 h-8 object-contain" />
+              </div>
+              <span className="font-bold text-2xl tracking-tight text-[#111827]">
+                Cofounder<span style={{ color: "#635BFF" }}>.ai</span>
+              </span>
+            </div>
+            <p className="text-xs text-[#6B7280] font-bold">Your AI Co-Founder</p>
           </div>
 
+          {/* Title */}
           <motion.div
             initial={false}
             animate={{ opacity: 1, y: 0 }}
             key={isLogin ? "login-title" : "signup-title"}
             className="text-center mb-6"
           >
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            <h1 className="text-2xl font-bold text-[#111827] mb-1.5">
               {isLogin ? "Welcome back 👋" : "Create an account ✨"}
             </h1>
-            <p className="text-sm text-gray-500 font-medium">
+            <p className="text-xs text-[#6B7280] font-medium">
               {isLogin ? "Login to continue building your dream" : "Sign up to start building your dream"}
             </p>
           </motion.div>
 
-          {/* Mode Toggle Switch */}
-          <div className="flex p-1 mb-8 bg-gray-100 border border-gray-200 rounded-full relative w-full">
+          {/* Mode Toggle — neumorphic pill */}
+          <div className="flex p-1 mb-8 neu-inset rounded-full relative w-full">
             <motion.div
-              className="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white shadow-sm border border-gray-200 rounded-full z-0 pointer-events-none"
+              className="absolute top-1 bottom-1 w-[calc(50%-4px)] neu-pill-accent rounded-full z-0 pointer-events-none"
               initial={false}
               animate={{
                 left: isLogin ? "4px" : "calc(50%)",
@@ -138,26 +186,31 @@ export default function AuthPage() {
             <button
               type="button"
               onClick={() => { setIsLogin(true); setError(""); setSuccess(""); }}
-              className={`flex-1 py-2 text-sm font-bold z-10 transition-colors duration-200 ${isLogin ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`flex-1 py-2.5 text-sm font-bold z-10 transition-colors duration-200 rounded-full ${
+                isLogin ? "text-white" : "text-[#6B7280] hover:text-[#374151]"
+              }`}
             >
               Log In
             </button>
             <button
               type="button"
               onClick={() => { setIsLogin(false); setError(""); setSuccess(""); }}
-              className={`flex-1 py-2 text-sm font-bold z-10 transition-colors duration-200 ${!isLogin ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`flex-1 py-2.5 text-sm font-bold z-10 transition-colors duration-200 rounded-full ${
+                !isLogin ? "text-white" : "text-[#6B7280] hover:text-[#374151]"
+              }`}
             >
               Sign Up
             </button>
           </div>
 
+          {/* Error / Success messages */}
           <AnimatePresence mode="wait">
             {error && (
               <motion.div 
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
-                className="mb-6 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm font-semibold text-center"
+                className="mb-6 p-3.5 neu-inset rounded-xl text-red-500 text-xs font-bold text-center border border-red-200/50"
               >
                 {error}
               </motion.div>
@@ -168,32 +221,39 @@ export default function AuthPage() {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
-                className="mb-6 p-3 bg-green-50 border border-green-200 text-green-600 rounded-lg text-sm font-semibold text-center"
+                className="mb-6 p-3.5 neu-inset rounded-xl text-emerald-600 text-xs font-bold text-center border border-emerald-200/50"
               >
                 {success}
               </motion.div>
             )}
           </AnimatePresence>
 
+          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5" htmlFor="email">Email address</label>
+              <label className="block text-xs font-bold text-[#374151] mb-2 uppercase tracking-wider" htmlFor="email">
+                Email address
+              </label>
               <input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#635BFF] focus:ring-1 focus:ring-[#635BFF] transition-all"
+                className="w-full px-4 py-3.5 neu-inset rounded-xl text-[#111827] placeholder-[#9CA3AF] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#635BFF]/30 transition-all"
                 placeholder="you@example.com"
               />
             </div>
 
             <div>
-              <div className="flex justify-between items-center mb-1.5">
-                <label className="block text-sm font-semibold text-gray-700" htmlFor="password">Password</label>
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-xs font-bold text-[#374151] uppercase tracking-wider" htmlFor="password">
+                  Password
+                </label>
                 {isLogin && (
-                  <a href="#" className="text-sm font-medium text-[#635BFF] hover:underline">Forgot password?</a>
+                  <a href="#" className="text-[11px] font-bold text-[#635BFF] hover:underline">
+                    Forgot password?
+                  </a>
                 )}
               </div>
               <input
@@ -202,7 +262,7 @@ export default function AuthPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#635BFF] focus:ring-1 focus:ring-[#635BFF] transition-all"
+                className="w-full px-4 py-3.5 neu-inset rounded-xl text-[#111827] placeholder-[#9CA3AF] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#635BFF]/30 transition-all"
                 placeholder="Enter your password"
                 minLength={!isLogin ? 6 : undefined}
               />
@@ -211,17 +271,29 @@ export default function AuthPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 bg-[#635BFF] hover:bg-[#524be6] text-white rounded-lg text-base font-bold mt-2 transition-colors duration-200 flex items-center justify-center gap-2"
+              className="w-full py-3.5 neu-pill-accent text-base font-bold mt-3 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
-                <>{isLogin ? "Log in" : "Sign up"}</>
+                <span className="inline-flex items-center gap-2">
+                  {isLogin ? "Log in" : "Sign up"}
+                  <ArrowRight className="w-4 h-4" />
+                </span>
               )}
             </button>
           </form>
 
-        </div>
+          {/* Back link */}
+          <div className="mt-8 text-center">
+            <Link
+              href="/"
+              className="text-xs font-bold text-[#9CA3AF] hover:text-[#635BFF] transition-colors inline-flex items-center gap-1"
+            >
+              ← Back to home
+            </Link>
+          </div>
+        </motion.div>
       </div>
     </main>
   );
