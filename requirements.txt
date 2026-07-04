@@ -5,3 +5,4 @@ pydantic
 langchain
 langchain-openrouter
 openai
+serpapi

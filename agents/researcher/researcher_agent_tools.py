@@ -1,20 +1,7 @@
 import datetime
-import os
 
 from langchain.tools import tool
-
-
-def _get_tavily_client():
-    try:
-        from tavily import TavilyClient
-    except ImportError as exc:
-        raise RuntimeError("tavily is not installed") from exc
-
-    api_key = os.getenv("TAVILY_API_KEY")
-    if not api_key:
-        raise RuntimeError("TAVILY_API_KEY is not set")
-
-    return TavilyClient(api_key=api_key)
+from helpers.utils import _get_tavily_client
 
 
 @tool('search_web', return_direct=True, description="Search the web for a given query and return a list of results.")

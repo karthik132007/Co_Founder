@@ -6,6 +6,7 @@ from typing import Optional
 
 
 class CompanyData(BaseModel):
+    id: int
     company_name: str
     small_description: str
     industry: str

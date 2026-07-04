@@ -1,8 +1,12 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException,UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from .models import UserCreate, CompanyCreate
 from .db.insert_to_sql import create_user, authenticate_user, create_company
-
+from backend.db.put_to_drive import upload_to_cloud
+from backend.db.get_from_sql import get_company_id
+from agents.util_agents.description_genrator import get_file_description
+from uuid import uuid4
+from agents.util_agents.image_description import get_image_description
 app = FastAPI()
 
 app.add_middleware(
@@ -56,3 +60,32 @@ def onboarding(company: CompanyCreate):
     if created:
         return {"id": created.id, "company_name": created.company_name, "message": "Company created"}
     raise HTTPException(status_code=400, detail="Failed to create company")
+@app.post("/upload")
+def upload_to_drive(user_id: int,file: UploadFile):
+    company_id = get_company_id(user_id)
+    try:
+        file_type = file.content_type
+        content = file.file.read()
+
+        if file.content_type.startswith("image/"):
+            file_desc = get_image_description(content, file.content_type)
+        else:
+
+            file_desc = get_file_description(content)
+        unique_name = f"{uuid4()}_{file.filename}"
+
+        upload_to_cloud(
+            company_id=company_id,
+            file=content,
+            file_name=unique_name,
+            content_type=file_type
+        )
+
+        #TODO: Store file_desc in the database
+
+        return {
+            "message": "File uploaded successfully",
+            "file_name": unique_name
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to upload file: {str(e)}")
