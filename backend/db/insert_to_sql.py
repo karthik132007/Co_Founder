@@ -1,5 +1,5 @@
 from .database import SessionLocal
-from ..models import User, Company
+from ..models import User, Company, File
 from sqlalchemy.exc import IntegrityError
 
 
@@ -56,5 +56,42 @@ def create_company(company_name: str, small_description: str, industry: str, use
     except Exception:
         db.rollback()
         return None
+    finally:
+        db.close()
+
+def add_meta_to_file(
+    company_id: int,
+    file_name: str,
+    original_file_name: str,
+    storage_path: str,
+    mime_type: str,
+    bucket_name: str = "company_files",
+    description: str = None,
+    file_extension: str = None,
+    file_size: int = None,
+    status: str = "ready",
+):
+    """Insert file metadata into the files table. Returns File object or None on failure."""
+    db = SessionLocal()
+    try:
+        file = File(
+            company_id=company_id,
+            file_name=file_name,
+            original_file_name=original_file_name,
+            bucket_name=bucket_name,
+            storage_path=storage_path,
+            description=description,
+            mime_type=mime_type,
+            file_extension=file_extension,
+            file_size=file_size,
+            status=status,
+        )
+        db.add(file)
+        db.commit()
+        db.refresh(file)
+        return file
+    except Exception as e:
+        db.rollback()
+        raise e
     finally:
         db.close()

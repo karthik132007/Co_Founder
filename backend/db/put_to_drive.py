@@ -3,11 +3,11 @@ from backend.utils import get_supabase_client
 client = get_supabase_client()
 
 
-def upload_to_cloud(company_id: int,file: bytes,file_name:str,content_type: str):
+def upload_to_cloud(company_id: int,content: bytes,file_name:str,content_type: str):
     try:
         client.storage.from_("company_files").upload(
             path=f"{company_id}/{file_name}",
-            file=file,
+            content=content,
             file_options={"content-type": content_type,"upsert":True}
         )
         return {

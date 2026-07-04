@@ -1,8 +1,9 @@
 from pydantic import BaseModel
 from .db.database import Base
-from sqlalchemy import Column, BigInteger, Text, ForeignKey
+from sqlalchemy import Column, BigInteger, Text, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from typing import Optional
+from datetime import datetime
 
 
 class CompanyData(BaseModel):
@@ -49,3 +50,36 @@ class CompanyCreate(BaseModel):
     industry: str
     tone: Optional[str] = None
     user_id: int
+
+
+class File(Base):
+    __tablename__ = "files"
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    company_id = Column(BigInteger, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False)
+    file_name = Column(Text, nullable=False)
+    original_file_name = Column(Text, nullable=False)
+    bucket_name = Column(Text, nullable=False, default="company_files")
+    storage_path = Column(Text, nullable=False)
+    description = Column(Text, nullable=True)
+    mime_type = Column(Text, nullable=False)
+    file_extension = Column(Text, nullable=True)
+    file_size = Column(BigInteger, nullable=True)
+    status = Column(Text, nullable=False, default="ready")
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    company = relationship("Company", passive_deletes=True)
+
+
+class FileCreate(BaseModel):
+    company_id: int
+    file_name: str
+    original_file_name: str
+    bucket_name: str = "company_files"
+    storage_path: str
+    description: Optional[str] = None
+    mime_type: str
+    file_extension: Optional[str] = None
+    file_size: Optional[int] = None
+    status: str = "ready"

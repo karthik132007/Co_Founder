@@ -6,3 +6,4 @@ langchain
 langchain-openrouter
 openai
 serpapi
+supabase
