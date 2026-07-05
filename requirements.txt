@@ -1,5 +1,6 @@
 sqlalchemy
 python-dotenv
+python-multipart
 fastapi
 pydantic
 langchain
@@ -7,3 +8,4 @@ langchain-openrouter
 openai
 serpapi
 supabase
+pymupdf

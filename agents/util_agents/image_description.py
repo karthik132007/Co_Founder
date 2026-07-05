@@ -1,13 +1,10 @@
-from langchain.chat_models import init_chat_model
-from helpers.choose_llm import get_best_llm, Task
+from agents.helpers.choose_llm import get_best_llm, Task
 import dotenv
 from langchain_core.messages import HumanMessage
-from helpers.utils import img_to_base64
+from agents.helpers.utils import img_to_base64
 dotenv.load_dotenv()
 
-model = init_chat_model(
-    model=get_best_llm([Task.OCR]),
-)
+model = get_best_llm([Task.OCR])
 
 prompt = """
 You are an AI assistant responsible for indexing business files.

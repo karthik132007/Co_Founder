@@ -1,7 +1,7 @@
 import datetime
 
 from langchain.tools import tool
-from helpers.utils import _get_tavily_client
+from agents.helpers.utils import _get_tavily_client
 
 
 @tool('search_web', return_direct=True, description="Search the web for a given query and return a list of results.")

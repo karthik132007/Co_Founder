@@ -1,16 +1,8 @@
-from langchain.chat_models import init_chat_model
-from helpers.choose_llm import get_best_llm, Task
+from agents.helpers.choose_llm import get_best_llm, Task
 import dotenv
 
 dotenv.load_dotenv()
-model_name = get_best_llm([Task.CLASSIFICATION])
-
-if model_name == "google/gemma-4-26b-a4b-it":
-    model_name = "google/gemma-4-26B-A4B-it" #according to langchain
-
-model = init_chat_model(
-    model=model_name,
-)
+model = get_best_llm([Task.CLASSIFICATION])
 
 def get_file_description(file_content: bytes):
     prompt = f"""

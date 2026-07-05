@@ -1,8 +1,8 @@
 from langchain.tools import tool
 from openai.types.responses import response_input_message_content_list
 
-from helpers.serp_helpers import *
-from helpers.utils import _get_tavily_client
+from agents.helpers.serp_helpers import *
+from agents.helpers.utils import _get_tavily_client
 @tool('super_search', return_direct=True, description="Super search the google trends,news,shopping for a given query and return a list of results.")
 def super_search(query:str):
     """

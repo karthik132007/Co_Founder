@@ -1,20 +1,25 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Loader2, LayoutDashboard, Bot, CheckSquare, BarChart3, Settings,
-  Search, Bell, LogOut, Menu, X, Brain, Code, Wallet, LineChart,
-  TrendingUp, Users, ChevronRight, Sparkles, Star, Clock, Shield,
-  Zap, MessageSquare, Plus, ArrowUpRight, ChevronDown
+  Loader2, LayoutDashboard, Bot, Settings,
+  Search, Bell, LogOut, Menu,
+  ChevronRight, Sparkles,
+  Zap, MessageSquare, ArrowUpRight, HardDrive,
+  Upload, FileText, Image as ImageIcon, Trash2
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getSession } from "@/lib/session";
+import {
+  fetchDashboard, fetchFiles, uploadFile, deleteFile, formatFileSize, isImageMime,
+  type DashboardData, type DriveFile,
+} from "@/lib/api";
 
 /* ─────────────────────────────────────────────
-   Types & Data
+   Types
    ───────────────────────────────────────────── */
 
 type NavItem = {
@@ -25,27 +30,9 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { label: "Overview", icon: LayoutDashboard, id: "overview" },
+  { label: "Drive", icon: HardDrive, id: "drive" },
   { label: "Agents", icon: Bot, id: "agents" },
-  { label: "Tasks", icon: CheckSquare, id: "tasks" },
-  { label: "Analytics", icon: BarChart3, id: "analytics" },
   { label: "Settings", icon: Settings, id: "settings" },
-];
-
-const agentCards = [
-  { name: "CEO Agent", icon: Brain, color: "#635BFF", status: "Active", task: "Generating Q3 strategy" },
-  { name: "Marketing", icon: TrendingUp, color: "#8B85FF", status: "Running campaign", task: "Email sequence · 1.2K sent" },
-  { name: "Developer", icon: Code, color: "#635BFF", status: "Idle", task: "Last deploy 12m ago" },
-  { name: "Finance", icon: Wallet, color: "#8B85FF", status: "Active", task: "Updating projections" },
-  { name: "Business Analyst", icon: LineChart, color: "#635BFF", status: "Idle", task: "Market report ready" },
-  { name: "Research", icon: Sparkles, color: "#8B85FF", status: "Active", task: "Competitor analysis" },
-];
-
-const recentActivity = [
-  { agent: "CEO Agent", action: "Generated Q3 strategy report", time: "2 min ago", color: "#635BFF" },
-  { agent: "Marketing", action: "Campaign CTR improved 23% vs last week", time: "18 min ago", color: "#8B85FF" },
-  { agent: "Developer", action: "Deployed landing page v2.1 to production", time: "1 hour ago", color: "#635BFF" },
-  { agent: "Finance", action: "Updated runway projection: 14 months", time: "3 hours ago", color: "#8B85FF" },
-  { agent: "Research", action: "Completed competitor deep-dive for 5 companies", time: "5 hours ago", color: "#8B85FF" },
 ];
 
 /* ─────────────────────────────────────────────
@@ -56,7 +43,7 @@ const subscribeToSession = () => () => {};
 const getServerSessionSnapshot = () => null;
 
 /* ─────────────────────────────────────────────
-   Dashboard
+   Dashboard Page
    ───────────────────────────────────────────── */
 
 export default function DashboardPage() {
@@ -69,11 +56,88 @@ export default function DashboardPage() {
   const [activeNav, setActiveNav] = useState("overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Data state
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [allFiles, setAllFiles] = useState<DriveFile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  /* ── Fetch dashboard data ── */
+  const loadDashboard = useCallback(async () => {
+    if (!session?.user?.id) return;
+    setLoading(true);
+    setError("");
+    try {
+      const data = await fetchDashboard(session.user.id);
+      setDashboardData(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load dashboard");
+    } finally {
+      setLoading(false);
+    }
+  }, [session?.user?.id]);
+
+  /* ── Fetch all files (for Drive tab) ── */
+  const loadFiles = useCallback(async () => {
+    if (!session?.user?.id) return;
+    try {
+      const result = await fetchFiles(session.user.id);
+      setAllFiles(result.files);
+    } catch {
+      // Silently fail — files are non-critical
+    }
+  }, [session?.user?.id]);
+
   useEffect(() => {
     if (!session) {
       router.replace("/auth");
     }
   }, [router, session]);
+
+  useEffect(() => {
+    if (session?.user?.id) {
+      loadDashboard();
+      loadFiles();
+    }
+  }, [session?.user?.id, loadDashboard, loadFiles]);
+
+  /* ── File upload handler ── */
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !session?.user?.id) return;
+
+    setUploading(true);
+    try {
+      await uploadFile(session.user.id, file);
+      // Refresh both dashboard and file list
+      await Promise.all([loadDashboard(), loadFiles()]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  /* ── File delete handler ── */
+  const handleDelete = async (fileId: number) => {
+    if (!session?.user?.id) return;
+    if (!window.confirm("Are you sure you want to delete this file? This action cannot be undone.")) return;
+
+    setDeleting(fileId);
+    try {
+      await deleteFile(session.user.id, fileId);
+      // Refresh both dashboard and file list
+      await Promise.all([loadDashboard(), loadFiles()]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Delete failed");
+    } finally {
+      setDeleting(null);
+    }
+  };
 
   if (!session) {
     return (
@@ -87,6 +151,10 @@ export default function DashboardPage() {
     localStorage.removeItem("cofounder.session");
     router.replace("/auth");
   };
+
+  const company = dashboardData?.company;
+  const stats = dashboardData?.stats;
+  const recentFiles = dashboardData?.recent_files ?? [];
 
   return (
     <div className="min-h-screen bg-[#f8faff] flex" style={{ fontFamily: "SF Mono, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace" }}>
@@ -157,7 +225,9 @@ export default function DashboardPage() {
               <div className="text-xs font-bold text-[#111827] truncate">
                 {session.user.email}
               </div>
-              <div className="text-[10px] text-[#9CA3AF] font-medium">Founder</div>
+              <div className="text-[10px] text-[#9CA3AF] font-medium">
+                {company?.company_name ?? "Founder"}
+              </div>
             </div>
             <button
               onClick={handleLogout}
@@ -203,10 +273,25 @@ export default function DashboardPage() {
               <Bell className="w-4 h-4 text-[#6B7280]" />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#635BFF]" />
             </button>
-            <button className="neu-pill-accent px-4 py-2 text-xs font-bold flex items-center gap-2">
-              <Plus className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">New Task</span>
+            {/* Upload button (visible on Drive tab too) */}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="neu-pill-accent px-4 py-2 text-xs font-bold flex items-center gap-2 disabled:opacity-60"
+            >
+              {uploading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Upload className="w-3.5 h-3.5" />
+              )}
+              <span className="hidden sm:inline">{uploading ? "Uploading..." : "Upload"}</span>
             </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              onChange={handleUpload}
+            />
           </div>
         </header>
 
@@ -220,214 +305,351 @@ export default function DashboardPage() {
             transition={{ duration: 0.4 }}
           >
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#111827]">
-              Welcome back <span className="text-gradient">{session.user.email.split("@")[0]}</span>
+              Welcome back{" "}
+              <span className="text-gradient">
+                {company?.company_name ?? session.user.email.split("@")[0]}
+              </span>
             </h1>
             <p className="mt-1.5 text-sm text-[#6B7280] font-medium">
-              Here&apos;s what your AI team is up to today.
+              {company
+                ? `${company.industry} · ${company.tone} tone`
+                : "Here's what your AI team is up to today."}
             </p>
           </motion.div>
 
-          {/* Stats row */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              { label: "Active Agents", value: "4 / 6", change: "2 idle", icon: Bot, color: "#635BFF" },
-              { label: "Tasks Completed", value: "247", change: "+12 this week", icon: CheckSquare, color: "#8B85FF" },
-              { label: "Revenue (MRR)", value: "$12.4K", change: "+8.3%", icon: TrendingUp, color: "#635BFF" },
-              { label: "Active Users", value: "2,847", change: "+24% MoM", icon: Users, color: "#8B85FF" },
-            ].map((stat, i) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.1 + i * 0.06 }}
-                className="neu-card rounded-2xl p-5"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="w-9 h-9 neu-circle rounded-full">
-                    <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
-                  </div>
-                  <ArrowUpRight className="w-3.5 h-3.5 text-[#B0B7C3]" />
-                </div>
-                <div className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-1">
-                  {stat.label}
-                </div>
-                <div className="text-xl font-bold text-[#111827]">{stat.value}</div>
-                <div className="text-[11px] font-bold text-emerald-500 mt-1">
-                  {stat.change}
-                </div>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Two-column layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            {/* Chart + Activity (2 cols) */}
-            <div className="lg:col-span-2 space-y-6">
-              
-              {/* Chart */}
-              <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.35 }}
-                className="neu-card rounded-2xl p-6"
-              >
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h3 className="text-sm font-bold text-[#111827]">Agent Activity</h3>
-                    <p className="text-[10px] text-[#9CA3AF] font-bold mt-0.5 uppercase tracking-wider">
-                      Tasks per day · Last 7 days
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {["#635BFF", "#E5E7EB"].map((c, i) => (
-                      <div key={i} className="flex items-center gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-full" style={{ background: c }} />
-                        <span className="text-[9px] font-bold text-[#9CA3AF]">
-                          {i === 0 ? "Completed" : "Pending"}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Bar chart */}
-                <div className="flex items-end justify-between gap-2 h-44">
-                  {[
-                    { done: 38, pending: 12 },
-                    { done: 55, pending: 8 },
-                    { done: 42, pending: 18 },
-                    { done: 70, pending: 10 },
-                    { done: 50, pending: 15 },
-                    { done: 85, pending: 5 },
-                    { done: 62, pending: 14 },
-                  ].map((bar, i) => (
-                    <div key={i} className="flex-1 flex flex-col justify-end gap-1">
-                      <motion.div
-                        initial={{ height: 0 }}
-                        animate={{ height: `${bar.done}%` }}
-                        transition={{ duration: 0.7, delay: 0.4 + i * 0.05 }}
-                        className="w-full rounded-t-lg"
-                        style={{
-                          background: "linear-gradient(180deg, #635BFF 0%, #8B85FF 100%)",
-                          minHeight: 4,
-                        }}
-                      />
-                      <motion.div
-                        initial={{ height: 0 }}
-                        animate={{ height: `${bar.pending}%` }}
-                        transition={{ duration: 0.7, delay: 0.45 + i * 0.05 }}
-                        className="w-full rounded-t-md bg-[#E5E7EB]"
-                        style={{ minHeight: 4 }}
-                      />
-                    </div>
-                  ))}
-                </div>
-                <div className="flex justify-between mt-3">
-                  {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
-                    <span key={d} className="text-[9px] font-bold text-[#B0B7C3]">{d}</span>
-                  ))}
-                </div>
-              </motion.div>
-
-              {/* Recent Activity */}
-              <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.45 }}
-                className="neu-card rounded-2xl p-6"
-              >
-                <div className="flex items-center justify-between mb-5">
-                  <h3 className="text-sm font-bold text-[#111827]">Recent Activity</h3>
-                  <button className="text-[10px] font-bold text-[#635BFF] hover:underline">
-                    View all
-                  </button>
-                </div>
-                <div className="space-y-1">
-                  {recentActivity.map((item, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-3.5 p-2.5 rounded-xl hover:bg-white/60 transition-colors"
-                    >
-                      <div
-                        className="w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold text-white shrink-0"
-                        style={{ background: item.color }}
-                      >
-                        {item.agent[0]}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[11px] font-bold text-[#111827] truncate">
-                          {item.agent}
-                        </div>
-                        <div className="text-[10px] text-[#6B7280] font-medium truncate">
-                          {item.action}
-                        </div>
-                      </div>
-                      <span className="text-[9px] font-bold text-[#B0B7C3] shrink-0">
-                        {item.time}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-            </div>
-
-            {/* Agent Status (1 col) */}
+          {/* Error banner */}
+          {error && (
             <motion.div
-              initial={{ opacity: 0, y: 16 }}
+              initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.4 }}
-              className="neu-card rounded-2xl p-6"
+              className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-xs font-bold text-red-600"
             >
-              <div className="flex items-center justify-between mb-5">
-                <h3 className="text-sm font-bold text-[#111827]">Your Agents</h3>
-                <span className="text-[10px] font-bold text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded-full">
-                  4 active
-                </span>
-              </div>
-              <div className="space-y-3">
-                {agentCards.map((agent, i) => (
-                  <div
-                    key={agent.name}
-                    className="neu-inset rounded-xl p-3.5 flex items-center gap-3 group hover:ring-2 hover:ring-[#635BFF]/20 transition-all cursor-pointer"
+              {error}
+              <button onClick={() => setError("")} className="ml-3 underline">Dismiss</button>
+            </motion.div>
+          )}
+
+          {/* Loading state */}
+          {loading && !dashboardData && (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="h-6 w-6 animate-spin" style={{ color: "#635BFF" }} />
+            </div>
+          )}
+
+          {/* ── OVERVIEW TAB ── */}
+          {!loading && dashboardData && activeNav === "overview" && (
+            <>
+              {/* Stats row */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {([
+                  { label: "Total Files", value: String(stats?.total_files ?? 0), change: `${stats?.documents ?? 0} docs · ${stats?.images ?? 0} imgs`, icon: HardDrive, color: "#635BFF" },
+                  { label: "Storage Used", value: formatFileSize(stats?.total_size_bytes ?? 0), change: "Drive", icon: HardDrive, color: "#8B85FF" },
+                  { label: "Company", value: company?.company_name ?? "—", change: company?.industry ?? "", icon: Sparkles, color: "#635BFF" },
+                  { label: "Brand Tone", value: (company?.tone ?? "professional").toUpperCase(), change: company?.industry ?? "", icon: Sparkles, color: "#8B85FF" },
+                ] as { label: string; value: string; change: string; icon: typeof HardDrive; color: string }[]).map((stat, i) => (
+                  <motion.div
+                    key={stat.label}
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.1 + i * 0.06 }}
+                    className="neu-card rounded-2xl p-5"
                   >
-                    <div
-                      className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                      style={{ background: agent.color + "15" }}
-                    >
-                      <agent.icon className="w-4 h-4" style={{ color: agent.color }} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-bold text-[#111827] truncate">
-                          {agent.name}
-                        </span>
-                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                          agent.status === "Active" || agent.status === "Running campaign"
-                            ? "bg-emerald-400"
-                            : "bg-[#D1D5DB]"
-                        }`} />
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="w-9 h-9 neu-circle rounded-full">
+                        <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
                       </div>
-                      <div className="text-[9px] text-[#6B7280] font-medium mt-0.5 truncate">
-                        {agent.task}
-                      </div>
+                      <ArrowUpRight className="w-3.5 h-3.5 text-[#B0B7C3]" />
                     </div>
-                  </div>
+                    <div className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-1">
+                      {stat.label}
+                    </div>
+                    <div className="text-xl font-bold text-[#111827] truncate">{stat.value}</div>
+                    <div className="text-[11px] font-bold text-emerald-500 mt-1">
+                      {stat.change}
+                    </div>
+                  </motion.div>
                 ))}
               </div>
 
-              {/* Quick prompt */}
-              <div className="mt-5 neu-inset rounded-xl p-3">
-                <div className="flex items-center gap-2.5">
-                  <MessageSquare className="w-3.5 h-3.5 text-[#635BFF] shrink-0" />
-                  <span className="text-[10px] text-[#B0B7C3] font-medium flex-1">
-                    Ask your AI team...
-                  </span>
-                  <Zap className="w-3 h-3 text-[#635BFF]" />
+              {/* Two-column layout */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                {/* Company description + Recent files (2 cols) */}
+                <div className="lg:col-span-2 space-y-6">
+                  
+                  {/* Company description card */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.35 }}
+                    className="neu-card rounded-2xl p-6"
+                  >
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h3 className="text-sm font-bold text-[#111827]">About {company?.company_name}</h3>
+                        <p className="text-[10px] text-[#9CA3AF] font-bold mt-0.5 uppercase tracking-wider">
+                          {company?.industry} · {company?.tone} tone
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-[#6B7280] leading-relaxed font-medium">
+                      {company?.small_description ?? "No description provided."}
+                    </p>
+                  </motion.div>
+
+                  {/* Recent Files */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.45 }}
+                    className="neu-card rounded-2xl p-6"
+                  >
+                    <div className="flex items-center justify-between mb-5">
+                      <h3 className="text-sm font-bold text-[#111827]">Recent Files</h3>
+                      <button
+                        onClick={() => setActiveNav("drive")}
+                        className="text-[10px] font-bold text-[#635BFF] hover:underline"
+                      >
+                        View all
+                      </button>
+                    </div>
+                    {recentFiles.length === 0 ? (
+                      <p className="text-xs text-[#9CA3AF] font-medium py-4 text-center">
+                        No files uploaded yet. Click Upload to get started.
+                      </p>
+                    ) : (
+                      <div className="space-y-1">
+                        {recentFiles.map((file, i) => (
+                          <div
+                            key={file.id}
+                            className="flex items-center gap-3.5 p-2.5 rounded-xl hover:bg-white/60 transition-colors"
+                          >
+                            <div
+                              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                              style={{ background: isImageMime(file.mime_type) ? "#8B85FF15" : "#635BFF15" }}
+                            >
+                              {isImageMime(file.mime_type) ? (
+                                <ImageIcon className="w-4 h-4" style={{ color: "#8B85FF" }} />
+                              ) : (
+                                <FileText className="w-4 h-4" style={{ color: "#635BFF" }} />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-[11px] font-bold text-[#111827] truncate">
+                                {file.original_file_name}
+                              </div>
+                              <div className="text-[10px] text-[#6B7280] font-medium truncate">
+                                {file.description ?? file.mime_type}
+                              </div>
+                            </div>
+                            <span className="text-[9px] font-bold text-[#B0B7C3] shrink-0">
+                              {formatFileSize(file.file_size)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </motion.div>
                 </div>
+
+                {/* Quick actions (1 col) */}
+                <motion.div
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.4 }}
+                  className="neu-card rounded-2xl p-6"
+                >
+                  <div className="flex items-center justify-between mb-5">
+                    <h3 className="text-sm font-bold text-[#111827]">Quick Actions</h3>
+                  </div>
+                  <div className="space-y-3">
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full neu-inset rounded-xl p-3.5 flex items-center gap-3 hover:ring-2 hover:ring-[#635BFF]/20 transition-all text-left"
+                    >
+                      <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: "#635BFF15" }}>
+                        <Upload className="w-4 h-4" style={{ color: "#635BFF" }} />
+                      </div>
+                      <div>
+                        <div className="text-[11px] font-bold text-[#111827]">Upload File</div>
+                        <div className="text-[9px] text-[#6B7280] font-medium">Add to your Drive</div>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => setActiveNav("drive")}
+                      className="w-full neu-inset rounded-xl p-3.5 flex items-center gap-3 hover:ring-2 hover:ring-[#635BFF]/20 transition-all text-left"
+                    >
+                      <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: "#8B85FF15" }}>
+                        <HardDrive className="w-4 h-4" style={{ color: "#8B85FF" }} />
+                      </div>
+                      <div>
+                        <div className="text-[11px] font-bold text-[#111827]">Browse Drive</div>
+                        <div className="text-[9px] text-[#6B7280] font-medium">{stats?.total_files ?? 0} files</div>
+                      </div>
+                    </button>
+                  </div>
+
+                  {/* Quick prompt */}
+                  <div className="mt-5 neu-inset rounded-xl p-3">
+                    <div className="flex items-center gap-2.5">
+                      <MessageSquare className="w-3.5 h-3.5 text-[#635BFF] shrink-0" />
+                      <span className="text-[10px] text-[#B0B7C3] font-medium flex-1">
+                        Ask your AI team...
+                      </span>
+                      <Zap className="w-3 h-3 text-[#635BFF]" />
+                    </div>
+                  </div>
+                </motion.div>
               </div>
+            </>
+          )}
+
+          {/* ── DRIVE TAB ── */}
+          {activeNav === "drive" && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-6"
+            >
+              {/* Drive header */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-bold text-[#111827]">Drive</h2>
+                  <p className="text-xs text-[#6B7280] font-medium mt-0.5">
+                    {allFiles.length} file{allFiles.length !== 1 ? "s" : ""} ·{" "}
+                    {formatFileSize(stats?.total_size_bytes ?? 0)} total
+                  </p>
+                </div>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="neu-pill-accent px-5 py-2.5 text-xs font-bold flex items-center gap-2 self-start disabled:opacity-60"
+                >
+                  {uploading ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Upload className="w-3.5 h-3.5" />
+                  )}
+                  {uploading ? "Uploading..." : "Upload File"}
+                </button>
+              </div>
+
+              {/* Files grid */}
+              {allFiles.length === 0 ? (
+                <div className="neu-card rounded-2xl p-12 text-center">
+                  <HardDrive className="w-12 h-12 mx-auto mb-4 text-[#D1D5DB]" />
+                  <h3 className="text-sm font-bold text-[#111827] mb-1">No files yet</h3>
+                  <p className="text-xs text-[#9CA3AF] font-medium mb-4">
+                    Upload your first file to get started.
+                  </p>
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="neu-pill-accent px-5 py-2.5 text-xs font-bold inline-flex items-center gap-2"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    Upload File
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  {allFiles.map((file, i) => (
+                    <motion.div
+                      key={file.id}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.04 }}
+                      className="neu-card rounded-2xl p-4 flex flex-col group relative hover:shadow-lg transition-shadow"
+                    >
+                      {/* Delete button */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDelete(file.id); }}
+                        disabled={deleting === file.id}
+                        className="absolute top-2.5 right-2.5 w-7 h-7 neu-circle rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 z-10"
+                        title="Delete file"
+                      >
+                        {deleting === file.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-red-400" />
+                        ) : (
+                          <Trash2 className="w-3.5 h-3.5 text-[#9CA3AF] hover:text-red-500 transition-colors" />
+                        )}
+                      </button>
+
+                      {/* File icon */}
+                      <div
+                        className="w-12 h-12 rounded-xl flex items-center justify-center mb-3"
+                        style={{ background: isImageMime(file.mime_type) ? "#8B85FF15" : "#635BFF15" }}
+                      >
+                        {isImageMime(file.mime_type) ? (
+                          <ImageIcon className="w-6 h-6" style={{ color: "#8B85FF" }} />
+                        ) : (
+                          <FileText className="w-6 h-6" style={{ color: "#635BFF" }} />
+                        )}
+                      </div>
+
+                      {/* File name */}
+                      <div className="text-[11px] font-bold text-[#111827] truncate mb-1" title={file.original_file_name}>
+                        {file.original_file_name}
+                      </div>
+
+                      {/* Description */}
+                      <div className="text-[10px] text-[#9CA3AF] font-medium truncate mb-3 flex-1">
+                        {file.description ?? "No description"}
+                      </div>
+
+                      {/* Footer: type + size + date */}
+                      <div className="flex items-center justify-between gap-2 pt-3 border-t border-white/40">
+                        <span className="text-[9px] font-bold text-[#635BFF] bg-[#635BFF]/10 rounded-md px-2 py-0.5 truncate">
+                          {file.mime_type.split("/")[1]?.toUpperCase() ?? file.mime_type}
+                        </span>
+                        <span className="text-[9px] font-bold text-[#B0B7C3] shrink-0">
+                          {formatFileSize(file.file_size)}
+                        </span>
+                      </div>
+                      <div className="text-[9px] text-[#D1D5DB] font-medium mt-1">
+                        {new Date(file.created_at).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
             </motion.div>
-          </div>
+          )}
+
+          {/* ── AGENTS TAB (placeholder) ── */}
+          {activeNav === "agents" && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="neu-card rounded-2xl p-8 text-center"
+            >
+              <Bot className="w-12 h-12 mx-auto mb-4 text-[#D1D5DB]" />
+              <h3 className="text-sm font-bold text-[#111827] mb-1">Agents</h3>
+              <p className="text-xs text-[#9CA3AF] font-medium">
+                Your AI agents will appear here once they&apos;re configured.
+              </p>
+            </motion.div>
+          )}
+
+          {/* ── SETTINGS TAB (placeholder) ── */}
+          {activeNav === "settings" && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="neu-card rounded-2xl p-8 text-center"
+            >
+              <Settings className="w-12 h-12 mx-auto mb-4 text-[#D1D5DB]" />
+              <h3 className="text-sm font-bold text-[#111827] mb-1">Settings</h3>
+              <p className="text-xs text-[#9CA3AF] font-medium">
+                Account and company settings coming soon.
+              </p>
+            </motion.div>
+          )}
+
         </main>
       </div>
     </div>

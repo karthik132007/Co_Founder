@@ -13,5 +13,8 @@ def _get_tavily_client():
     return TavilyClient(api_key=api_key)
 
 def img_to_base64(img_file):
+    if isinstance(img_file, bytes):
+        return base64.b64encode(img_file).decode("utf-8")
+    
     with open(img_file, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode("utf-8")

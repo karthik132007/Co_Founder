@@ -4,7 +4,7 @@ Asking llm to critique a given answer to a question, give suggestions.
 import dotenv
 from openai import OpenAI
 
-from judge.judge_propmts import get_judge_to_researcher_prompt,get_judge_to_writer_prompt
+from agents.judge.judge_propmts import get_judge_to_researcher_prompt,get_judge_to_writer_prompt
 dotenv.load_dotenv()
 LLM_API_KEY = dotenv.get_key(dotenv.find_dotenv(), "LLM_API_KEY")
 
