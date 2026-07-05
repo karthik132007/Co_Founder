@@ -1,14 +1,30 @@
 {
-  "version": "1.0.0",
+  "version": "2.0.0",
   "agents": [
     {
-      "id": "writer",
-      "name": "Writer",
-      "role": "Content Creation",
-      "description": "Creates, edits, rewrites, and formats written content.",
-      "tools": [],
+      "id": "ceo",
+      "name": "CEO Agent",
+      "role": "Orchestration",
+      "description": "Understands user requests, delegates work, and merges specialist outputs into one response.",
+      "tools": [
+        {
+          "id": "view_all_agents",
+          "name": "view_all_agents",
+          "description": "View all available agents and their descriptions.",
+          "args": {}
+        },
+        {
+          "id": "knowledge_request",
+          "name": "knowledge_request",
+          "description": "Search company knowledge across files and memory via the RAG engine.",
+          "args": {
+            "query": "Search query",
+            "top_k": "Maximum results to return"
+          }
+        }
+      ],
       "enabled": true,
-      "metadata": {}
+      "metadata": { "kind": "core" }
     },
     {
       "id": "researcher",
@@ -17,48 +33,103 @@
       "description": "Finds, verifies, summarizes, and synthesizes information.",
       "tools": [
         {
-          "web search":{
-            "args":{
-              "query: str":"Topic to search the web",
-              "max_results: int":"How many results to return, default=5"
-            },
-            "description":"Search the web for a given query and return a list of results."
-          },
-          "get_current_date":{
-            "args":"none",
-            "description":"Get the current date in YYYY-MM-DD format."
+          "id": "search_web",
+          "name": "search_web",
+          "description": "Search the web for a given query and return a list of results.",
+          "args": {
+            "query": "Topic to search the web",
+            "max_results": "How many results to return (default 5)"
+          }
+        },
+        {
+          "id": "get_current_date",
+          "name": "get_current_date",
+          "description": "Get the current date in YYYY-MM-DD format.",
+          "args": {}
+        }
+      ],
+      "enabled": true,
+      "metadata": { "kind": "core" }
+    },
+    {
+      "id": "writer",
+      "name": "Writer",
+      "role": "Writing",
+      "description": "Turns CEO-provided context into clear, structured, publication-ready content.",
+      "tools": [],
+      "enabled": true,
+      "metadata": { "kind": "core" }
+    },
+    {
+      "id": "marketing",
+      "name": "CMO",
+      "role": "Marketing Strategy",
+      "description": "Develops marketing strategy, campaigns, SEO, branding, and growth plans.",
+      "tools": [
+        {
+          "id": "super_search",
+          "name": "super_search",
+          "description": "Search trends, news, and shopping results for a given query.",
+          "args": {
+            "query": "Topic to search"
+          }
+        },
+        {
+          "id": "search_web",
+          "name": "search_web",
+          "description": "Search the web for a given query and return a list of results.",
+          "args": {
+            "query": "Topic to search the web",
+            "max_results": "How many results to return (default 5)"
+          }
+        },
+        {
+          "id": "extract_content_from_webpages",
+          "name": "extract_content_from_webpages",
+          "description": "Extract content from a webpage.",
+          "args": {
+            "urls": "URL or URLs to extract"
           }
         }
       ],
       "enabled": true,
-      "metadata": {}
+      "metadata": { "kind": "core" }
     },
     {
-      "id": "data_analyst",
-      "name": "Data Analyst",
-      "role": "Data Analysis",
-      "description": "Analyzes datasets, generates insights, performs statistical analysis, and creates visualizations.",
+      "id": "judge",
+      "name": "Judge",
+      "role": "Quality Review",
+      "description": "Critiques research and writing outputs and returns scores, critique, and suggestions.",
       "tools": [],
       "enabled": true,
-      "metadata": {}
+      "metadata": { "kind": "review" }
     },
     {
-      "id": "marketing",
-      "name": "Marketing",
-      "role": "Marketing Strategy",
-      "description": "Develops marketing strategies, campaigns, SEO, branding, and growth plans.",
+      "id": "chat_memory_agent",
+      "name": "Chat Memory Agent",
+      "role": "Memory Extraction",
+      "description": "Extracts durable long-term memories from conversations into structured JSON.",
       "tools": [],
       "enabled": true,
-      "metadata": {}
+      "metadata": { "kind": "utility" }
     },
     {
-      "id": "graphic_designer",
-      "name": "Graphic Designer",
-      "role": "Design",
-      "description": "Creates visual assets, branding materials, UI concepts, and image prompts.",
+      "id": "document_description",
+      "name": "Document Description Agent",
+      "role": "Document Analysis",
+      "description": "Generates retrieval-optimized descriptions for uploaded non-image files.",
       "tools": [],
       "enabled": true,
-      "metadata": {}
+      "metadata": { "kind": "utility" }
+    },
+    {
+      "id": "image_description",
+      "name": "Image Description Agent",
+      "role": "OCR and Image Analysis",
+      "description": "Describes uploaded images, extracts visible text, and produces indexing-friendly metadata.",
+      "tools": [],
+      "enabled": true,
+      "metadata": { "kind": "utility" }
     }
   ]
 }

@@ -13,8 +13,9 @@ class Task(str, Enum):
     CLASSIFICATION = "classification"
     OCR = "ocr"
 
+
 class Model(str, Enum):
-    QWEN = "qwen/qwen3-coder-next"      # fallback
+    QWEN = "qwen/qwen3-coder-next"
     DEEPSEEK = "deepseek/deepseek-v4-flash"
     MIMO = "xiaomi/mimo-v2.5"
     GEMMA = "google/gemma-4-26b-a4b-it"
@@ -22,40 +23,52 @@ class Model(str, Enum):
     GPT_OSS = "openai/gpt-oss-120b"
 
 
-TASK_TO_MODEL = {
-    Task.CREATIVE: Model.GPT_OSS,
-    Task.RESEARCH: Model.GLM,
-    Task.WRITING: Model.DEEPSEEK,
-    Task.DATA_ANALYSIS: Model.DEEPSEEK,
-    Task.PLANNING: Model.GLM,
-    Task.CLASSIFICATION: Model.MIMO,
-    Task.OCR: Model.GEMMA,
-}
-
-
 DEFAULT_MODEL = Model.DEEPSEEK
 
 
 def get_best_llm(tasks: Iterable[Task]):
     """
-    Return the most suitable model for a list of tasks.
-    Higher-priority tasks win.
-    """
+    Select the best LLM based on the combination of tasks.
 
-    priority = (
-        Task.CREATIVE,
-        Task.PLANNING,
-        Task.RESEARCH,
-        Task.DATA_ANALYSIS,
-        Task.WRITING,
-        Task.CLASSIFICATION,
-        Task.OCR,
-    )
+    Strategy:
+    - OCR -> Gemma
+    - Classification -> MIMO
+    - Research-heavy workflows -> DeepSeek (1M context)
+    - Data analysis / coding -> DeepSeek
+    - Writing -> DeepSeek
+    - Pure planning -> GLM
+    - Pure creative -> GPT-OSS
+    """
 
     task_set = set(tasks)
 
-    for task in priority:
-        if task in task_set:
-            return create_llm(TASK_TO_MODEL[task].value)
+    # Vision / OCR
+    if Task.OCR in task_set:
+        return create_llm(Model.GEMMA.value)
+
+    # Classification
+    if Task.CLASSIFICATION in task_set:
+        return create_llm(Model.MIMO.value)
+
+    # Research dominates everything else because it usually
+    # involves tool outputs and long contexts.
+    if Task.RESEARCH in task_set:
+        return create_llm(Model.DEEPSEEK.value)
+
+    # Coding / data work
+    if Task.DATA_ANALYSIS in task_set:
+        return create_llm(Model.DEEPSEEK.value)
+
+    # Writing benefits from DeepSeek as well
+    if Task.WRITING in task_set:
+        return create_llm(Model.DEEPSEEK.value)
+
+    # Planning without research
+    if Task.PLANNING in task_set:
+        return create_llm(Model.GLM.value)
+
+    # Pure creative generation
+    if Task.CREATIVE in task_set:
+        return create_llm(Model.GPT_OSS.value)
 
     return create_llm(DEFAULT_MODEL.value)
