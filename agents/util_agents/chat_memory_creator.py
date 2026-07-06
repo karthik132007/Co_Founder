@@ -1,6 +1,6 @@
 from langchain.agents import create_agent
 
-from helpers.choose_llm import get_best_llm, Task
+from agents.helpers.choose_llm import get_best_llm, Task
 
 agent = create_agent(
     name="chat_memory_agent",
@@ -138,26 +138,13 @@ Example:
     "title": "Target Audience",
     "memory": "Primary customers are university students and professors near the campus.",
     "category": "marketing",
-    "importance": "critical",
-    "keywords": [
-      "students",
-      "professors",
-      "university",
-      "campus",
-      "target audience"
-    ]
+    "importance": "critical"
   },
   {
     "title": "Pricing Strategy",
     "memory": "The business uses mid-tier pricing positioned below Starbucks and above fast-food chains.",
     "category": "finance",
-    "importance": "high",
-    "keywords": [
-      "pricing",
-      "Starbucks",
-      "mid-tier",
-      "coffee"
-    ]
+    "importance": "high"
   }
 ]
 

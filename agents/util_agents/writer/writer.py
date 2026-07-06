@@ -3,7 +3,7 @@ The writer agent that handles writing tasks, based on given context.
 """
 import json
 from langchain.agents import create_agent
-from util_agents.writer.writer_prompts import get_writer_system_prompt,get_writer_reflection_prompt
+from agents.util_agents.writer.writer_prompts import get_writer_system_prompt, get_writer_reflection_prompt
 from agents.helpers.choose_llm import get_best_llm,Task
 from agents.judge.llm_as_judge import judge_output_to_writer
 writer_agent = create_agent(

@@ -14,7 +14,7 @@ router = APIRouter(
     tags=["User"]
 )
 
-@router.post("/user/onboarding")
+@router.post("/onboarding")
 def onboarding(company: CompanyCreate):
     tone = company.tone or "professional"
     allowed_tones = {"friendly", "professional", "witty"}
@@ -37,7 +37,7 @@ def onboarding(company: CompanyCreate):
     raise HTTPException(status_code=400, detail="Failed to create company")
 
 
-@router.get("/user/dashboard")
+@router.get("/dashboard")
 def user_dashboard(user_id: int = Query(..., description="User ID")):
     """Return dashboard overview data for a user's company."""
     company = get_company_by_user(user_id)
@@ -61,7 +61,7 @@ def user_dashboard(user_id: int = Query(..., description="User ID")):
     }
 
 
-@router.get("/user/files")
+@router.get("/files")
 def list_user_files(user_id: int = Query(..., description="User ID")):
     """Return all files for a user's company."""
     company_id = get_company_id(user_id)

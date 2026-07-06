@@ -25,7 +25,7 @@ export default function AuthPage() {
     setError("");
     setSuccess("");
 
-    const endpoint = isLogin ? `${API_BASE_URL}/login` : `${API_BASE_URL}/signup`;
+    const endpoint = isLogin ? `${API_BASE_URL}/auth/login` : `${API_BASE_URL}/auth/signup`;
 
     try {
       const res = await fetch(endpoint, {

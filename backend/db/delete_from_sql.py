@@ -1,17 +1,18 @@
-from backend.db.database import SessionLocal
-from backend.models import File
-def delete_file_by_id(file_id: int):
+"""
+Database delete operations using Supabase REST API (HTTPS).
+Replaces SQLAlchemy direct PostgreSQL connections which require IPv6.
+"""
+from backend.utils import get_supabase_client
+
+_client = get_supabase_client()
+
+
+def delete_file_by_id(file_id: int) -> bool:
     """Delete a file from the database by ID. Returns True if deleted, False if not found."""
-    db = SessionLocal()
-    try:
-        file = db.query(File).filter(File.id == file_id).first()
-        if not file:
-            return False
-        db.delete(file)
-        db.commit()
-        return True
-    except Exception as e:
-        db.rollback()
-        raise e
-    finally:
-        db.close()
+    # First check if the file exists
+    check = _client.table("files").select("id").eq("id", file_id).execute()
+    if not check.data:
+        return False
+
+    _client.table("files").delete().eq("id", file_id).execute()
+    return True

@@ -17,6 +17,7 @@ import {
   fetchDashboard, fetchFiles, uploadFile, deleteFile, formatFileSize, isImageMime,
   type DashboardData, type DriveFile,
 } from "@/lib/api";
+import Chat from "@/components/Chat";
 
 /* ─────────────────────────────────────────────
    Types
@@ -31,7 +32,7 @@ type NavItem = {
 const navItems: NavItem[] = [
   { label: "Overview", icon: LayoutDashboard, id: "overview" },
   { label: "Drive", icon: HardDrive, id: "drive" },
-  { label: "Agents", icon: Bot, id: "agents" },
+  { label: "Chat", icon: MessageSquare, id: "chat" },
   { label: "Settings", icon: Settings, id: "settings" },
 ];
 
@@ -620,18 +621,13 @@ export default function DashboardPage() {
             </motion.div>
           )}
 
-          {/* ── AGENTS TAB (placeholder) ── */}
-          {activeNav === "agents" && (
+          {/* ── CHAT TAB ── */}
+          {activeNav === "chat" && (
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              className="neu-card rounded-2xl p-8 text-center"
             >
-              <Bot className="w-12 h-12 mx-auto mb-4 text-[#D1D5DB]" />
-              <h3 className="text-sm font-bold text-[#111827] mb-1">Agents</h3>
-              <p className="text-xs text-[#9CA3AF] font-medium">
-                Your AI agents will appear here once they&apos;re configured.
-              </p>
+              <Chat user={session.user} />
             </motion.div>
           )}
 
