@@ -3,11 +3,12 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Loader2, LayoutDashboard, Bot, Settings,
+  Loader2, LayoutDashboard, Settings,
   Search, Bell, LogOut, Menu,
   ChevronRight, Sparkles,
   Zap, MessageSquare, ArrowUpRight, HardDrive,
-  Upload, FileText, Image as ImageIcon, Trash2
+  Upload, FileText, Image as ImageIcon, Trash2,
+  Plus, Clock,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -15,7 +16,8 @@ import { useRouter } from "next/navigation";
 import { getSession } from "@/lib/session";
 import {
   fetchDashboard, fetchFiles, uploadFile, deleteFile, formatFileSize, isImageMime,
-  type DashboardData, type DriveFile,
+  fetchChatSessions,
+  type DashboardData, type DriveFile, type ChatSession,
 } from "@/lib/api";
 import Chat from "@/components/Chat";
 
@@ -64,6 +66,13 @@ export default function DashboardPage() {
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState<number | null>(null);
+  // Chat session state
+  const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
+  const [loadingSessions, setLoadingSessions] = useState(false);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [activeSessionTitle, setActiveSessionTitle] = useState<string | null>(null);
+  // Key to force Chat component remount on session switch
+  const [chatKey, setChatKey] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   /* ── Fetch dashboard data ── */
@@ -92,6 +101,20 @@ export default function DashboardPage() {
     }
   }, [session?.user?.id]);
 
+  /* ── Load chat sessions ── */
+  const loadSessions = useCallback(async () => {
+    if (!session?.user?.id) return;
+    setLoadingSessions(true);
+    try {
+      const data = await fetchChatSessions(session.user.id);
+      setChatSessions(data.sessions);
+    } catch {
+      // Silently fail
+    } finally {
+      setLoadingSessions(false);
+    }
+  }, [session?.user?.id]);
+
   useEffect(() => {
     if (!session) {
       router.replace("/auth");
@@ -102,8 +125,9 @@ export default function DashboardPage() {
     if (session?.user?.id) {
       loadDashboard();
       loadFiles();
+      loadSessions();
     }
-  }, [session?.user?.id, loadDashboard, loadFiles]);
+  }, [session?.user?.id, loadDashboard, loadFiles, loadSessions]);
 
   /* ── File upload handler ── */
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -139,6 +163,38 @@ export default function DashboardPage() {
       setDeleting(null);
     }
   };
+
+  /* ── Select a chat session ── */
+  const handleSelectSession = useCallback(
+    async (s: ChatSession) => {
+      if (s.session_id === activeSessionId) return;
+      setSidebarOpen(false);
+      setActiveNav("chat");
+      setActiveSessionId(s.session_id);
+      setActiveSessionTitle(s.title);
+      setChatKey((k) => k + 1);  // remount Chat to load new session
+    },
+    [activeSessionId],
+  );
+
+  /* ── New chat ── */
+  const handleNewChat = useCallback(() => {
+    setActiveSessionId(null);
+    setActiveSessionTitle(null);
+    setChatKey((k) => k + 1);  // remount Chat for fresh session
+    setActiveNav("chat");
+    setSidebarOpen(false);
+  }, []);
+
+  /* ── Called by Chat when a new session is created ── */
+  const handleSessionCreated = useCallback(
+    (sessionId: string, title: string) => {
+      setActiveSessionId(sessionId);
+      setActiveSessionTitle(title);
+      loadSessions();
+    },
+    [loadSessions],
+  );
 
   if (!session) {
     return (
@@ -194,8 +250,19 @@ export default function DashboardPage() {
           </Link>
         </div>
 
+        {/* ── New Chat button (always visible) ── */}
+        <div className="px-3 pt-3 pb-2 shrink-0">
+          <button
+            onClick={handleNewChat}
+            className="w-full neu-inset rounded-xl px-3 py-2.5 flex items-center gap-2.5 text-xs font-bold text-[#6B7280] hover:text-[#635BFF] hover:ring-2 hover:ring-[#635BFF]/20 transition-all"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            New Chat
+          </button>
+        </div>
+
         {/* Nav items */}
-        <nav className="flex-1 px-3 py-5 space-y-1 overflow-y-auto">
+        <nav className="px-3 py-2 space-y-1 shrink-0">
           {navItems.map((item) => {
             const isActive = activeNav === item.id;
             return (
@@ -216,8 +283,80 @@ export default function DashboardPage() {
           })}
         </nav>
 
+        {/* Divider */}
+        <div className="px-5 py-2 shrink-0">
+          <div className="border-t border-white/50" />
+        </div>
+
+        {/* ── Chat History ── */}
+        <div className="flex-1 overflow-y-auto px-3 pb-3">
+          <p className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider px-4 py-2">
+            Chat History
+          </p>
+
+          {loadingSessions && chatSessions.length === 0 && (
+            <div className="flex items-center justify-center py-6">
+              <Loader2 className="w-4 h-4 animate-spin text-[#B0B7C3]" />
+            </div>
+          )}
+
+          {!loadingSessions && chatSessions.length === 0 && (
+            <p className="text-[10px] text-[#B0B7C3] font-medium text-center py-6 px-4">
+              No chats yet. Start a new one!
+            </p>
+          )}
+
+          <div className="space-y-0.5">
+            {chatSessions.map((s) => {
+              const isActive = s.session_id === activeSessionId && activeNav === "chat";
+              const sessionDate = s.created_at
+                ? (() => {
+                    const d = new Date(s.created_at);
+                    const now = new Date();
+                    const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+                    if (diffDays === 0) return "Today";
+                    if (diffDays === 1) return "Yesterday";
+                    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                  })()
+                : "";
+              return (
+                <button
+                  key={s.session_id}
+                  onClick={() => handleSelectSession(s)}
+                  className={`w-full text-left rounded-xl px-3 py-2.5 transition-all duration-200 group ${
+                    isActive
+                      ? "bg-[#635BFF]/10 ring-1 ring-[#635BFF]/20"
+                      : "hover:bg-white/40"
+                  }`}
+                >
+                  <div className="flex items-start gap-2.5">
+                    <MessageSquare
+                      className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${
+                        isActive ? "text-[#635BFF]" : "text-[#B0B7C3] group-hover:text-[#635BFF]"
+                      }`}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div
+                        className={`text-[11px] font-bold truncate ${
+                          isActive ? "text-[#635BFF]" : "text-[#111827]"
+                        }`}
+                      >
+                        {s.title || "Untitled Chat"}
+                      </div>
+                      <div className="text-[9px] font-medium mt-0.5 flex items-center gap-1 text-[#B0B7C3]">
+                        <Clock className="w-2.5 h-2.5" />
+                        {sessionDate}
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* User profile */}
-        <div className="px-5 py-4 border-t border-white/50">
+        <div className="px-5 py-4 border-t border-white/50 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-[#635BFF] flex items-center justify-center text-white text-xs font-bold shrink-0">
               {session.user.email[0].toUpperCase()}
@@ -627,7 +766,13 @@ export default function DashboardPage() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <Chat user={session.user} />
+              <Chat
+                key={chatKey}
+                user={session.user}
+                initialSessionId={activeSessionId}
+                initialTitle={activeSessionTitle}
+                onSessionCreated={handleSessionCreated}
+              />
             </motion.div>
           )}
 

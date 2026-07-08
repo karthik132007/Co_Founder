@@ -19,7 +19,7 @@ def semantic_search(embedding,company_id,match_count: int=10):
 def keywords_search(query, company_id: int, match_count: int=10):
     results=(
         supabase.rpc(
-            "keywords_search",
+            "keyword_search",
             {
                 "query_text": query,
                 "p_company_id": company_id,

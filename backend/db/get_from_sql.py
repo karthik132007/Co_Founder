@@ -57,3 +57,26 @@ def get_dashboard_stats(company_id: int) -> Dict[str, Any]:
         "images": images,
         "documents": documents,
     }
+
+def get_chats_in_session(session_id: str) -> List[Dict[str, Any]]:
+    """Return all chat messages for a session, ordered from oldest to newest."""
+    response = (
+        supabase_client.table("chat_messages")
+        .select("*")
+        .eq("session_id", session_id)
+        .order("created_at", desc=False)
+        .execute()
+    )
+    return response.data if response.data else []
+
+
+def get_chat_sessions(company_id: int) -> List[Dict[str, Any]]:
+    """Return all chat sessions for a company, ordered by newest first."""
+    response = (
+        supabase_client.table("chat_sessions")
+        .select("*")
+        .eq("company_id", company_id)
+        .order("created_at", desc=True)
+        .execute()
+    )
+    return response.data if response.data else []

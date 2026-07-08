@@ -17,7 +17,7 @@ class KnowledgeEngine:
     ):
         results=[]
         query = query.lower()
-        query_embedding = embedding_generator(query)
+        query_embedding = embedding_generator.generate_embeddings(query)
         semantic_search_results = semantic_search(company_id=company_id, embedding=query_embedding)
         keyword_search_results = keywords_search(company_id=company_id, query=query)
         if rerank:

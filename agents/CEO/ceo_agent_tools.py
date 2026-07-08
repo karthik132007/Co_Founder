@@ -5,7 +5,7 @@ from langchain.tools import tool
 
 AGENTS_FILE = Path(__file__).resolve().parents[1] / "agents.json"
 
-@tool('view_all_agents', return_direct=True, description="View all available agents and their descriptions.")
+@tool('view_all_agents', description="View all available agents and their descriptions.")
 def view_all_agents():
     """
     View all available agents and their descriptions.

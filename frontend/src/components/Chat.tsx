@@ -8,8 +8,9 @@ import {
   Sparkles,
   User,
   AlertCircle,
+  MessageSquare,
 } from "lucide-react";
-import { sendChatMessage } from "@/lib/api";
+import { sendChatMessage, fetchSessionMessages } from "@/lib/api";
 import type { SessionUser } from "@/lib/session";
 
 /* ─────────────────────────────────────────────
@@ -23,15 +24,30 @@ type Message = {
   timestamp: number;
 };
 
+type ChatProps = {
+  user: SessionUser;
+  initialSessionId: string | null;
+  initialTitle: string | null;
+  onSessionCreated: (sessionId: string, title: string) => void;
+};
+
 /* ─────────────────────────────────────────────
    Chat Component
    ───────────────────────────────────────────── */
 
-export default function Chat({ user }: { user: SessionUser }) {
+export default function Chat({
+  user,
+  initialSessionId,
+  initialTitle,
+  onSessionCreated,
+}: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  const [sessionId, setSessionId] = useState<string | null>(initialSessionId);
+  const [chatTitle, setChatTitle] = useState<string | null>(initialTitle);
+  const [loadingMessages, setLoadingMessages] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -43,6 +59,38 @@ export default function Chat({ user }: { user: SessionUser }) {
   useEffect(() => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
+
+  /* ── Load session messages when initialSessionId changes ── */
+  useEffect(() => {
+    setSessionId(initialSessionId);
+    setChatTitle(initialTitle);
+    setError("");
+
+    if (initialSessionId) {
+      setLoadingMessages(true);
+      fetchSessionMessages(user.id, initialSessionId)
+        .then((data) => {
+          setMessages(
+            data.messages.map((m) => ({
+              id: String(m.id),
+              role: m.role as "user" | "assistant",
+              content: m.content,
+              timestamp: m.created_at
+                ? new Date(m.created_at).getTime()
+                : Date.now(),
+            })),
+          );
+        })
+        .catch((err) => {
+          setError(
+            err instanceof Error ? err.message : "Failed to load session",
+          );
+        })
+        .finally(() => setLoadingMessages(false));
+    } else {
+      setMessages([]);
+    }
+  }, [initialSessionId, initialTitle, user.id]);
 
   /* ── Send message ── */
   const handleSend = useCallback(async () => {
@@ -62,7 +110,19 @@ export default function Chat({ user }: { user: SessionUser }) {
     setError("");
 
     try {
-      const response = await sendChatMessage(user.id, trimmed);
+      const response = await sendChatMessage(
+        user.id,
+        trimmed,
+        sessionId ?? undefined,
+      );
+
+      // Capture session_id and title from the first message in a new session
+      if (response.is_new_session || !sessionId) {
+        setSessionId(response.session_id);
+        const title = response.title ?? "Untitled Chat";
+        setChatTitle(title);
+        onSessionCreated(response.session_id, title);
+      }
 
       const assistantMsg: Message = {
         id: crypto.randomUUID(),
@@ -78,7 +138,7 @@ export default function Chat({ user }: { user: SessionUser }) {
       setSending(false);
       inputRef.current?.focus();
     }
-  }, [input, sending, user.id]);
+  }, [input, sending, user.id, sessionId, onSessionCreated]);
 
   /* ── Handle Enter key ── */
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -98,10 +158,43 @@ export default function Chat({ user }: { user: SessionUser }) {
 
   return (
     <div className="flex flex-col h-[calc(100vh-12rem)]">
+      {/* Chat header with title */}
+      <div className="flex items-center shrink-0 pb-3 mb-1">
+        <div className="flex items-center gap-2.5 min-w-0">
+          {chatTitle ? (
+            <>
+              <div className="w-8 h-8 rounded-lg bg-[#635BFF]/10 flex items-center justify-center shrink-0">
+                <MessageSquare
+                  className="w-4 h-4"
+                  style={{ color: "#635BFF" }}
+                />
+              </div>
+              <span className="text-sm font-bold text-[#111827] truncate">
+                {chatTitle}
+              </span>
+            </>
+          ) : (
+            <span className="text-sm font-medium text-[#B0B7C3]">
+              New Chat
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Loading messages indicator */}
+      {loadingMessages && (
+        <div className="flex items-center justify-center py-4">
+          <Loader2
+            className="w-5 h-5 animate-spin"
+            style={{ color: "#635BFF" }}
+          />
+        </div>
+      )}
+
       {/* ── Messages area ── */}
       <div className="flex-1 overflow-y-auto px-1 space-y-4 pb-4">
         <AnimatePresence initial={false}>
-          {messages.length === 0 && (
+          {messages.length === 0 && !loadingMessages && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}

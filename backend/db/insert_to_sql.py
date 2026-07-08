@@ -30,6 +30,23 @@ class _FileResult:
             setattr(self, k, v)
 
 
+class _ChatSessionResult:
+    """Lightweight object for chat_sessions rows."""
+    def __init__(self, session_id: str, company_id: int, title: Optional[str] = None):
+        self.session_id = session_id
+        self.company_id = company_id
+        self.title = title
+
+
+class _ChatMessageResult:
+    """Lightweight object for chat_messages rows."""
+    def __init__(self, id: int, session_id: str, role: str, message: str):
+        self.id = id
+        self.session_id = session_id
+        self.role = role
+        self.message = message
+
+
 def create_user(email: str, password: str) -> Optional[_UserResult]:
     """Create a new user. Returns a user-like object or None if the email already exists."""
     # Check for existing user first
@@ -138,3 +155,54 @@ def add_meta_to_file(
         )
     raise RuntimeError("Failed to insert file metadata")
 
+
+def create_chat_session(session_id: str, company_id: int, title: Optional[str] = None) -> _ChatSessionResult:
+    """Create a chat session row and return a lightweight result object."""
+    if not session_id:
+        raise ValueError("session_id must be provided.")
+    if company_id is None:
+        raise ValueError("company_id must be provided.")
+
+    payload: Dict[str, Any] = {
+        "session_id": session_id,
+        "company_id": company_id,
+    }
+    if title is not None:
+        payload["title"] = title
+
+    response = _client.table("chat_sessions").insert(payload).execute()
+    if response.data:
+        row = response.data[0]
+        return _ChatSessionResult(
+            session_id=row["session_id"],
+            company_id=row["company_id"],
+            title=row.get("title"),
+        )
+    raise RuntimeError("Failed to insert chat session")
+
+
+def add_message_to_session(session_id: str, role: str, message: str) -> _ChatMessageResult:
+    """Add a new message entry to the chat_messages table."""
+    if not session_id:
+        raise ValueError("session_id must be provided.")
+    if role not in {"user", "assistant", "system"}:
+        raise ValueError("role must be one of: user, assistant, system")
+    if not message:
+        raise ValueError("message must be provided.")
+
+    payload: Dict[str, Any] = {
+        "session_id": session_id,
+        "role": role,
+        "message": message,
+    }
+
+    response = _client.table("chat_messages").insert(payload).execute()
+    if response.data:
+        row = response.data[0]
+        return _ChatMessageResult(
+            id=row["id"],
+            session_id=row["session_id"],
+            role=row["role"],
+            message=row["message"],
+        )
+    raise RuntimeError("Failed to insert chat message")
