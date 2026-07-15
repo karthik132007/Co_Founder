@@ -4,8 +4,10 @@ python-multipart
 fastapi
 pydantic
 langchain
+langchain-experimental
 langchain-openrouter
 openai
 serpapi
 supabase
 pymupdf
+openrouter

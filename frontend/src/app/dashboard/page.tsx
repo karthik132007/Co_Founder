@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Loader2, LayoutDashboard, Settings,
-  Search, Bell, LogOut, Menu,
+  Bell, LogOut, Menu,
   ChevronRight, Sparkles,
   Zap, MessageSquare, ArrowUpRight, HardDrive,
   Upload, FileText, Image as ImageIcon, Trash2,
@@ -58,6 +58,7 @@ export default function DashboardPage() {
   );
   const [activeNav, setActiveNav] = useState("overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Data state
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
@@ -212,6 +213,7 @@ export default function DashboardPage() {
   const company = dashboardData?.company;
   const stats = dashboardData?.stats;
   const recentFiles = dashboardData?.recent_files ?? [];
+  const activeNavLabel = navItems.find((item) => item.id === activeNav)?.label ?? "Dashboard";
 
   return (
     <div className="min-h-screen bg-[#f8faff] flex" style={{ fontFamily: "SF Mono, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace" }}>
@@ -232,37 +234,53 @@ export default function DashboardPage() {
       {/* ── Sidebar ── */}
       <aside className={`
         fixed lg:sticky top-0 left-0 z-50 h-screen
-        w-64 bg-[#f0f2f8] border-r border-white/60
+        w-64 ${sidebarCollapsed ? "lg:w-20" : "lg:w-64"} bg-[#f0f2f8] border-r border-white/60
         flex flex-col shrink-0
-        transition-transform duration-300 ease-in-out
+        transition-[width,transform] duration-300 ease-in-out
         ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
         shadow-[8px_0_20px_rgba(163,177,198,0.15)]
       `}>
         {/* Logo */}
-        <div className="px-5 py-5 border-b border-white/50">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 neu-circle rounded-full flex items-center justify-center group-hover:scale-105 transition-transform overflow-hidden">
-              <Image src="/logo.png" alt="Logo" width={28} height={28} className="w-7 h-7 object-contain" />
-            </div>
-            <span className="font-bold text-lg tracking-tight text-[#111827]">
-              Cofounder<span style={{ color: "#635BFF" }}>.ai</span>
-            </span>
-          </Link>
+        <div className={`px-5 py-5 border-b border-white/50 ${sidebarCollapsed ? "lg:px-2" : ""}`}>
+          <div className="flex items-center justify-between gap-2">
+            <Link href="/" className="flex min-w-0 items-center gap-2.5 group">
+              <div className={`w-9 h-9 neu-circle rounded-full flex items-center justify-center group-hover:scale-105 transition-transform overflow-hidden shrink-0 ${sidebarCollapsed ? "lg:w-8 lg:h-8" : ""}`}>
+                <Image src="/logo.png" alt="Logo" width={28} height={28} className="w-7 h-7 object-contain" />
+              </div>
+              <span className={`font-bold text-lg tracking-tight text-[#111827] truncate ${sidebarCollapsed ? "lg:hidden" : ""}`}>
+                Cofounder<span style={{ color: "#635BFF" }}>.ai</span>
+              </span>
+            </Link>
+            <button
+              onClick={() => setSidebarCollapsed((value) => !value)}
+              className="hidden lg:flex w-7 h-7 neu-circle rounded-full items-center justify-center shrink-0"
+              title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              <ChevronRight
+                className={`w-3.5 h-3.5 text-[#6B7280] transition-transform ${
+                  sidebarCollapsed ? "" : "rotate-180"
+                }`}
+              />
+            </button>
+          </div>
         </div>
 
         {/* ── New Chat button (always visible) ── */}
-        <div className="px-3 pt-3 pb-2 shrink-0">
+        <div className={`px-3 pt-3 pb-2 shrink-0 ${sidebarCollapsed ? "lg:px-2" : ""}`}>
           <button
             onClick={handleNewChat}
-            className="w-full neu-inset rounded-xl px-3 py-2.5 flex items-center gap-2.5 text-xs font-bold text-[#6B7280] hover:text-[#635BFF] hover:ring-2 hover:ring-[#635BFF]/20 transition-all"
+            className={`w-full neu-inset rounded-xl px-3 py-2.5 flex items-center gap-2.5 text-xs font-bold text-[#6B7280] hover:text-[#635BFF] hover:ring-2 hover:ring-[#635BFF]/20 transition-all ${
+              sidebarCollapsed ? "lg:justify-center lg:px-0" : ""
+            }`}
+            title="New Chat"
           >
-            <Plus className="w-3.5 h-3.5" />
-            New Chat
+            <Plus className="w-3.5 h-3.5 shrink-0" />
+            <span className={sidebarCollapsed ? "lg:hidden" : ""}>New Chat</span>
           </button>
         </div>
 
         {/* Nav items */}
-        <nav className="px-3 py-2 space-y-1 shrink-0">
+        <nav className={`px-3 py-2 space-y-1 shrink-0 ${sidebarCollapsed ? "lg:px-2" : ""}`}>
           {navItems.map((item) => {
             const isActive = activeNav === item.id;
             return (
@@ -270,26 +288,29 @@ export default function DashboardPage() {
                 key={item.id}
                 onClick={() => { setActiveNav(item.id); setSidebarOpen(false); }}
                 className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 group ${
+                  sidebarCollapsed ? "lg:justify-center lg:px-0" : ""
+                } ${
                   isActive
                     ? "neu-pill-accent shadow-lg"
                     : "text-[#6B7280] hover:text-[#111827] hover:bg-white/40"
                 }`}
+                title={item.label}
               >
-                <item.icon className={`w-4 h-4 ${isActive ? "text-white" : "text-[#9CA3AF] group-hover:text-[#635BFF]"}`} />
-                <span>{item.label}</span>
-                {isActive && <ChevronRight className="w-3.5 h-3.5 ml-auto" />}
+                <item.icon className={`w-4 h-4 shrink-0 ${isActive ? "text-white" : "text-[#9CA3AF] group-hover:text-[#635BFF]"}`} />
+                <span className={sidebarCollapsed ? "lg:hidden" : ""}>{item.label}</span>
+                {isActive && <ChevronRight className={`w-3.5 h-3.5 ml-auto ${sidebarCollapsed ? "lg:hidden" : ""}`} />}
               </button>
             );
           })}
         </nav>
 
         {/* Divider */}
-        <div className="px-5 py-2 shrink-0">
+        <div className={`px-5 py-2 shrink-0 ${sidebarCollapsed ? "lg:px-3" : ""}`}>
           <div className="border-t border-white/50" />
         </div>
 
         {/* ── Chat History ── */}
-        <div className="flex-1 overflow-y-auto px-3 pb-3">
+        <div className={`flex-1 overflow-y-auto px-3 pb-3 ${sidebarCollapsed ? "lg:hidden" : ""}`}>
           <p className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider px-4 py-2">
             Chat History
           </p>
@@ -354,14 +375,15 @@ export default function DashboardPage() {
             })}
           </div>
         </div>
+        <div className={sidebarCollapsed ? "hidden lg:block flex-1" : "hidden"} />
 
         {/* User profile */}
-        <div className="px-5 py-4 border-t border-white/50 shrink-0">
-          <div className="flex items-center gap-3">
+        <div className={`px-5 py-4 border-t border-white/50 shrink-0 ${sidebarCollapsed ? "lg:px-2" : ""}`}>
+          <div className={`flex items-center gap-3 ${sidebarCollapsed ? "lg:flex-col lg:gap-2" : ""}`}>
             <div className="w-9 h-9 rounded-xl bg-[#635BFF] flex items-center justify-center text-white text-xs font-bold shrink-0">
               {session.user.email[0].toUpperCase()}
             </div>
-            <div className="flex-1 min-w-0">
+            <div className={`flex-1 min-w-0 ${sidebarCollapsed ? "lg:hidden" : ""}`}>
               <div className="text-xs font-bold text-[#111827] truncate">
                 {session.user.email}
               </div>
@@ -387,24 +409,15 @@ export default function DashboardPage() {
         <header className="sticky top-0 z-30 bg-[#f8faff]/80 backdrop-blur-xl border-b border-white/60 px-4 sm:px-8 py-3.5 flex items-center gap-4">
           {/* Mobile menu trigger */}
           <button
-            onClick={() => setSidebarOpen(true)}
+            onClick={() => { setSidebarCollapsed(false); setSidebarOpen(true); }}
             className="lg:hidden neu-circle rounded-full w-9 h-9 flex-shrink-0"
           >
             <Menu className="w-4 h-4 text-[#4B5563]" />
           </button>
 
-          {/* Search */}
-          <div className="flex-1 max-w-md">
-            <div className="neu-inset rounded-xl px-4 py-2 flex items-center gap-3">
-              <Search className="w-4 h-4 text-[#9CA3AF]" />
-              <input
-                type="text"
-                placeholder="Search anything..."
-                className="bg-transparent text-sm font-medium text-[#111827] placeholder-[#B0B7C3] outline-none w-full"
-              />
-              <kbd className="hidden sm:inline-flex text-[10px] font-bold text-[#B0B7C3] bg-white/50 rounded-md px-1.5 py-0.5">
-                ⌘K
-              </kbd>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-bold text-[#111827] truncate">
+              {activeNavLabel}
             </div>
           </div>
 
@@ -438,25 +451,6 @@ export default function DashboardPage() {
         {/* Page body */}
         <main className="flex-1 p-4 sm:p-8 space-y-8">
           
-          {/* Welcome */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#111827]">
-              Welcome back{" "}
-              <span className="text-gradient">
-                {company?.company_name ?? session.user.email.split("@")[0]}
-              </span>
-            </h1>
-            <p className="mt-1.5 text-sm text-[#6B7280] font-medium">
-              {company
-                ? `${company.industry} · ${company.tone} tone`
-                : "Here's what your AI team is up to today."}
-            </p>
-          </motion.div>
-
           {/* Error banner */}
           {error && (
             <motion.div
@@ -479,6 +473,25 @@ export default function DashboardPage() {
           {/* ── OVERVIEW TAB ── */}
           {!loading && dashboardData && activeNav === "overview" && (
             <>
+              {/* Welcome */}
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+              >
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#111827]">
+                  Welcome back{" "}
+                  <span className="text-gradient">
+                    {company?.company_name ?? session.user.email.split("@")[0]}
+                  </span>
+                </h1>
+                <p className="mt-1.5 text-sm text-[#6B7280] font-medium">
+                  {company
+                    ? `${company.industry} · ${company.tone} tone`
+                    : "Here's what your AI team is up to today."}
+                </p>
+              </motion.div>
+
               {/* Stats row */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {([

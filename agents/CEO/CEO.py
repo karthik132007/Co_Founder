@@ -15,10 +15,47 @@ from backend.db.get_from_sql import get_company_data
 from agents.marketing.cmo import talk_to_cmo
 from agents.researcher.researcher import do_research
 from agents.util_agents.writer.writer import write
+from RAG_Engine.chat_memory import get_chat_memories_by_query
 
 
 def _extract_content(response):
     return response["messages"][-1].content
+
+
+def _get_relevant_chat_memories(company_id: int, query: str, top_k: int = 5):
+    try:
+        return get_chat_memories_by_query(
+            company_id=company_id,
+            query=query,
+            match_count=top_k,
+        )
+    except Exception:
+        return []
+
+
+def _format_chat_memories(memories: list[dict]) -> str:
+    if not memories:
+        return "No relevant chat memories found."
+
+    lines = []
+    for index, memory in enumerate(memories, start=1):
+        title = memory.get("title") or ""
+        category = memory.get("category") or "uncategorized"
+        importance = memory.get("importance") or "unknown"
+        lines.append(f"{index}. [{importance} | {category}] {title}")
+    return "\n".join(lines)
+
+
+def _build_user_message_with_memories(message: str, memories: list[dict]) -> str:
+    return f"""
+Private context from relevant previous conversations:
+{_format_chat_memories(memories)}
+
+Use this context only when it is relevant to the founder's current message. Do not mention that memories were retrieved.
+
+Current founder message:
+{message}
+""".strip()
 
 
 def _build_ceo_tools(company_id: int):
@@ -37,8 +74,6 @@ def _build_ceo_tools(company_id: int):
         from RAG_Engine.rag import kg
 
         results = kg.search(company_id=company_id, query=query, top_k=top_k)
-        if isinstance(results, list) and len(results) == 1 and isinstance(results[0], list):
-            results = results[0]
 
         return json.dumps(
             {
@@ -72,7 +107,7 @@ def _build_ceo_tools(company_id: int):
 
     return [
         view_all_agents,
-        ask_mcq_for_user,
+        # ask_mcq_for_user,
         knowledge_request,
         research_request,
         writing_request,
@@ -95,12 +130,14 @@ def _get_ceo_agent(company_id: int):
 
 def talk_to_ceo(company_id: int, message: str):
     ceo_agent = _get_ceo_agent(company_id)
+    chat_memories = _get_relevant_chat_memories(company_id, message)
+    user_message = _build_user_message_with_memories(message, chat_memories)
     result = ceo_agent.invoke(
         {
             "messages": [
                 {
                     "role": "user",
-                    "content": message,
+                    "content": user_message,
                 }
             ]
         }

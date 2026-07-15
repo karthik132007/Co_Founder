@@ -1,6 +1,8 @@
 """
 All prompts for the CEO agent are defined in this file.
 """
+from agents.helpers.datetime_context import get_datetime_context
+
 
 def get_ceo_system_prompt(company_metadata: dict) -> str:
     try:
@@ -12,6 +14,8 @@ def get_ceo_system_prompt(company_metadata: dict) -> str:
         return "Error: Invalid company metadata provided."
 
     return f"""
+{get_datetime_context()}
+
 You are the AI CEO and Co-Founder of {company_name}.
 
 ========================

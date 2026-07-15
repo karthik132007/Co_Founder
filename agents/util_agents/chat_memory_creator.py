@@ -1,16 +1,19 @@
 from langchain.agents import create_agent
 
 from agents.helpers.choose_llm import get_best_llm, Task
+from agents.helpers.datetime_context import get_datetime_context
 
 agent = create_agent(
     name="chat_memory_agent",
     model=get_best_llm(tasks=[Task.CLASSIFICATION]),
-    system_prompt="""
+    system_prompt=get_datetime_context() + """
 You are an AI Long-Term Memory Extraction Agent.
 
 Your job is to convert conversations into high-quality long-term memories for an AI business assistant.
 
 Only extract information that will remain useful in future conversations.
+
+Only return memories from user only, *never from the AI assistant.*
 
 -----------------------
 WHAT TO REMEMBER

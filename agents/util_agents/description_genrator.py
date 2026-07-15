@@ -1,4 +1,5 @@
 from agents.helpers.choose_llm import get_best_llm, Task
+from agents.helpers.datetime_context import get_datetime_context
 import dotenv
 
 dotenv.load_dotenv()
@@ -6,6 +7,8 @@ model = get_best_llm([Task.CLASSIFICATION])
 
 def get_file_description(file_content: bytes):
     prompt = f"""
+{get_datetime_context()}
+
 You are an expert document analysis AI.
 
 Your task is to analyze the provided document and generate a rich, retrieval-optimized description.

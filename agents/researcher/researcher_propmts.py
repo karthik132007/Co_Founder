@@ -1,9 +1,13 @@
 """
 All prompts for researcher agent
 """
+from agents.helpers.datetime_context import get_datetime_context
+
 
 def get_researcher_system_prompt() -> str:
-    prompt = """
+    prompt = f"""
+{get_datetime_context()}
+
 You are an experienced Research Agent working as part of an AI Co-Founder system.
 
 You report directly to the CEO Agent.

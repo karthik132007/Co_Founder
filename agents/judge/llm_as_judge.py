@@ -5,6 +5,7 @@ import dotenv
 from openai import OpenAI
 
 from agents.judge.judge_propmts import get_judge_to_researcher_prompt,get_judge_to_writer_prompt
+from agents.helpers.datetime_context import get_datetime_context
 dotenv.load_dotenv()
 LLM_API_KEY = dotenv.get_key(dotenv.find_dotenv(), "LLM_API_KEY")
 
@@ -25,7 +26,7 @@ def judge_output_to_researcher(model: str, v1: any,task: str):
     messages=[
         {
         "role": "system",
-        "content": "You are a judge, your task is to critique the given answer to a question and provide suggestions for improvement."
+        "content": f"{get_datetime_context()}\n\nYou are a judge, your task is to critique the given answer to a question and provide suggestions for improvement."
     },
         {
         "role": "user",
@@ -45,7 +46,7 @@ def judge_output_to_writer(model: str, v1: any, task: str):
     messages=[
         {
         "role": "system",
-        "content": "You are a judge, your task is to critique the given answer to a question and provide suggestions for improvement."
+        "content": f"{get_datetime_context()}\n\nYou are a judge, your task is to critique the given answer to a question and provide suggestions for improvement."
     },
         {
         "role": "user",

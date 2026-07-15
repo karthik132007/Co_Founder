@@ -1,9 +1,14 @@
 from agents.helpers.choose_llm import get_best_llm, Task
+from agents.helpers.datetime_context import get_datetime_context
 from langchain.agents import create_agent
 
 agent = create_agent(
     model=get_best_llm([Task.CLASSIFICATION]),
-    system_prompt="You are a helpful assistant"
+    system_prompt=f"""
+{get_datetime_context()}
+
+You are a helpful assistant.
+"""
 )
 
 

@@ -1,4 +1,3 @@
-
 from backend.models import CompanyData
 import supabase
 from backend.utils import get_supabase_client

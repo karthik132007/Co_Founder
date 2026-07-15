@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import ReactMarkdown, { type Components } from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
   Send,
   Loader2,
@@ -30,6 +32,93 @@ type ChatProps = {
   initialTitle: string | null;
   onSessionCreated: (sessionId: string, title: string) => void;
 };
+
+const markdownComponents: Components = {
+  p: ({ children }) => (
+    <p className="mb-3 last:mb-0 leading-relaxed">{children}</p>
+  ),
+  h1: ({ children }) => (
+    <h1 className="mb-3 mt-1 text-base font-bold leading-snug text-[#111827]">
+      {children}
+    </h1>
+  ),
+  h2: ({ children }) => (
+    <h2 className="mb-2.5 mt-4 text-sm font-bold leading-snug text-[#111827] first:mt-0">
+      {children}
+    </h2>
+  ),
+  h3: ({ children }) => (
+    <h3 className="mb-2 mt-3 text-sm font-bold leading-snug text-[#111827] first:mt-0">
+      {children}
+    </h3>
+  ),
+  ul: ({ children }) => (
+    <ul className="mb-3 list-disc space-y-1 pl-5 last:mb-0">{children}</ul>
+  ),
+  ol: ({ children }) => (
+    <ol className="mb-3 list-decimal space-y-1 pl-5 last:mb-0">{children}</ol>
+  ),
+  li: ({ children }) => <li className="pl-1 leading-relaxed">{children}</li>,
+  a: ({ children, href }) => (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className="font-semibold text-[#4F46E5] underline decoration-[#4F46E5]/30 underline-offset-2 hover:decoration-[#4F46E5]"
+    >
+      {children}
+    </a>
+  ),
+  blockquote: ({ children }) => (
+    <blockquote className="mb-3 border-l-2 border-[#635BFF]/40 pl-3 text-[#4B5563] last:mb-0">
+      {children}
+    </blockquote>
+  ),
+  strong: ({ children }) => (
+    <strong className="font-bold text-[#111827]">{children}</strong>
+  ),
+  code: ({ children, className, ...props }) => (
+    <code
+      className={
+        className ??
+        "rounded-md bg-white/70 px-1.5 py-0.5 text-[0.8em] font-semibold text-[#374151]"
+      }
+      {...props}
+    >
+      {children}
+    </code>
+  ),
+  pre: ({ children }) => (
+    <pre className="mb-3 overflow-x-auto rounded-xl bg-[#111827] px-3 py-2.5 text-xs leading-relaxed text-white last:mb-0">
+      {children}
+    </pre>
+  ),
+  table: ({ children }) => (
+    <table className="mb-3 min-w-full border-collapse text-left text-xs last:mb-0">
+      {children}
+    </table>
+  ),
+  th: ({ children }) => (
+    <th className="border border-[#D8DEE9] bg-white/70 px-2 py-1.5 font-bold text-[#111827]">
+      {children}
+    </th>
+  ),
+  td: ({ children }) => (
+    <td className="border border-[#D8DEE9] px-2 py-1.5 align-top">
+      {children}
+    </td>
+  ),
+};
+
+function MarkdownMessage({ content }: { content: string }) {
+  return (
+    <div className="chat-markdown overflow-x-auto text-sm leading-relaxed break-words">
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+        {content}
+      </ReactMarkdown>
+    </div>
+  );
+}
 
 /* ─────────────────────────────────────────────
    Chat Component
@@ -194,46 +283,7 @@ export default function Chat({
       {/* ── Messages area ── */}
       <div className="flex-1 overflow-y-auto px-1 space-y-4 pb-4">
         <AnimatePresence initial={false}>
-          {messages.length === 0 && !loadingMessages && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex flex-col items-center justify-center h-full text-center py-12"
-            >
-              <div className="w-16 h-16 neu-circle rounded-full flex items-center justify-center mb-5">
-                <Sparkles className="w-7 h-7" style={{ color: "#635BFF" }} />
-              </div>
-              <h3 className="text-lg font-bold text-[#111827] mb-2">
-                Ask your CEO Agent
-              </h3>
-              <p className="text-sm text-[#6B7280] font-medium max-w-md leading-relaxed">
-                Your AI CEO coordinates strategy, delegates tasks to specialist
-                agents, and helps you make decisions that align with your
-                business goals.
-              </p>
 
-              {/* Quick prompts */}
-              <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full max-w-lg">
-                {[
-                  "What should my next steps be?",
-                  "Analyze my business strategy",
-                  "Help me plan a marketing campaign",
-                  "What research should I prioritize?",
-                ].map((prompt) => (
-                  <button
-                    key={prompt}
-                    onClick={() => {
-                      setInput(prompt);
-                      inputRef.current?.focus();
-                    }}
-                    className="neu-inset rounded-xl px-4 py-2.5 text-left text-xs font-medium text-[#6B7280] hover:text-[#111827] hover:ring-2 hover:ring-[#635BFF]/20 transition-all"
-                  >
-                    {prompt}
-                  </button>
-                ))}
-              </div>
-            </motion.div>
-          )}
 
           {messages.map((msg) => (
             <motion.div
@@ -252,15 +302,19 @@ export default function Chat({
 
               {/* Bubble */}
               <div
-                className={`max-w-[75%] rounded-2xl px-4 py-3 ${
+                className={`min-w-0 ${
                   msg.role === "user"
-                    ? "bg-[#635BFF] text-white rounded-br-md"
-                    : "neu-card text-[#111827] rounded-bl-md"
+                    ? "max-w-[75%] bg-[#635BFF] text-white rounded-2xl rounded-br-md px-4 py-3"
+                    : "max-w-[82%] text-[#111827]"
                 }`}
               >
-                <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
-                  {msg.content}
-                </p>
+                {msg.role === "assistant" ? (
+                  <MarkdownMessage content={msg.content} />
+                ) : (
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                    {msg.content}
+                  </p>
+                )}
                 <span
                   className={`text-[10px] mt-1.5 block font-medium ${
                     msg.role === "user"
@@ -294,7 +348,7 @@ export default function Chat({
               <div className="w-8 h-8 rounded-xl bg-[#635BFF] flex items-center justify-center shrink-0">
                 <Sparkles className="w-4 h-4 text-white" />
               </div>
-              <div className="neu-card rounded-2xl rounded-bl-md px-5 py-3.5 flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-[#635BFF] animate-bounce" style={{ animationDelay: "0ms" }} />
                 <span className="w-2 h-2 rounded-full bg-[#635BFF] animate-bounce" style={{ animationDelay: "150ms" }} />
                 <span className="w-2 h-2 rounded-full bg-[#635BFF] animate-bounce" style={{ animationDelay: "300ms" }} />

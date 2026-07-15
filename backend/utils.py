@@ -2,6 +2,7 @@ import os
 from urllib.parse import urlparse
 
 import supabase
+from supabase import ClientOptions
 from dotenv import load_dotenv
 import pymupdf
 load_dotenv()
@@ -36,9 +37,18 @@ def _get_supabase_key() -> str:
     return supabase_key
 
 
+def _get_postgrest_timeout() -> float:
+    raw_timeout = os.getenv("SUPABASE_POSTGREST_TIMEOUT", "30")
+    try:
+        return float(raw_timeout)
+    except ValueError as exc:
+        raise RuntimeError("SUPABASE_POSTGREST_TIMEOUT must be a number of seconds.") from exc
+
+
 supabase_client = supabase.Client(
     supabase_url=_get_supabase_url(),
     supabase_key=_get_supabase_key(),
+    options=ClientOptions(postgrest_client_timeout=_get_postgrest_timeout()),
 )
 
 def get_supabase_client():

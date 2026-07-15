@@ -1,9 +1,13 @@
 """
 contains all types of prompts for writer agent
 """
+from agents.helpers.datetime_context import get_datetime_context
+
 
 def get_writer_system_prompt():
-    return """
+    return f"""
+{get_datetime_context()}
+
 You are an expert Technical and Business Writer working as part of an AI Co-Founder system.
 
 You report directly to the CEO Agent.

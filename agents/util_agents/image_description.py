@@ -1,4 +1,5 @@
 from agents.helpers.choose_llm import get_best_llm, Task
+from agents.helpers.datetime_context import get_datetime_context
 import dotenv
 from langchain_core.messages import HumanMessage
 from agents.helpers.utils import img_to_base64
@@ -6,7 +7,9 @@ dotenv.load_dotenv()
 
 model = get_best_llm([Task.OCR])
 
-prompt = """
+prompt = f"""
+{get_datetime_context()}
+
 You are an AI assistant responsible for indexing business files.
 
 Analyze the uploaded image thoroughly.

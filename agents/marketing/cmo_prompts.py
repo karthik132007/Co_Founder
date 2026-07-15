@@ -1,5 +1,10 @@
+from agents.helpers.datetime_context import get_datetime_context
+
+
 def get_cmo_system_prompt(company_context):
     return f"""
+{get_datetime_context()}
+
 You are the Chief Marketing Officer (CMO) of an AI-powered company.
 
 # Company Context

@@ -1,14 +1,17 @@
-from fastapi import APIRouter,HTTPException,UploadFile,Query,Path
-from backend.db.delete_from_sql import delete_file_by_id
-from backend.db.put_to_drive import upload_to_cloud, delete_from_cloud
-from agents.util_agents.description_genrator import get_file_description
+from pathlib import Path as FilePath
 from uuid import uuid4
+
+from fastapi import APIRouter, HTTPException, Path, Query, UploadFile
+
+from RAG_Engine.chunking import chunk_document_text
+from agents.util_agents.description_genrator import get_file_description
 from agents.util_agents.image_description import get_image_description
-from backend.db.insert_to_sql import add_meta_to_file
+from backend.db.delete_from_sql import delete_file_by_id
 from backend.db.get_from_sql import get_company_id
-from backend.utils import extract_text
+from backend.db.insert_to_sql import add_document_chunks, add_meta_to_file
+from backend.db.put_to_drive import delete_from_cloud, upload_to_cloud
 from backend.utils import get_supabase_client
-from backend.models import CompanyCreate
+from backend.utils import extract_text
 
 router = APIRouter()
 
@@ -17,19 +20,29 @@ router = APIRouter()
 def upload_to_drive(user_id: int, file: UploadFile):
     company_id = get_company_id(user_id)
     try:
+        if not company_id:
+            raise HTTPException(status_code=404, detail="No company found for this user.")
+
         file_bytes = file.file.read()
         if not file_bytes:
             raise HTTPException(status_code=400, detail="Uploaded file is empty")
         file_type = file.content_type or "application/octet-stream"
+        original_file_name = file.filename or "uploaded_file"
+        file_extension = FilePath(original_file_name).suffix.lstrip(".") or None
+        document_chunks = []
 
-        if file.content_type.startswith("image/"):
+        if file_type.startswith("image/"):
             file_desc = get_image_description(file_bytes, file_type)
 
         else:
             extracted_content = extract_text(file_bytes)
             file_desc = get_file_description(extracted_content)
+            document_chunks = chunk_document_text(
+                text=extracted_content,
+                file_path=original_file_name,
+            )
 
-        unique_name = f"{uuid4()}_{file.filename}"
+        unique_name = f"{uuid4()}_{original_file_name}"
 
         upload_to_cloud(
             company_id=company_id,
@@ -38,20 +51,33 @@ def upload_to_drive(user_id: int, file: UploadFile):
             content_type=file_type
         )
 
-        # TODO: Store file_desc in the database
-        add_meta_to_file(
+        file_record = add_meta_to_file(
             company_id=company_id,
             file_name=unique_name,
-            original_file_name=file.filename,
+            original_file_name=original_file_name,
             storage_path=unique_name,  # Adjust this based on your cloud storage logic
             mime_type=file_type,
-            description=file_desc
+            description=file_desc,
+            file_extension=file_extension,
+            file_size=len(file_bytes),
         )
+
+        if document_chunks:
+            add_document_chunks(
+                file_id=file_record.id,
+                company_id=company_id,
+                chunks=document_chunks,
+                original_file_name=original_file_name,
+                mime_type=file_type,
+            )
 
         return {
             "message": "File uploaded successfully",
-            "file_name": unique_name
+            "file_name": unique_name,
+            "chunks_stored": len(document_chunks),
         }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to upload file: {str(e)}")
 

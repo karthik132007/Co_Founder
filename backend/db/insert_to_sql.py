@@ -156,6 +156,42 @@ def add_meta_to_file(
     raise RuntimeError("Failed to insert file metadata")
 
 
+def add_document_chunks(
+    file_id: int,
+    company_id: int,
+    chunks: list[Dict[str, Any]],
+    original_file_name: str = None,
+    mime_type: str = None,
+) -> list[Dict[str, Any]]:
+    """Insert embedded document chunks into the document_chunks table."""
+    if not chunks:
+        return []
+
+    rows = []
+    for chunk in chunks:
+        metadata: Dict[str, Any] = {}
+        if original_file_name:
+            metadata["original_file_name"] = original_file_name
+        if mime_type:
+            metadata["mime_type"] = mime_type
+        if chunk.get("file_path"):
+            metadata["file_path"] = chunk["file_path"]
+
+        row: Dict[str, Any] = {
+            "file_id": file_id,
+            "company_id": company_id,
+            "chunk_index": chunk["chunk_index"],
+            "chunk_text": chunk["chunk_text"],
+            "embedding": chunk.get("embedding"),
+        }
+        if metadata:
+            row["metadata"] = metadata
+        rows.append(row)
+
+    response = _client.table("document_chunks").insert(rows).execute()
+    return response.data if response.data else []
+
+
 def create_chat_session(session_id: str, company_id: int, title: Optional[str] = None) -> _ChatSessionResult:
     """Create a chat session row and return a lightweight result object."""
     if not session_id:
@@ -179,6 +215,29 @@ def create_chat_session(session_id: str, company_id: int, title: Optional[str] =
             title=row.get("title"),
         )
     raise RuntimeError("Failed to insert chat session")
+
+
+def update_chat_session_title(session_id: str, title: str) -> Optional[_ChatSessionResult]:
+    """Update a chat session title and return the updated lightweight session object."""
+    if not session_id:
+        raise ValueError("session_id must be provided.")
+    if not title:
+        raise ValueError("title must be provided.")
+
+    response = (
+        _client.table("chat_sessions")
+        .update({"title": title})
+        .eq("session_id", session_id)
+        .execute()
+    )
+    if response.data:
+        row = response.data[0]
+        return _ChatSessionResult(
+            session_id=row["session_id"],
+            company_id=row["company_id"],
+            title=row.get("title"),
+        )
+    return None
 
 
 def add_message_to_session(session_id: str, role: str, message: str) -> _ChatMessageResult:
