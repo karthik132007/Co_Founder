@@ -15,6 +15,8 @@ import {
 import { sendChatMessage, fetchSessionMessages } from "@/lib/api";
 import type { SessionUser } from "@/lib/session";
 
+const ACCENT = "#4f46e5";
+
 /* ─────────────────────────────────────────────
    Types
    ───────────────────────────────────────────── */
@@ -38,17 +40,17 @@ const markdownComponents: Components = {
     <p className="mb-3 last:mb-0 leading-relaxed">{children}</p>
   ),
   h1: ({ children }) => (
-    <h1 className="mb-3 mt-1 text-base font-bold leading-snug text-[#111827]">
+    <h1 className="mb-3 mt-1 text-base font-semibold leading-snug text-[#0a0a0a]">
       {children}
     </h1>
   ),
   h2: ({ children }) => (
-    <h2 className="mb-2.5 mt-4 text-sm font-bold leading-snug text-[#111827] first:mt-0">
+    <h2 className="mb-2.5 mt-4 text-[15px] font-semibold leading-snug text-[#0a0a0a] first:mt-0">
       {children}
     </h2>
   ),
   h3: ({ children }) => (
-    <h3 className="mb-2 mt-3 text-sm font-bold leading-snug text-[#111827] first:mt-0">
+    <h3 className="mb-2 mt-3 text-sm font-semibold leading-snug text-[#0a0a0a] first:mt-0">
       {children}
     </h3>
   ),
@@ -64,24 +66,24 @@ const markdownComponents: Components = {
       href={href}
       target="_blank"
       rel="noreferrer"
-      className="font-semibold text-[#4F46E5] underline decoration-[#4F46E5]/30 underline-offset-2 hover:decoration-[#4F46E5]"
+      className="font-medium text-[#4f46e5] underline decoration-[#4f46e5]/30 underline-offset-2 hover:decoration-[#4f46e5]"
     >
       {children}
     </a>
   ),
   blockquote: ({ children }) => (
-    <blockquote className="mb-3 border-l-2 border-[#635BFF]/40 pl-3 text-[#4B5563] last:mb-0">
+    <blockquote className="mb-3 border-l-2 border-[#4f46e5]/30 pl-3 text-[#4b5563] last:mb-0">
       {children}
     </blockquote>
   ),
   strong: ({ children }) => (
-    <strong className="font-bold text-[#111827]">{children}</strong>
+    <strong className="font-semibold text-[#0a0a0a]">{children}</strong>
   ),
   code: ({ children, className, ...props }) => (
     <code
       className={
         className ??
-        "rounded-md bg-white/70 px-1.5 py-0.5 text-[0.8em] font-semibold text-[#374151]"
+        "rounded-md bg-[#f3f4f6] px-1.5 py-0.5 text-[0.85em] font-medium text-[#374151]"
       }
       {...props}
     >
@@ -89,30 +91,28 @@ const markdownComponents: Components = {
     </code>
   ),
   pre: ({ children }) => (
-    <pre className="mb-3 overflow-x-auto rounded-xl bg-[#111827] px-3 py-2.5 text-xs leading-relaxed text-white last:mb-0">
+    <pre className="mb-3 overflow-x-auto rounded-xl bg-[#0a0a0a] px-4 py-3 text-[13px] leading-relaxed text-white last:mb-0">
       {children}
     </pre>
   ),
   table: ({ children }) => (
-    <table className="mb-3 min-w-full border-collapse text-left text-xs last:mb-0">
+    <table className="mb-3 min-w-full border-collapse text-left text-[13px] last:mb-0">
       {children}
     </table>
   ),
   th: ({ children }) => (
-    <th className="border border-[#D8DEE9] bg-white/70 px-2 py-1.5 font-bold text-[#111827]">
+    <th className="border border-[#e5e7eb] bg-[#f9fafb] px-3 py-2 font-semibold text-[#0a0a0a]">
       {children}
     </th>
   ),
   td: ({ children }) => (
-    <td className="border border-[#D8DEE9] px-2 py-1.5 align-top">
-      {children}
-    </td>
+    <td className="border border-[#e5e7eb] px-3 py-2 align-top">{children}</td>
   ),
 };
 
 function MarkdownMessage({ content }: { content: string }) {
   return (
-    <div className="chat-markdown overflow-x-auto text-sm leading-relaxed break-words">
+    <div className="overflow-x-auto text-sm leading-relaxed break-words text-[#374151]">
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
         {content}
       </ReactMarkdown>
@@ -140,7 +140,6 @@ export default function Chat({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  /* ── Auto-scroll to bottom ── */
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
@@ -149,39 +148,58 @@ export default function Chat({
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
-  /* ── Load session messages when initialSessionId changes ── */
-  useEffect(() => {
+  // Sync props into state during render (React-recommended pattern)
+  const [prevProps, setPrevProps] = useState({ initialSessionId, initialTitle });
+  if (
+    prevProps.initialSessionId !== initialSessionId ||
+    prevProps.initialTitle !== initialTitle
+  ) {
+    setPrevProps({ initialSessionId, initialTitle });
     setSessionId(initialSessionId);
     setChatTitle(initialTitle);
     setError("");
-
-    if (initialSessionId) {
-      setLoadingMessages(true);
-      fetchSessionMessages(user.id, initialSessionId)
-        .then((data) => {
-          setMessages(
-            data.messages.map((m) => ({
-              id: String(m.id),
-              role: m.role as "user" | "assistant",
-              content: m.content,
-              timestamp: m.created_at
-                ? new Date(m.created_at).getTime()
-                : Date.now(),
-            })),
-          );
-        })
-        .catch((err) => {
-          setError(
-            err instanceof Error ? err.message : "Failed to load session",
-          );
-        })
-        .finally(() => setLoadingMessages(false));
-    } else {
+    if (!initialSessionId) {
       setMessages([]);
     }
-  }, [initialSessionId, initialTitle, user.id]);
+  }
 
-  /* ── Send message ── */
+  useEffect(() => {
+    if (!initialSessionId) return;
+    let cancelled = false;
+
+    // Defer synchronous state update out of the effect body
+    queueMicrotask(() => {
+      if (!cancelled) setLoadingMessages(true);
+    });
+
+    fetchSessionMessages(user.id, initialSessionId)
+      .then((data) => {
+        if (cancelled) return;
+        setMessages(
+          data.messages.map((m) => ({
+            id: String(m.id),
+            role: m.role as "user" | "assistant",
+            content: m.content,
+            timestamp: m.created_at
+              ? new Date(m.created_at).getTime()
+              : Date.now(),
+          })),
+        );
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Failed to load session");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingMessages(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [initialSessionId, user.id]);
+
   const handleSend = useCallback(async () => {
     const trimmed = input.trim();
     if (!trimmed || sending) return;
@@ -205,7 +223,6 @@ export default function Chat({
         sessionId ?? undefined,
       );
 
-      // Capture session_id and title from the first message in a new session
       if (response.is_new_session || !sessionId) {
         setSessionId(response.session_id);
         const title = response.title ?? "Untitled Chat";
@@ -229,7 +246,6 @@ export default function Chat({
     }
   }, [input, sending, user.id, sessionId, onSessionCreated]);
 
-  /* ── Handle Enter key ── */
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -237,174 +253,184 @@ export default function Chat({
     }
   };
 
-  /* ── Format timestamp ── */
-  const formatTime = (ts: number) => {
-    return new Date(ts).toLocaleTimeString("en-US", {
+  const formatTime = (ts: number) =>
+    new Date(ts).toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
     });
-  };
+
+  const isEmpty = messages.length === 0 && !loadingMessages;
 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)]">
-      {/* Chat header with title */}
-      <div className="flex items-center shrink-0 pb-3 mb-1">
-        <div className="flex items-center gap-2.5 min-w-0">
-          {chatTitle ? (
-            <>
-              <div className="w-8 h-8 rounded-lg bg-[#635BFF]/10 flex items-center justify-center shrink-0">
-                <MessageSquare
-                  className="w-4 h-4"
-                  style={{ color: "#635BFF" }}
-                />
-              </div>
-              <span className="text-sm font-bold text-[#111827] truncate">
-                {chatTitle}
-              </span>
-            </>
-          ) : (
-            <span className="text-sm font-medium text-[#B0B7C3]">
-              New Chat
+      {/* Header */}
+      <div className="flex items-center shrink-0 pb-3">
+        {chatTitle ? (
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-[#eef2ff] flex items-center justify-center shrink-0">
+              <MessageSquare className="w-4 h-4" style={{ color: ACCENT }} />
+            </div>
+            <span className="text-sm font-semibold text-[#0a0a0a] truncate">
+              {chatTitle}
             </span>
-          )}
-        </div>
+          </div>
+        ) : (
+          <span className="text-sm font-medium text-[#9ca3af]">New Chat</span>
+        )}
       </div>
 
-      {/* Loading messages indicator */}
       {loadingMessages && (
         <div className="flex items-center justify-center py-4">
-          <Loader2
-            className="w-5 h-5 animate-spin"
-            style={{ color: "#635BFF" }}
-          />
+          <Loader2 className="w-5 h-5 animate-spin" style={{ color: ACCENT }} />
         </div>
       )}
 
-      {/* ── Messages area ── */}
-      <div className="flex-1 overflow-y-auto px-2 pb-4">
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto px-1 pb-4">
+        {/* Empty state */}
+        {isEmpty && (
+          <div className="h-full flex flex-col items-center justify-center text-center py-16">
+            <div
+              className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
+              style={{ background: ACCENT }}
+            >
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+            <h3 className="text-base font-semibold text-[#0a0a0a]">
+              Ask your AI team anything
+            </h3>
+            <p className="mt-1.5 text-sm text-[#6b7280] max-w-sm">
+              Strategy, marketing plans, financial projections, code — your CEO
+              agent delegates to specialists and delivers real output.
+            </p>
+          </div>
+        )}
+
         <div className="space-y-6">
           <AnimatePresence initial={false}>
-
-
-          {messages.map((msg) => (
-            <motion.div
-              key={msg.id}
-              initial={{ opacity: 0, y: 8, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.25 }}
-              className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-            >
-              {/* Avatar (assistant only) */}
-              {msg.role === "assistant" && (
-                <div className="w-8 h-8 rounded-xl bg-[#635BFF] flex items-center justify-center shrink-0 mt-0.5">
-                  <Sparkles className="w-4 h-4 text-white" />
-                </div>
-              )}
-
-              {/* Bubble */}
-              <div
-                className={`min-w-0 ${
-                  msg.role === "user"
-                    ? "max-w-[75%] bg-[#635BFF] text-white rounded-2xl rounded-tr-md px-5 py-3.5 shadow-sm"
-                    : "max-w-[85%] text-[#111827] py-2"
-                }`}
+            {messages.map((msg) => (
+              <motion.div
+                key={msg.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.22 }}
+                className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
-                {msg.role === "assistant" ? (
-                  <MarkdownMessage content={msg.content} />
-                ) : (
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
-                    {msg.content}
-                  </p>
+                {msg.role === "assistant" && (
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+                    style={{ background: ACCENT }}
+                  >
+                    <Sparkles className="w-4 h-4 text-white" />
+                  </div>
                 )}
-                <span
-                  className={`text-[10px] mt-1.5 block font-medium ${
+
+                <div
+                  className={`min-w-0 ${
                     msg.role === "user"
-                      ? "text-white/60"
-                      : "text-[#B0B7C3]"
+                      ? "max-w-[75%] bg-[#0a0a0a] text-white rounded-2xl rounded-tr-md px-4.5 py-3 px-5"
+                      : "max-w-[85%] py-1.5"
                   }`}
                 >
-                  {formatTime(msg.timestamp)}
-                </span>
-              </div>
-
-              {/* Avatar (user only) */}
-              {msg.role === "user" && (
-                <div className="w-8 h-8 rounded-xl bg-[#8B85FF] flex items-center justify-center shrink-0 mt-0.5">
-                  <User className="w-4 h-4 text-white" />
+                  {msg.role === "assistant" ? (
+                    <MarkdownMessage content={msg.content} />
+                  ) : (
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                      {msg.content}
+                    </p>
+                  )}
+                  <span
+                    className={`text-[10px] mt-1.5 block font-medium ${
+                      msg.role === "user" ? "text-white/50" : "text-[#9ca3af]"
+                    }`}
+                  >
+                    {formatTime(msg.timestamp)}
+                  </span>
                 </div>
-              )}
-            </motion.div>
-          ))}
-        </AnimatePresence>
 
-        {/* Typing indicator */}
-        <AnimatePresence>
-          {sending && (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              className="flex gap-3"
-            >
-              <div className="w-8 h-8 rounded-xl bg-[#635BFF] flex items-center justify-center shrink-0">
-                <Sparkles className="w-4 h-4 text-white" />
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-[#635BFF] animate-bounce" style={{ animationDelay: "0ms" }} />
-                <span className="w-2 h-2 rounded-full bg-[#635BFF] animate-bounce" style={{ animationDelay: "150ms" }} />
-                <span className="w-2 h-2 rounded-full bg-[#635BFF] animate-bounce" style={{ animationDelay: "300ms" }} />
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                {msg.role === "user" && (
+                  <div className="w-8 h-8 rounded-lg bg-[#e5e7eb] flex items-center justify-center shrink-0 mt-0.5">
+                    <User className="w-4 h-4 text-[#6b7280]" />
+                  </div>
+                )}
+              </motion.div>
+            ))}
+          </AnimatePresence>
 
-        {/* Error banner */}
-        <AnimatePresence>
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3"
-            >
-              <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
-              <p className="text-xs font-bold text-red-600 flex-1">{error}</p>
-              <button
-                onClick={() => setError("")}
-                className="text-[10px] font-bold text-red-500 underline shrink-0"
+          {/* Typing indicator */}
+          <AnimatePresence>
+            {sending && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="flex gap-3"
               >
-                Dismiss
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ background: ACCENT }}
+                >
+                  <Sparkles className="w-4 h-4 text-white" />
+                </div>
+                <div className="flex items-center gap-1.5">
+                  {[0, 150, 300].map((delay) => (
+                    <span
+                      key={delay}
+                      className="w-1.5 h-1.5 rounded-full bg-[#4f46e5] animate-bounce"
+                      style={{ animationDelay: `${delay}ms` }}
+                    />
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Error */}
+          <AnimatePresence>
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="flex items-center gap-2.5 bg-red-50 border border-red-200 rounded-xl px-4 py-3"
+              >
+                <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+                <p className="text-[13px] font-medium text-red-600 flex-1">{error}</p>
+                <button
+                  onClick={() => setError("")}
+                  className="text-xs font-medium text-red-500 underline shrink-0"
+                >
+                  Dismiss
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <div ref={messagesEndRef} />
         </div>
       </div>
 
-      {/* ── Input area ── */}
-      <div className="shrink-0 pt-2">
-        <div className="w-full">
-          <div className="bg-white border border-gray-300 shadow-sm rounded-full px-4 py-2 flex items-center gap-3 focus-within:ring-2 focus-within:ring-[#635BFF]/30 focus-within:border-transparent transition-all">
+      {/* Input */}
+      <div className="shrink-0 pt-3">
+        <div className="card rounded-2xl px-4 py-2.5 flex items-center gap-3 focus-within:border-[#4f46e5] focus-within:ring-2 focus-within:ring-[#4f46e5]/10 transition-all">
           <input
             ref={inputRef}
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Message your CEO agent..."
+            placeholder="Message your CEO agent…"
             disabled={sending}
-            className="flex-1 bg-transparent text-sm font-medium text-[#111827] placeholder-[#B0B7C3] outline-none py-1.5 disabled:opacity-50"
+            className="flex-1 bg-transparent text-sm text-[#0a0a0a] placeholder-[#9ca3af] outline-none py-1.5 disabled:opacity-50"
             autoFocus
           />
           <button
             onClick={handleSend}
             disabled={!input.trim() || sending}
-            className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all disabled:cursor-not-allowed"
             style={{
-              background: input.trim() && !sending ? "#635BFF" : "#E5E7EB",
-              color: input.trim() && !sending ? "#fff" : "#9CA3AF",
+              background: input.trim() && !sending ? ACCENT : "#f3f4f6",
+              color: input.trim() && !sending ? "#fff" : "#9ca3af",
             }}
           >
             {sending ? (
@@ -414,10 +440,9 @@ export default function Chat({
             )}
           </button>
         </div>
-        <p className="text-[11px] text-[#9CA3AF] font-medium text-center mt-3">
+        <p className="text-[11px] text-[#9ca3af] text-center mt-3">
           Your CEO agent coordinates strategy and delegates to specialist agents.
         </p>
-        </div>
       </div>
     </div>
   );

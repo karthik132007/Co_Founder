@@ -2,12 +2,14 @@
 
 import { FormEvent, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, Check, Loader2, Brain, Sparkles, ChevronLeft } from "lucide-react";
+import { ArrowRight, Check, Loader2, ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { API_BASE_URL, readApiError } from "@/lib/api";
 import { getSession, setOnboardingComplete, type CofounderSession } from "@/lib/session";
+
+const ACCENT = "#4f46e5";
 
 type OnboardingForm = {
   companyName: string;
@@ -32,7 +34,7 @@ const steps: Step[] = [
   },
   {
     key: "smallDescription",
-    label: "Small description",
+    label: "Description",
     title: "Describe what you are building.",
     helper: "Keep it clear and practical. Maximum 500 words.",
   },
@@ -61,9 +63,14 @@ const subscribeToSession = () => () => {};
 const getServerSessionSnapshot = () => null;
 
 function countWords(value: string) {
-  const words = value.trim().split(/\s+/).filter(Boolean);
-  return words.length;
+  return value.trim().split(/\s+/).filter(Boolean).length;
 }
+
+const toneOptions = [
+  { value: "friendly", label: "Friendly", desc: "Warm, approachable, conversational" },
+  { value: "professional", label: "Professional", desc: "Clear, confident, trustworthy" },
+  { value: "witty", label: "Witty", desc: "Sharp, playful, memorable" },
+] as const;
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -89,31 +96,24 @@ export default function OnboardingPage() {
       router.replace("/auth");
       return;
     }
-
     if (session.onboardingComplete) {
       router.replace("/dashboard");
     }
   }, [router, session]);
 
   const updateField = (key: keyof OnboardingForm, value: string) => {
-    setForm((current) => ({
-      ...current,
-      [key]: value,
-    }));
+    setForm((current) => ({ ...current, [key]: value }));
     setError("");
   };
 
   const validateCurrentStep = () => {
     const value = form[currentStep.key];
-
     if (typeof value === "string" && !value.trim()) {
       return `${currentStep.label} is required`;
     }
-
     if (currentStep.key === "smallDescription" && descriptionWords > 500) {
-      return "Small description must be 500 words or less";
+      return "Description must be 500 words or less";
     }
-
     return "";
   };
 
@@ -129,9 +129,7 @@ export default function OnboardingPage() {
     try {
       const response = await fetch(`${API_BASE_URL}/user/onboarding`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           company_name: form.companyName.trim(),
           small_description: form.smallDescription.trim(),
@@ -156,141 +154,138 @@ export default function OnboardingPage() {
 
   const handleNext = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
     const validationError = validateCurrentStep();
     if (validationError) {
       setError(validationError);
       return;
     }
-
     if (!isLastStep) {
       setStepIndex((current) => current + 1);
       return;
     }
-
     await submitOnboarding();
   };
 
   if (!session || session.onboardingComplete) {
     return (
-      <main className="min-h-screen bg-[#f8faff] flex items-center justify-center" style={{ fontFamily: "SF Mono, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace" }}>
-        <Loader2 className="h-6 w-6 animate-spin" style={{ color: "#635BFF" }} />
+      <main className="min-h-screen bg-[#fafafa] flex items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin" style={{ color: ACCENT }} />
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#f8faff] flex text-[#111827]" style={{ fontFamily: "SF Mono, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace" }}>
-      
-      {/* Left Column — Branding */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col relative px-12 py-10 overflow-hidden">
-        {/* Ambient orbs */}
-        <div className="absolute -top-[20%] -left-[10%] w-[50vw] h-[50vw] bg-[#635BFF]/[0.05] rounded-full blur-[180px] pointer-events-none" />
-        <div className="absolute -bottom-[10%] right-[0%] w-[40vw] h-[40vw] bg-[#8B85FF]/[0.04] rounded-full blur-[150px] pointer-events-none" />
+    <main className="min-h-screen bg-[#fafafa] flex text-[#0a0a0a]">
+      {/* ── Left: brand panel ── */}
+      <div className="hidden lg:flex lg:w-1/2 flex-col relative px-14 py-12 overflow-hidden bg-[#0a0a0a]">
+        <div
+          className="absolute inset-0 opacity-[0.12] pointer-events-none"
+          style={{
+            backgroundImage:
+              "linear-gradient(to right, rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.1) 1px, transparent 1px)",
+            backgroundSize: "56px 56px",
+          }}
+        />
+        <div className="absolute -bottom-32 -left-24 w-[480px] h-[480px] bg-[#4f46e5]/25 rounded-full blur-[140px] pointer-events-none" />
 
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-3 z-10 group">
-          <div className="w-10 h-10 neu-circle rounded-full flex items-center justify-center group-hover:scale-105 transition-transform overflow-hidden">
-            <Image src="/logo.png" alt="Logo" width={32} height={32} className="w-8 h-8 object-contain" />
+        <Link href="/" className="flex items-center gap-2.5 relative z-10">
+          <div className="w-8 h-8 rounded-lg bg-white/10 border border-white/15 flex items-center justify-center overflow-hidden">
+            <Image src="/logo.png" alt="Cofounder.ai" width={24} height={24} className="w-6 h-6 object-contain" />
           </div>
-          <span className="font-bold text-xl tracking-tight text-[#111827]">
-            Cofounder<span style={{ color: "#635BFF" }}>.ai</span>
+          <span className="font-semibold text-[15px] tracking-tight text-white">
+            Cofounder<span style={{ color: "#8b85ff" }}>.ai</span>
           </span>
         </Link>
 
-        {/* Content */}
-        <div className="flex-1 flex flex-col justify-center z-10 max-w-[520px] mx-auto w-full">
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <span className="neu-label">Onboarding</span>
-          </motion.div>
-
+        <div className="flex-1 flex flex-col justify-center relative z-10 max-w-lg">
           <motion.h1
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="mt-6 text-5xl font-extrabold leading-tight tracking-tight text-[#111827]"
+            transition={{ duration: 0.5 }}
+            className="text-[clamp(2rem,3.4vw,3.1rem)] font-semibold leading-[1.12] tracking-tight text-white"
           >
-            Tell us the basics.<br />
-            <span className="text-gradient">We will tune</span><br />
-            your team.
+            Tell us the basics. <span className="text-[#8b85ff]">We&apos;ll tune your team.</span>
           </motion.h1>
 
           <motion.p
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="mt-6 text-base text-[#6B7280] font-medium max-w-md leading-relaxed"
+            transition={{ duration: 0.5, delay: 0.12 }}
+            className="mt-5 text-[15px] text-[#a1a1aa] leading-relaxed"
           >
-            Answer a few quick questions so our AI agents can personalize your experience. Takes less than 2 minutes.
+            Answer a few quick questions so our AI agents can personalize your
+            experience. Takes less than 2 minutes.
           </motion.p>
 
-          {/* Step indicators */}
+          {/* Step list */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.35 }}
-            className="mt-10 flex gap-3"
+            transition={{ duration: 0.5, delay: 0.24 }}
+            className="mt-12 space-y-3"
           >
-            {steps.map((step, i) => (
-              <div
-                key={step.key}
-                className={`flex items-center gap-2 neu-card rounded-xl px-4 py-2.5 transition-all duration-300 ${
-                  i === stepIndex
-                    ? "ring-2 ring-[#635BFF]/30 shadow-lg"
-                    : i < stepIndex
-                    ? "opacity-60"
-                    : "opacity-40"
-                }`}
-              >
-                <div
-                  className={`w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-bold text-white ${
-                    i < stepIndex ? "bg-emerald-500" : i === stepIndex ? "bg-[#635BFF]" : "bg-[#D1D5DB]"
-                  }`}
-                >
-                  {i < stepIndex ? <Check className="w-3 h-3" /> : i + 1}
+            {steps.map((step, i) => {
+              const done = i < stepIndex;
+              const active = i === stepIndex;
+              return (
+                <div key={step.key} className="flex items-center gap-3.5">
+                  <div
+                    className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold border transition-colors ${
+                      done
+                        ? "bg-emerald-500 border-emerald-500 text-white"
+                        : active
+                          ? "border-[#8b85ff] bg-[#8b85ff]/15 text-[#8b85ff]"
+                          : "border-white/15 text-[#71717a]"
+                    }`}
+                  >
+                    {done ? <Check className="w-3.5 h-3.5" /> : i + 1}
+                  </div>
+                  <span
+                    className={`text-sm font-medium transition-colors ${
+                      active ? "text-white" : done ? "text-[#a1a1aa]" : "text-[#71717a]"
+                    }`}
+                  >
+                    {step.label}
+                  </span>
                 </div>
-                <span className="text-[10px] font-bold text-[#374151] hidden xl:inline">{step.label}</span>
-              </div>
-            ))}
+              );
+            })}
           </motion.div>
         </div>
+
+        <p className="relative z-10 text-xs text-[#71717a]">
+          © 2026 Cofounder.ai — All rights reserved.
+        </p>
       </div>
 
-      {/* Right Column — Form */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 sm:p-12 bg-white lg:bg-transparent">
+      {/* ── Right: form ── */}
+      <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-6 sm:p-12">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.15 }}
-          className="w-full max-w-[420px]"
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="w-full max-w-[440px]"
         >
-          {/* Logo (mobile) */}
-          <div className="flex flex-col items-center mb-8 lg:hidden">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 neu-circle rounded-full flex items-center justify-center overflow-hidden">
-                <Image src="/logo.png" alt="Logo" width={32} height={32} className="w-8 h-8 object-contain" />
-              </div>
-              <span className="font-bold text-2xl tracking-tight text-[#111827]">
-                Cofounder<span style={{ color: "#635BFF" }}>.ai</span>
-              </span>
+          {/* Mobile logo */}
+          <Link href="/" className="flex items-center justify-center gap-2.5 mb-10 lg:hidden">
+            <div className="w-9 h-9 rounded-lg bg-white border border-[#e5e7eb] flex items-center justify-center overflow-hidden">
+              <Image src="/logo.png" alt="Cofounder.ai" width={26} height={26} className="w-7 h-7 object-contain" />
             </div>
-            <p className="text-xs text-[#6B7280] font-bold">Your AI Co-Founder</p>
-          </div>
+            <span className="font-semibold text-lg tracking-tight text-[#0a0a0a]">
+              Cofounder<span style={{ color: ACCENT }}>.ai</span>
+            </span>
+          </Link>
 
-          {/* Progress bar */}
-          <div className="mb-8">
-            <div className="flex justify-between text-[10px] font-bold text-[#6B7280] mb-2.5 uppercase tracking-wider">
-              <span>Question {stepIndex + 1} of {steps.length}</span>
+          {/* Progress */}
+          <div className="mb-9">
+            <div className="flex justify-between text-xs font-medium text-[#6b7280] mb-2.5">
+              <span>Step {stepIndex + 1} of {steps.length}</span>
               <span>{Math.round(((stepIndex + 1) / steps.length) * 100)}%</span>
             </div>
-            <div className="h-2.5 w-full neu-inset rounded-full overflow-hidden">
+            <div className="h-1.5 w-full bg-[#e5e7eb] rounded-full overflow-hidden">
               <motion.div
                 className="h-full rounded-full"
-                style={{ background: "linear-gradient(90deg, #635BFF, #8B85FF)" }}
+                style={{ background: ACCENT }}
                 initial={false}
                 animate={{ width: `${((stepIndex + 1) / steps.length) * 100}%` }}
                 transition={{ type: "spring", stiffness: 260, damping: 30 }}
@@ -305,7 +300,7 @@ export default function OnboardingPage() {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
-                className="mb-6 p-3.5 neu-inset rounded-xl text-red-500 text-xs font-bold text-center border border-red-200/50"
+                className="mb-5 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-[13px] font-medium"
               >
                 {error}
               </motion.div>
@@ -316,17 +311,19 @@ export default function OnboardingPage() {
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentStep.key}
-                initial={{ opacity: 0, x: 24 }}
+                initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -24 }}
+                exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.22, ease: "easeOut" }}
               >
-                <div className="text-center mb-6">
-                  <p className="text-[10px] font-bold text-[#635BFF] mb-2 uppercase tracking-widest">
+                <div className="mb-6">
+                  <p className="text-xs font-semibold mb-2 uppercase tracking-widest" style={{ color: ACCENT }}>
                     {currentStep.label}
                   </p>
-                  <h1 className="text-2xl font-bold text-[#111827] mb-2">{currentStep.title}</h1>
-                  <p className="text-xs text-[#6B7280] font-medium">{currentStep.helper}</p>
+                  <h1 className="text-2xl font-semibold tracking-tight text-[#0a0a0a]">
+                    {currentStep.title}
+                  </h1>
+                  <p className="mt-1.5 text-sm text-[#6b7280]">{currentStep.helper}</p>
                 </div>
 
                 {currentStep.key === "smallDescription" ? (
@@ -334,48 +331,63 @@ export default function OnboardingPage() {
                     <textarea
                       id={currentStep.key}
                       value={form.smallDescription}
-                      onChange={(event) => updateField("smallDescription", event.target.value)}
+                      onChange={(e) => updateField("smallDescription", e.target.value)}
                       required
-                      rows={7}
-                      className="w-full px-4 py-3.5 neu-inset rounded-xl text-[#111827] placeholder-[#9CA3AF] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#635BFF]/30 transition-all resize-none"
+                      rows={6}
+                      className="input px-3.5 py-3 text-sm resize-none"
                       placeholder="We help early-stage founders..."
                     />
-                    <div className={`mt-2 text-right text-[10px] font-bold ${descriptionWords > 500 ? "text-red-500" : "text-[#9CA3AF]"}`}>
+                    <div className={`mt-2 text-right text-xs font-medium ${descriptionWords > 500 ? "text-red-500" : "text-[#9ca3af]"}`}>
                       {descriptionWords}/500 words
                     </div>
                   </div>
                 ) : currentStep.key === "tone" ? (
-                  <select
-                    id={currentStep.key}
-                    value={form.tone}
-                    onChange={(event) => updateField("tone", event.target.value)}
-                    className="w-full px-4 py-3.5 neu-inset rounded-xl text-[#111827] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#635BFF]/30 transition-all appearance-none cursor-pointer"
-                  >
-                    <option value="friendly">😊 Friendly</option>
-                    <option value="professional">💼 Professional</option>
-                    <option value="witty">⚡ Witty</option>
-                  </select>
+                  <div className="space-y-2.5">
+                    {toneOptions.map((opt) => {
+                      const active = form.tone === opt.value;
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => updateField("tone", opt.value)}
+                          className={`w-full text-left px-4 py-3.5 rounded-xl border transition-all ${
+                            active
+                              ? "border-[#4f46e5] bg-[#eef2ff] ring-1 ring-[#4f46e5]/30"
+                              : "border-[#e5e7eb] bg-white hover:border-[#d4d4d8]"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className={`text-sm font-semibold ${active ? "text-[#0a0a0a]" : "text-[#374151]"}`}>
+                              {opt.label}
+                            </span>
+                            {active && <Check className="w-4 h-4" style={{ color: ACCENT }} />}
+                          </div>
+                          <p className="mt-0.5 text-xs text-[#6b7280]">{opt.desc}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
                 ) : (
                   <input
                     id={currentStep.key}
                     type="text"
                     value={form[currentStep.key]}
-                    onChange={(event) => updateField(currentStep.key, event.target.value)}
+                    onChange={(e) => updateField(currentStep.key, e.target.value)}
                     required
-                    className="w-full px-4 py-3.5 neu-inset rounded-xl text-[#111827] placeholder-[#9CA3AF] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#635BFF]/30 transition-all"
+                    className="input px-3.5 py-2.5 text-sm"
                     placeholder={currentStep.key === "companyName" ? "Acme AI" : "SaaS"}
                   />
                 )}
               </motion.div>
             </AnimatePresence>
 
-            {/* Navigation buttons */}
+            {/* Nav buttons */}
             <div className="flex gap-3 mt-8">
               {stepIndex > 0 && (
                 <button
                   type="button"
                   onClick={() => { setStepIndex((c) => c - 1); setError(""); }}
-                  className="neu-pill px-5 py-3.5 text-sm font-bold text-[#6B7280] hover:text-[#111827] transition-colors inline-flex items-center gap-2"
+                  className="btn-ghost px-4 py-2.5 text-sm border border-[#e5e7eb] bg-white"
                 >
                   <ChevronLeft className="w-4 h-4" />
                   Back
@@ -384,19 +396,19 @@ export default function OnboardingPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 py-3.5 neu-pill-accent text-base font-bold flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="btn-primary flex-1 py-2.5 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {loading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                 ) : isLastStep ? (
                   <>
                     Finish onboarding
-                    <Check className="w-5 h-5" />
+                    <Check className="w-4 h-4" />
                   </>
                 ) : (
                   <>
-                    Next
-                    <ArrowRight className="w-5 h-5" />
+                    Continue
+                    <ArrowRight className="w-4 h-4" />
                   </>
                 )}
               </button>

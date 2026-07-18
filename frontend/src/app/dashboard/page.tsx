@@ -6,7 +6,7 @@ import {
   Loader2, LayoutDashboard, Settings,
   Bell, LogOut, Menu,
   ChevronRight, Sparkles,
-  Zap, MessageSquare, ArrowUpRight, HardDrive,
+  MessageSquare, ArrowUpRight, HardDrive,
   Upload, FileText, Image as ImageIcon, Trash2,
   Plus, Clock,
 } from "lucide-react";
@@ -20,6 +20,8 @@ import {
   type DashboardData, type DriveFile, type ChatSession,
 } from "@/lib/api";
 import Chat from "@/components/Chat";
+
+const ACCENT = "#4f46e5";
 
 /* ─────────────────────────────────────────────
    Types
@@ -37,10 +39,6 @@ const navItems: NavItem[] = [
   { label: "Chat", icon: MessageSquare, id: "chat" },
   { label: "Settings", icon: Settings, id: "settings" },
 ];
-
-/* ─────────────────────────────────────────────
-   Session
-   ───────────────────────────────────────────── */
 
 const subscribeToSession = () => () => {};
 const getServerSessionSnapshot = () => null;
@@ -60,61 +58,56 @@ export default function DashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // Data state
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [allFiles, setAllFiles] = useState<DriveFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState<number | null>(null);
-  // Chat session state
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [activeSessionTitle, setActiveSessionTitle] = useState<string | null>(null);
-  // Key to force Chat component remount on session switch
   const [chatKey, setChatKey] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const userId = session?.user?.id;
 
-  /* ── Fetch dashboard data ── */
   const loadDashboard = useCallback(async () => {
-    if (!session?.user?.id) return;
+    if (!userId) return;
     setLoading(true);
     setError("");
     try {
-      const data = await fetchDashboard(session.user.id);
+      const data = await fetchDashboard(userId);
       setDashboardData(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load dashboard");
     } finally {
       setLoading(false);
     }
-  }, [session?.user?.id]);
+  }, [userId]);
 
-  /* ── Fetch all files (for Drive tab) ── */
   const loadFiles = useCallback(async () => {
-    if (!session?.user?.id) return;
+    if (!userId) return;
     try {
-      const result = await fetchFiles(session.user.id);
+      const result = await fetchFiles(userId);
       setAllFiles(result.files);
     } catch {
-      // Silently fail — files are non-critical
+      // Non-critical
     }
-  }, [session?.user?.id]);
+  }, [userId]);
 
-  /* ── Load chat sessions ── */
   const loadSessions = useCallback(async () => {
-    if (!session?.user?.id) return;
+    if (!userId) return;
     setLoadingSessions(true);
     try {
-      const data = await fetchChatSessions(session.user.id);
+      const data = await fetchChatSessions(userId);
       setChatSessions(data.sessions);
     } catch {
-      // Silently fail
+      // Non-critical
     } finally {
       setLoadingSessions(false);
     }
-  }, [session?.user?.id]);
+  }, [userId]);
 
   useEffect(() => {
     if (!session) {
@@ -122,23 +115,64 @@ export default function DashboardPage() {
     }
   }, [router, session]);
 
-  useEffect(() => {
-    if (session?.user?.id) {
-      loadDashboard();
-      loadFiles();
-      loadSessions();
-    }
-  }, [session?.user?.id, loadDashboard, loadFiles, loadSessions]);
+  const userKey = userId ?? null;
 
-  /* ── File upload handler ── */
+  useEffect(() => {
+    if (!userKey) return;
+    let cancelled = false;
+
+    // Defer synchronous state updates out of the effect body
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setLoading(true);
+      setError("");
+      setLoadingSessions(true);
+    });
+
+    fetchDashboard(userKey)
+      .then((data) => {
+        if (!cancelled) setDashboardData(data);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Failed to load dashboard");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    fetchFiles(userKey)
+      .then((result) => {
+        if (!cancelled) setAllFiles(result.files);
+      })
+      .catch(() => {
+        // Non-critical
+      });
+
+    fetchChatSessions(userKey)
+      .then((data) => {
+        if (!cancelled) setChatSessions(data.sessions);
+      })
+      .catch(() => {
+        // Non-critical
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingSessions(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userKey]);
+
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !session?.user?.id) return;
+    if (!file || !userId) return;
 
     setUploading(true);
     try {
-      await uploadFile(session.user.id, file);
-      // Refresh both dashboard and file list
+      await uploadFile(userId, file);
       await Promise.all([loadDashboard(), loadFiles()]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
@@ -148,15 +182,13 @@ export default function DashboardPage() {
     }
   };
 
-  /* ── File delete handler ── */
   const handleDelete = async (fileId: number) => {
-    if (!session?.user?.id) return;
+    if (!userId) return;
     if (!window.confirm("Are you sure you want to delete this file? This action cannot be undone.")) return;
 
     setDeleting(fileId);
     try {
-      await deleteFile(session.user.id, fileId);
-      // Refresh both dashboard and file list
+      await deleteFile(userId, fileId);
       await Promise.all([loadDashboard(), loadFiles()]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Delete failed");
@@ -165,29 +197,26 @@ export default function DashboardPage() {
     }
   };
 
-  /* ── Select a chat session ── */
   const handleSelectSession = useCallback(
-    async (s: ChatSession) => {
+    (s: ChatSession) => {
       if (s.session_id === activeSessionId) return;
       setSidebarOpen(false);
       setActiveNav("chat");
       setActiveSessionId(s.session_id);
       setActiveSessionTitle(s.title);
-      setChatKey((k) => k + 1);  // remount Chat to load new session
+      setChatKey((k) => k + 1);
     },
     [activeSessionId],
   );
 
-  /* ── New chat ── */
   const handleNewChat = useCallback(() => {
     setActiveSessionId(null);
     setActiveSessionTitle(null);
-    setChatKey((k) => k + 1);  // remount Chat for fresh session
+    setChatKey((k) => k + 1);
     setActiveNav("chat");
     setSidebarOpen(false);
   }, []);
 
-  /* ── Called by Chat when a new session is created ── */
   const handleSessionCreated = useCallback(
     (sessionId: string, title: string) => {
       setActiveSessionId(sessionId);
@@ -199,8 +228,8 @@ export default function DashboardPage() {
 
   if (!session) {
     return (
-      <main className="min-h-screen bg-[#f8faff] flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin" style={{ color: "#635BFF" }} />
+      <main className="min-h-screen bg-[#fafafa] flex items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin" style={{ color: ACCENT }} />
       </main>
     );
   }
@@ -216,8 +245,7 @@ export default function DashboardPage() {
   const activeNavLabel = navItems.find((item) => item.id === activeNav)?.label ?? "Dashboard";
 
   return (
-    <div className="min-h-screen bg-[#f8faff] flex">
-      
+    <div className="min-h-screen bg-[#fafafa] flex text-[#0a0a0a]">
       {/* ── Mobile overlay ── */}
       <AnimatePresence>
         {sidebarOpen && (
@@ -225,104 +253,98 @@ export default function DashboardPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/20 z-40 lg:hidden"
+            className="fixed inset-0 bg-black/30 backdrop-blur-[2px] z-40 lg:hidden"
             onClick={() => setSidebarOpen(false)}
           />
         )}
       </AnimatePresence>
 
       {/* ── Sidebar ── */}
-      <aside className={`
-        fixed lg:sticky top-0 left-0 z-50 h-screen
-        w-64 ${sidebarCollapsed ? "lg:w-20" : "lg:w-64"} bg-[#f0f2f8] border-r border-white/60
-        flex flex-col shrink-0
-        transition-[width,transform] duration-300 ease-in-out
-        ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
-        shadow-[8px_0_20px_rgba(163,177,198,0.15)]
-      `}>
+      <aside
+        className={`
+          fixed lg:sticky top-0 left-0 z-50 h-screen
+          w-[264px] ${sidebarCollapsed ? "lg:w-[68px]" : "lg:w-[264px]"}
+          bg-white border-r border-[#e5e7eb]
+          flex flex-col shrink-0
+          transition-[width,transform] duration-300 ease-in-out
+          ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+        `}
+      >
         {/* Logo */}
-        <div className={`px-5 py-5 border-b border-white/50 ${sidebarCollapsed ? "lg:px-2" : ""}`}>
-          <div className="flex items-center justify-between gap-2">
-            <Link href="/" className="flex min-w-0 items-center gap-2.5 group">
-              <div className={`w-9 h-9 bg-white border border-gray-200 shadow-sm rounded-full flex items-center justify-center group-hover:scale-105 transition-transform overflow-hidden shrink-0 ${sidebarCollapsed ? "lg:w-8 lg:h-8" : ""}`}>
-                <Image src="/logo.png" alt="Logo" width={28} height={28} className="w-7 h-7 object-contain" />
+        <div className={`h-16 px-4 flex items-center border-b border-[#e5e7eb] ${sidebarCollapsed ? "lg:px-3" : ""}`}>
+          <div className="flex items-center justify-between gap-2 w-full">
+            <Link href="/" className="flex min-w-0 items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-[#fafafa] border border-[#e5e7eb] flex items-center justify-center overflow-hidden shrink-0">
+                <Image src="/logo.png" alt="Cofounder.ai" width={24} height={24} className="w-6 h-6 object-contain" />
               </div>
-              <span className={`font-bold text-lg tracking-tight text-[#111827] truncate ${sidebarCollapsed ? "lg:hidden" : ""}`}>
-                Cofounder<span style={{ color: "#635BFF" }}>.ai</span>
+              <span className={`font-semibold text-[15px] tracking-tight truncate ${sidebarCollapsed ? "lg:hidden" : ""}`}>
+                Cofounder<span style={{ color: ACCENT }}>.ai</span>
               </span>
             </Link>
             <button
-              onClick={() => setSidebarCollapsed((value) => !value)}
-              className="hidden lg:flex w-7 h-7 bg-white border border-gray-200 shadow-sm hover:bg-gray-50 rounded-full items-center justify-center shrink-0"
+              onClick={() => setSidebarCollapsed((v) => !v)}
+              className="hidden lg:flex w-6 h-6 rounded-md hover:bg-[#f3f4f6] items-center justify-center shrink-0 transition-colors"
               title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
               <ChevronRight
-                className={`w-3.5 h-3.5 text-[#6B7280] transition-transform ${
-                  sidebarCollapsed ? "" : "rotate-180"
-                }`}
+                className={`w-3.5 h-3.5 text-[#9ca3af] transition-transform ${sidebarCollapsed ? "" : "rotate-180"}`}
               />
             </button>
           </div>
         </div>
 
-        {/* ── New Chat button (always visible) ── */}
-        <div className={`px-3 pt-3 pb-2 shrink-0 ${sidebarCollapsed ? "lg:px-2" : ""}`}>
+        {/* New chat */}
+        <div className={`p-3 ${sidebarCollapsed ? "lg:px-2.5" : ""}`}>
           <button
             onClick={handleNewChat}
-            className={`w-full bg-white border border-gray-200 shadow-sm rounded-xl px-3 py-2.5 flex items-center gap-2.5 text-xs font-bold text-[#6B7280] hover:text-[#635BFF] hover:border-[#635BFF]/30 transition-all ${
-              sidebarCollapsed ? "lg:justify-center lg:px-0" : ""
-            }`}
+            className={`w-full btn-primary py-2 text-[13px] ${sidebarCollapsed ? "lg:px-0" : "px-3.5"}`}
             title="New Chat"
           >
-            <Plus className="w-3.5 h-3.5 shrink-0" />
+            <Plus className="w-4 h-4 shrink-0" />
             <span className={sidebarCollapsed ? "lg:hidden" : ""}>New Chat</span>
           </button>
         </div>
 
-        {/* Nav items */}
-        <nav className={`px-3 py-2 space-y-1 shrink-0 ${sidebarCollapsed ? "lg:px-2" : ""}`}>
+        {/* Nav */}
+        <nav className={`px-3 space-y-0.5 ${sidebarCollapsed ? "lg:px-2.5" : ""}`}>
           {navItems.map((item) => {
             const isActive = activeNav === item.id;
             return (
               <button
                 key={item.id}
                 onClick={() => { setActiveNav(item.id); setSidebarOpen(false); }}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 group ${
+                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
                   sidebarCollapsed ? "lg:justify-center lg:px-0" : ""
                 } ${
                   isActive
-                    ? "bg-[#635BFF] text-white shadow-md"
-                    : "text-[#6B7280] hover:text-[#111827] hover:bg-white/60"
+                    ? "bg-[#eef2ff] text-[#4f46e5]"
+                    : "text-[#6b7280] hover:text-[#0a0a0a] hover:bg-[#f3f4f6]"
                 }`}
                 title={item.label}
               >
-                <item.icon className={`w-4 h-4 shrink-0 ${isActive ? "text-white" : "text-[#9CA3AF] group-hover:text-[#635BFF]"}`} />
+                <item.icon className={`w-4 h-4 shrink-0 ${isActive ? "text-[#4f46e5]" : "text-[#9ca3af]"}`} />
                 <span className={sidebarCollapsed ? "lg:hidden" : ""}>{item.label}</span>
-                {isActive && <ChevronRight className={`w-3.5 h-3.5 ml-auto ${sidebarCollapsed ? "lg:hidden" : ""}`} />}
               </button>
             );
           })}
         </nav>
 
-        {/* Divider */}
-        <div className={`px-5 py-2 shrink-0 ${sidebarCollapsed ? "lg:px-3" : ""}`}>
-          <div className="border-t border-white/50" />
-        </div>
+        <div className={`mx-4 my-3 border-t border-[#f3f4f6] ${sidebarCollapsed ? "lg:mx-3" : ""}`} />
 
-        {/* ── Chat History ── */}
+        {/* Chat history */}
         <div className={`flex-1 overflow-y-auto px-3 pb-3 ${sidebarCollapsed ? "lg:hidden" : ""}`}>
-          <p className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider px-4 py-2">
-            Chat History
+          <p className="text-[10px] font-semibold text-[#9ca3af] uppercase tracking-wider px-3 py-2">
+            Recent Chats
           </p>
 
           {loadingSessions && chatSessions.length === 0 && (
             <div className="flex items-center justify-center py-6">
-              <Loader2 className="w-4 h-4 animate-spin text-[#B0B7C3]" />
+              <Loader2 className="w-4 h-4 animate-spin text-[#d4d4d8]" />
             </div>
           )}
 
           {!loadingSessions && chatSessions.length === 0 && (
-            <p className="text-[10px] text-[#B0B7C3] font-medium text-center py-6 px-4">
+            <p className="text-xs text-[#9ca3af] text-center py-6 px-4">
               No chats yet. Start a new one!
             </p>
           )}
@@ -344,27 +366,19 @@ export default function DashboardPage() {
                 <button
                   key={s.session_id}
                   onClick={() => handleSelectSession(s)}
-                  className={`w-full text-left rounded-xl px-3 py-2.5 transition-all duration-200 group ${
-                    isActive
-                      ? "bg-[#635BFF]/10 ring-1 ring-[#635BFF]/20"
-                      : "hover:bg-white/40"
+                  className={`w-full text-left rounded-lg px-3 py-2 transition-colors group ${
+                    isActive ? "bg-[#eef2ff]" : "hover:bg-[#f3f4f6]"
                   }`}
                 >
-                  <div className="flex items-start gap-2.5">
+                  <div className="flex items-center gap-2.5">
                     <MessageSquare
-                      className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${
-                        isActive ? "text-[#635BFF]" : "text-[#B0B7C3] group-hover:text-[#635BFF]"
-                      }`}
+                      className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-[#4f46e5]" : "text-[#9ca3af]"}`}
                     />
                     <div className="flex-1 min-w-0">
-                      <div
-                        className={`text-[11px] font-bold truncate ${
-                          isActive ? "text-[#635BFF]" : "text-[#111827]"
-                        }`}
-                      >
+                      <div className={`text-[13px] font-medium truncate ${isActive ? "text-[#4f46e5]" : "text-[#374151]"}`}>
                         {s.title || "Untitled Chat"}
                       </div>
-                      <div className="text-[9px] font-medium mt-0.5 flex items-center gap-1 text-[#B0B7C3]">
+                      <div className="text-[10px] text-[#9ca3af] flex items-center gap-1">
                         <Clock className="w-2.5 h-2.5" />
                         {sessionDate}
                       </div>
@@ -377,225 +391,205 @@ export default function DashboardPage() {
         </div>
         <div className={sidebarCollapsed ? "hidden lg:block flex-1" : "hidden"} />
 
-        {/* User profile */}
-        <div className={`px-5 py-4 border-t border-white/50 shrink-0 ${sidebarCollapsed ? "lg:px-2" : ""}`}>
-          <div className={`flex items-center gap-3 ${sidebarCollapsed ? "lg:flex-col lg:gap-2" : ""}`}>
-            <div className="w-9 h-9 rounded-xl bg-[#635BFF] flex items-center justify-center text-white text-xs font-bold shrink-0">
+        {/* User */}
+        <div className={`p-3 border-t border-[#e5e7eb] ${sidebarCollapsed ? "lg:px-2.5" : ""}`}>
+          <div className={`flex items-center gap-2.5 ${sidebarCollapsed ? "lg:flex-col" : ""}`}>
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-semibold shrink-0"
+              style={{ background: ACCENT }}
+            >
               {session.user.email[0].toUpperCase()}
             </div>
             <div className={`flex-1 min-w-0 ${sidebarCollapsed ? "lg:hidden" : ""}`}>
-              <div className="text-xs font-bold text-[#111827] truncate">
+              <div className="text-[13px] font-medium text-[#0a0a0a] truncate">
                 {session.user.email}
               </div>
-              <div className="text-[10px] text-[#9CA3AF] font-medium">
+              <div className="text-[11px] text-[#9ca3af]">
                 {company?.company_name ?? "Founder"}
               </div>
             </div>
             <button
               onClick={handleLogout}
-              className="w-8 h-8 bg-white border border-gray-200 shadow-sm rounded-full flex items-center justify-center hover:text-red-500 transition-colors"
+              className="w-8 h-8 rounded-lg hover:bg-red-50 flex items-center justify-center transition-colors group"
               title="Log out"
             >
-              <LogOut className="w-3.5 h-3.5 text-[#9CA3AF]" />
+              <LogOut className="w-3.5 h-3.5 text-[#9ca3af] group-hover:text-red-500" />
             </button>
           </div>
         </div>
       </aside>
 
-      {/* ── Main Content ── */}
+      {/* ── Main ── */}
       <div className="flex-1 flex flex-col min-w-0">
-        
         {/* Top bar */}
-        <header className="sticky top-0 z-30 bg-[#f8faff]/80 backdrop-blur-xl border-b border-white/60 px-4 sm:px-8 py-3.5 flex items-center gap-4">
-          {/* Mobile menu trigger */}
+        <header className="sticky top-0 z-30 nav-glass h-16 px-4 sm:px-6 flex items-center gap-3">
           <button
             onClick={() => { setSidebarCollapsed(false); setSidebarOpen(true); }}
-            className="lg:hidden bg-white border border-gray-200 shadow-sm rounded-full w-9 h-9 flex-shrink-0"
+            className="lg:hidden w-9 h-9 rounded-lg border border-[#e5e7eb] bg-white flex items-center justify-center shrink-0"
           >
-            <Menu className="w-4 h-4 text-[#4B5563]" />
+            <Menu className="w-4 h-4 text-[#374151]" />
           </button>
 
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-bold text-[#111827] truncate">
-              {activeNavLabel}
-            </div>
-          </div>
+          <h1 className="flex-1 min-w-0 text-[15px] font-semibold text-[#0a0a0a] truncate">
+            {activeNavLabel}
+          </h1>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            <button className="bg-white border border-gray-200 shadow-sm rounded-full w-9 h-9 relative hover:bg-gray-50 transition-colors">
-              <Bell className="w-4 h-4 text-[#6B7280]" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#635BFF]" />
+          <div className="flex items-center gap-2">
+            <button className="w-9 h-9 rounded-lg border border-[#e5e7eb] bg-white hover:bg-[#f9fafb] flex items-center justify-center relative transition-colors">
+              <Bell className="w-4 h-4 text-[#6b7280]" />
+              <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full" style={{ background: ACCENT }} />
             </button>
-            {/* Upload button (visible on Drive tab too) */}
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              className="bg-[#635BFF] hover:bg-[#524be3] text-white rounded-full px-4 py-2 text-xs font-bold flex items-center gap-2 shadow-sm disabled:opacity-60 transition-colors"
+              className="btn-primary px-3.5 py-2 text-[13px] disabled:opacity-60"
             >
-              {uploading ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Upload className="w-3.5 h-3.5" />
-              )}
-              <span className="hidden sm:inline">{uploading ? "Uploading..." : "Upload"}</span>
+              {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+              <span className="hidden sm:inline">{uploading ? "Uploading…" : "Upload"}</span>
             </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              className="hidden"
-              onChange={handleUpload}
-            />
+            <input ref={fileInputRef} type="file" className="hidden" onChange={handleUpload} />
           </div>
         </header>
 
-        {/* Page body */}
-        <main className="flex-1 p-4 sm:p-8 space-y-8">
-          
+        {/* Body */}
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6">
           {/* Error banner */}
           {error && (
             <motion.div
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-xs font-bold text-red-600"
+              className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-[13px] font-medium text-red-600"
             >
               {error}
               <button onClick={() => setError("")} className="ml-3 underline">Dismiss</button>
             </motion.div>
           )}
 
-          {/* Loading state */}
+          {/* Loading */}
           {loading && !dashboardData && (
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="h-6 w-6 animate-spin" style={{ color: "#635BFF" }} />
+            <div className="flex items-center justify-center py-24">
+              <Loader2 className="h-6 w-6 animate-spin" style={{ color: ACCENT }} />
             </div>
           )}
 
-          {/* ── OVERVIEW TAB ── */}
+          {/* ── OVERVIEW ── */}
           {!loading && dashboardData && activeNav === "overview" && (
             <>
-              {/* Welcome */}
               <motion.div
-                initial={{ opacity: 0, y: 12 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
+                transition={{ duration: 0.35 }}
               >
-                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#111827]">
-                  Welcome back{" "}
+                <h2 className="text-2xl font-semibold tracking-tight text-[#0a0a0a]">
+                  Welcome back,{" "}
                   <span className="text-gradient">
                     {company?.company_name ?? session.user.email.split("@")[0]}
                   </span>
-                </h1>
-                <p className="mt-1.5 text-sm text-[#6B7280] font-medium">
+                </h2>
+                <p className="mt-1 text-sm text-[#6b7280]">
                   {company
                     ? `${company.industry} · ${company.tone} tone`
                     : "Here's what your AI team is up to today."}
                 </p>
               </motion.div>
 
-              {/* Stats row */}
+              {/* Stats */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {([
-                  { label: "Total Files", value: String(stats?.total_files ?? 0), change: `${stats?.documents ?? 0} docs · ${stats?.images ?? 0} imgs`, icon: HardDrive, color: "#635BFF" },
-                  { label: "Storage Used", value: formatFileSize(stats?.total_size_bytes ?? 0), change: "Drive", icon: HardDrive, color: "#8B85FF" },
-                  { label: "Company", value: company?.company_name ?? "—", change: company?.industry ?? "", icon: Sparkles, color: "#635BFF" },
-                  { label: "Brand Tone", value: (company?.tone ?? "professional").toUpperCase(), change: company?.industry ?? "", icon: Sparkles, color: "#8B85FF" },
-                ] as { label: string; value: string; change: string; icon: typeof HardDrive; color: string }[]).map((stat, i) => (
+                  { label: "Total Files", value: String(stats?.total_files ?? 0), sub: `${stats?.documents ?? 0} docs · ${stats?.images ?? 0} images`, icon: HardDrive },
+                  { label: "Storage Used", value: formatFileSize(stats?.total_size_bytes ?? 0), sub: "Drive", icon: HardDrive },
+                  { label: "Company", value: company?.company_name ?? "—", sub: company?.industry ?? "", icon: Sparkles },
+                  { label: "Brand Tone", value: (company?.tone ?? "professional").toUpperCase(), sub: company?.industry ?? "", icon: Sparkles },
+                ] as { label: string; value: string; sub: string; icon: typeof HardDrive }[]).map((stat, i) => (
                   <motion.div
                     key={stat.label}
-                    initial={{ opacity: 0, y: 16 }}
+                    initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: 0.1 + i * 0.06 }}
-                    className="bg-white border border-gray-200 shadow-sm rounded-2xl p-5 hover:shadow-md transition-shadow"
+                    transition={{ duration: 0.35, delay: 0.05 + i * 0.05 }}
+                    className="card p-5"
                   >
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="w-9 h-9 neu-circle rounded-full">
-                        <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="w-8 h-8 rounded-lg bg-[#eef2ff] flex items-center justify-center">
+                        <stat.icon className="w-4 h-4" style={{ color: ACCENT }} />
                       </div>
-                      <ArrowUpRight className="w-3.5 h-3.5 text-[#B0B7C3]" />
+                      <ArrowUpRight className="w-3.5 h-3.5 text-[#d4d4d8]" />
                     </div>
-                    <div className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-1">
+                    <div className="text-[11px] font-medium text-[#9ca3af] uppercase tracking-wider">
                       {stat.label}
                     </div>
-                    <div className="text-xl font-bold text-[#111827] truncate">{stat.value}</div>
-                    <div className="text-[11px] font-bold text-emerald-500 mt-1">
-                      {stat.change}
-                    </div>
+                    <div className="mt-1 text-lg font-semibold text-[#0a0a0a] truncate">{stat.value}</div>
+                    <div className="text-[11px] text-[#6b7280] mt-0.5 truncate">{stat.sub}</div>
                   </motion.div>
                 ))}
               </div>
 
-              {/* Two-column layout */}
+              {/* Two-column */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                
-                {/* Company description + Recent files (2 cols) */}
                 <div className="lg:col-span-2 space-y-6">
-                  
-                  {/* Company description card */}
+                  {/* About */}
                   <motion.div
-                    initial={{ opacity: 0, y: 16 }}
+                    initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: 0.35 }}
-                    className="bg-white border border-gray-200 shadow-sm rounded-2xl p-6"
+                    transition={{ duration: 0.35, delay: 0.25 }}
+                    className="card p-6"
                   >
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h3 className="text-sm font-bold text-[#111827]">About {company?.company_name}</h3>
-                        <p className="text-[10px] text-[#9CA3AF] font-bold mt-0.5 uppercase tracking-wider">
-                          {company?.industry} · {company?.tone} tone
-                        </p>
-                      </div>
+                    <div className="mb-3">
+                      <h3 className="text-[15px] font-semibold text-[#0a0a0a]">
+                        About {company?.company_name}
+                      </h3>
+                      <p className="text-[11px] text-[#9ca3af] mt-0.5 uppercase tracking-wider font-medium">
+                        {company?.industry} · {company?.tone} tone
+                      </p>
                     </div>
-                    <p className="text-xs text-[#6B7280] leading-relaxed font-medium">
+                    <p className="text-sm text-[#6b7280] leading-relaxed">
                       {company?.small_description ?? "No description provided."}
                     </p>
                   </motion.div>
 
-                  {/* Recent Files */}
+                  {/* Recent files */}
                   <motion.div
-                    initial={{ opacity: 0, y: 16 }}
+                    initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: 0.45 }}
-                    className="bg-white border border-gray-200 shadow-sm rounded-2xl p-6"
+                    transition={{ duration: 0.35, delay: 0.35 }}
+                    className="card p-6"
                   >
-                    <div className="flex items-center justify-between mb-5">
-                      <h3 className="text-sm font-bold text-[#111827]">Recent Files</h3>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-[15px] font-semibold text-[#0a0a0a]">Recent Files</h3>
                       <button
                         onClick={() => setActiveNav("drive")}
-                        className="text-[10px] font-bold text-[#635BFF] hover:underline"
+                        className="text-[13px] font-medium hover:underline"
+                        style={{ color: ACCENT }}
                       >
                         View all
                       </button>
                     </div>
                     {recentFiles.length === 0 ? (
-                      <p className="text-xs text-[#9CA3AF] font-medium py-4 text-center">
+                      <p className="text-sm text-[#9ca3af] py-6 text-center">
                         No files uploaded yet. Click Upload to get started.
                       </p>
                     ) : (
-                      <div className="space-y-1">
-                        {recentFiles.map((file, i) => (
-                          <div
-                            key={file.id}
-                            className="flex items-center gap-3.5 p-2.5 rounded-xl hover:bg-white/60 transition-colors"
-                          >
+                      <div className="divide-y divide-[#f3f4f6]">
+                        {recentFiles.map((file) => (
+                          <div key={file.id} className="flex items-center gap-3.5 py-3 first:pt-0 last:pb-0">
                             <div
-                              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                              style={{ background: isImageMime(file.mime_type) ? "#8B85FF15" : "#635BFF15" }}
+                              className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                              style={{ background: isImageMime(file.mime_type) ? "#f5f3ff" : "#eef2ff" }}
                             >
                               {isImageMime(file.mime_type) ? (
-                                <ImageIcon className="w-4 h-4" style={{ color: "#8B85FF" }} />
+                                <ImageIcon className="w-4 h-4 text-[#7c3aed]" />
                               ) : (
-                                <FileText className="w-4 h-4" style={{ color: "#635BFF" }} />
+                                <FileText className="w-4 h-4" style={{ color: ACCENT }} />
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <div className="text-[11px] font-bold text-[#111827] truncate">
+                              <div className="text-[13px] font-medium text-[#0a0a0a] truncate">
                                 {file.original_file_name}
                               </div>
-                              <div className="text-[10px] text-[#6B7280] font-medium truncate">
+                              <div className="text-xs text-[#6b7280] truncate">
                                 {file.description ?? file.mime_type}
                               </div>
                             </div>
-                            <span className="text-[9px] font-bold text-[#B0B7C3] shrink-0">
+                            <span className="text-xs font-medium text-[#9ca3af] shrink-0">
                               {formatFileSize(file.file_size)}
                             </span>
                           </div>
@@ -605,100 +599,89 @@ export default function DashboardPage() {
                   </motion.div>
                 </div>
 
-                {/* Quick actions (1 col) */}
+                {/* Quick actions */}
                 <motion.div
-                  initial={{ opacity: 0, y: 16 }}
+                  initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: 0.4 }}
-                  className="bg-white border border-gray-200 shadow-sm rounded-2xl p-6"
+                  transition={{ duration: 0.35, delay: 0.3 }}
+                  className="card p-6 h-fit"
                 >
-                  <div className="flex items-center justify-between mb-5">
-                    <h3 className="text-sm font-bold text-[#111827]">Quick Actions</h3>
-                  </div>
-                  <div className="space-y-3">
+                  <h3 className="text-[15px] font-semibold text-[#0a0a0a] mb-4">Quick Actions</h3>
+                  <div className="space-y-2.5">
                     <button
                       onClick={() => fileInputRef.current?.click()}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3.5 flex items-center gap-3 hover:border-[#635BFF]/40 hover:bg-white transition-all text-left"
+                      className="w-full border border-[#e5e7eb] rounded-xl p-3.5 flex items-center gap-3 hover:border-[#4f46e5]/40 hover:bg-[#fafafa] transition-all text-left"
                     >
-                      <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: "#635BFF15" }}>
-                        <Upload className="w-4 h-4" style={{ color: "#635BFF" }} />
+                      <div className="w-9 h-9 rounded-lg bg-[#eef2ff] flex items-center justify-center shrink-0">
+                        <Upload className="w-4 h-4" style={{ color: ACCENT }} />
                       </div>
                       <div>
-                        <div className="text-[11px] font-bold text-[#111827]">Upload File</div>
-                        <div className="text-[9px] text-[#6B7280] font-medium">Add to your Drive</div>
+                        <div className="text-[13px] font-semibold text-[#0a0a0a]">Upload File</div>
+                        <div className="text-[11px] text-[#6b7280]">Add to your Drive</div>
                       </div>
                     </button>
 
                     <button
                       onClick={() => setActiveNav("drive")}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3.5 flex items-center gap-3 hover:border-[#635BFF]/40 hover:bg-white transition-all text-left"
+                      className="w-full border border-[#e5e7eb] rounded-xl p-3.5 flex items-center gap-3 hover:border-[#4f46e5]/40 hover:bg-[#fafafa] transition-all text-left"
                     >
-                      <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: "#8B85FF15" }}>
-                        <HardDrive className="w-4 h-4" style={{ color: "#8B85FF" }} />
+                      <div className="w-9 h-9 rounded-lg bg-[#eef2ff] flex items-center justify-center shrink-0">
+                        <HardDrive className="w-4 h-4" style={{ color: ACCENT }} />
                       </div>
                       <div>
-                        <div className="text-[11px] font-bold text-[#111827]">Browse Drive</div>
-                        <div className="text-[9px] text-[#6B7280] font-medium">{stats?.total_files ?? 0} files</div>
+                        <div className="text-[13px] font-semibold text-[#0a0a0a]">Browse Drive</div>
+                        <div className="text-[11px] text-[#6b7280]">{stats?.total_files ?? 0} files</div>
                       </div>
                     </button>
-                  </div>
 
-                  {/* Quick prompt */}
-                  <div className="mt-5 bg-gray-50 border border-gray-200 rounded-xl p-3">
-                    <div className="flex items-center gap-2.5">
-                      <MessageSquare className="w-3.5 h-3.5 text-[#635BFF] shrink-0" />
-                      <span className="text-[10px] text-[#B0B7C3] font-medium flex-1">
-                        Ask your AI team...
-                      </span>
-                      <Zap className="w-3 h-3 text-[#635BFF]" />
-                    </div>
+                    <button
+                      onClick={handleNewChat}
+                      className="w-full border border-[#e5e7eb] rounded-xl p-3.5 flex items-center gap-3 hover:border-[#4f46e5]/40 hover:bg-[#fafafa] transition-all text-left"
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-[#eef2ff] flex items-center justify-center shrink-0">
+                        <MessageSquare className="w-4 h-4" style={{ color: ACCENT }} />
+                      </div>
+                      <div>
+                        <div className="text-[13px] font-semibold text-[#0a0a0a]">New Chat</div>
+                        <div className="text-[11px] text-[#6b7280]">Talk to your AI team</div>
+                      </div>
+                    </button>
                   </div>
                 </motion.div>
               </div>
             </>
           )}
 
-          {/* ── DRIVE TAB ── */}
+          {/* ── DRIVE ── */}
           {activeNav === "drive" && (
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="space-y-6"
-            >
-              {/* Drive header */}
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                  <h2 className="text-lg font-bold text-[#111827]">Drive</h2>
-                  <p className="text-xs text-[#6B7280] font-medium mt-0.5">
-                    {allFiles.length} file{allFiles.length !== 1 ? "s" : ""} ·{" "}
-                    {formatFileSize(stats?.total_size_bytes ?? 0)} total
+                  <h2 className="text-lg font-semibold text-[#0a0a0a]">Drive</h2>
+                  <p className="text-sm text-[#6b7280] mt-0.5">
+                    {allFiles.length} file{allFiles.length !== 1 ? "s" : ""} · {formatFileSize(stats?.total_size_bytes ?? 0)} total
                   </p>
                 </div>
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
-                  className="bg-[#635BFF] hover:bg-[#524be3] text-white shadow-sm rounded-full px-5 py-2.5 text-xs font-bold flex items-center gap-2 self-start disabled:opacity-60 transition-colors"
+                  className="btn-primary px-4 py-2.5 text-[13px] self-start disabled:opacity-60"
                 >
-                  {uploading ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Upload className="w-3.5 h-3.5" />
-                  )}
-                  {uploading ? "Uploading..." : "Upload File"}
+                  {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                  {uploading ? "Uploading…" : "Upload File"}
                 </button>
               </div>
 
-              {/* Files grid */}
               {allFiles.length === 0 ? (
-                <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-12 text-center flex flex-col items-center justify-center min-h-[300px]">
-                  <HardDrive className="w-12 h-12 mx-auto mb-4 text-[#D1D5DB]" />
-                  <h3 className="text-sm font-bold text-[#111827] mb-1">No files yet</h3>
-                  <p className="text-xs text-[#9CA3AF] font-medium mb-4">
-                    Upload your first file to get started.
-                  </p>
+                <div className="card p-12 text-center flex flex-col items-center justify-center min-h-[320px]">
+                  <div className="w-14 h-14 rounded-2xl bg-[#f3f4f6] flex items-center justify-center mb-4">
+                    <HardDrive className="w-6 h-6 text-[#9ca3af]" />
+                  </div>
+                  <h3 className="text-[15px] font-semibold text-[#0a0a0a] mb-1">No files yet</h3>
+                  <p className="text-sm text-[#6b7280] mb-5">Upload your first file to get started.</p>
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="bg-[#635BFF] hover:bg-[#524be3] text-white shadow-sm rounded-full px-5 py-2.5 text-xs font-bold inline-flex items-center gap-2 transition-colors"
+                    className="btn-primary px-4 py-2.5 text-[13px]"
                   >
                     <Upload className="w-3.5 h-3.5" />
                     Upload File
@@ -709,57 +692,51 @@ export default function DashboardPage() {
                   {allFiles.map((file, i) => (
                     <motion.div
                       key={file.id}
-                      initial={{ opacity: 0, y: 12 }}
+                      initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.04 }}
-                      className="bg-white border border-gray-200 shadow-sm rounded-2xl p-4 flex flex-col group relative hover:shadow-md hover:border-[#635BFF]/30 transition-all cursor-pointer"
+                      transition={{ delay: i * 0.03 }}
+                      className="card card-hover p-4 flex flex-col group relative"
                     >
-                      {/* Delete button */}
                       <button
                         onClick={(e) => { e.stopPropagation(); handleDelete(file.id); }}
                         disabled={deleting === file.id}
-                        className="absolute top-2.5 right-2.5 w-7 h-7 neu-circle rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 z-10"
+                        className="absolute top-2.5 right-2.5 w-7 h-7 rounded-lg bg-white border border-[#e5e7eb] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:border-red-200 hover:bg-red-50 z-10"
                         title="Delete file"
                       >
                         {deleting === file.id ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin text-red-400" />
                         ) : (
-                          <Trash2 className="w-3.5 h-3.5 text-[#9CA3AF] hover:text-red-500 transition-colors" />
+                          <Trash2 className="w-3.5 h-3.5 text-[#9ca3af]" />
                         )}
                       </button>
 
-                      {/* File icon */}
                       <div
-                        className="w-12 h-12 rounded-xl flex items-center justify-center mb-3"
-                        style={{ background: isImageMime(file.mime_type) ? "#8B85FF15" : "#635BFF15" }}
+                        className="w-11 h-11 rounded-xl flex items-center justify-center mb-3"
+                        style={{ background: isImageMime(file.mime_type) ? "#f5f3ff" : "#eef2ff" }}
                       >
                         {isImageMime(file.mime_type) ? (
-                          <ImageIcon className="w-6 h-6" style={{ color: "#8B85FF" }} />
+                          <ImageIcon className="w-5 h-5 text-[#7c3aed]" />
                         ) : (
-                          <FileText className="w-6 h-6" style={{ color: "#635BFF" }} />
+                          <FileText className="w-5 h-5" style={{ color: ACCENT }} />
                         )}
                       </div>
 
-                      {/* File name */}
-                      <div className="text-[11px] font-bold text-[#111827] truncate mb-1" title={file.original_file_name}>
+                      <div className="text-[13px] font-semibold text-[#0a0a0a] truncate mb-0.5" title={file.original_file_name}>
                         {file.original_file_name}
                       </div>
-
-                      {/* Description */}
-                      <div className="text-[10px] text-[#9CA3AF] font-medium truncate mb-3 flex-1">
+                      <div className="text-xs text-[#9ca3af] truncate mb-3 flex-1">
                         {file.description ?? "No description"}
                       </div>
 
-                      {/* Footer: type + size + date */}
-                      <div className="flex items-center justify-between gap-2 pt-3 border-t border-white/40">
-                        <span className="text-[9px] font-bold text-[#635BFF] bg-[#635BFF]/10 rounded-md px-2 py-0.5 truncate">
+                      <div className="flex items-center justify-between gap-2 pt-3 border-t border-[#f3f4f6]">
+                        <span className="text-[10px] font-semibold bg-[#eef2ff] rounded-md px-2 py-0.5 truncate" style={{ color: ACCENT }}>
                           {file.mime_type.split("/")[1]?.toUpperCase() ?? file.mime_type}
                         </span>
-                        <span className="text-[9px] font-bold text-[#B0B7C3] shrink-0">
+                        <span className="text-[11px] font-medium text-[#9ca3af] shrink-0">
                           {formatFileSize(file.file_size)}
                         </span>
                       </div>
-                      <div className="text-[9px] text-[#D1D5DB] font-medium mt-1">
+                      <div className="text-[10px] text-[#d4d4d8] mt-1.5">
                         {new Date(file.created_at).toLocaleDateString("en-US", {
                           month: "short",
                           day: "numeric",
@@ -773,12 +750,9 @@ export default function DashboardPage() {
             </motion.div>
           )}
 
-          {/* ── CHAT TAB ── */}
+          {/* ── CHAT ── */}
           {activeNav === "chat" && (
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
               <Chat
                 key={chatKey}
                 user={session.user}
@@ -789,21 +763,22 @@ export default function DashboardPage() {
             </motion.div>
           )}
 
-          {/* ── SETTINGS TAB (placeholder) ── */}
+          {/* ── SETTINGS ── */}
           {activeNav === "settings" && (
             <motion.div
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white border border-gray-200 shadow-sm rounded-2xl p-8 text-center"
+              className="card p-12 text-center"
             >
-              <Settings className="w-12 h-12 mx-auto mb-4 text-[#D1D5DB]" />
-              <h3 className="text-sm font-bold text-[#111827] mb-1">Settings</h3>
-              <p className="text-xs text-[#9CA3AF] font-medium">
+              <div className="w-14 h-14 rounded-2xl bg-[#f3f4f6] flex items-center justify-center mx-auto mb-4">
+                <Settings className="w-6 h-6 text-[#9ca3af]" />
+              </div>
+              <h3 className="text-[15px] font-semibold text-[#0a0a0a] mb-1">Settings</h3>
+              <p className="text-sm text-[#6b7280]">
                 Account and company settings coming soon.
               </p>
             </motion.div>
           )}
-
         </main>
       </div>
     </div>
