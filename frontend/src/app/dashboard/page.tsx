@@ -199,7 +199,7 @@ export default function DashboardPage() {
 
   if (!session) {
     return (
-      <main className="min-h-screen bg-[#f8faff] flex items-center justify-center" style={{ fontFamily: "SF Mono, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace" }}>
+      <main className="min-h-screen bg-[#f8faff] flex items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin" style={{ color: "#635BFF" }} />
       </main>
     );
@@ -216,7 +216,7 @@ export default function DashboardPage() {
   const activeNavLabel = navItems.find((item) => item.id === activeNav)?.label ?? "Dashboard";
 
   return (
-    <div className="min-h-screen bg-[#f8faff] flex" style={{ fontFamily: "SF Mono, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace" }}>
+    <div className="min-h-screen bg-[#f8faff] flex">
       
       {/* ── Mobile overlay ── */}
       <AnimatePresence>
@@ -244,7 +244,7 @@ export default function DashboardPage() {
         <div className={`px-5 py-5 border-b border-white/50 ${sidebarCollapsed ? "lg:px-2" : ""}`}>
           <div className="flex items-center justify-between gap-2">
             <Link href="/" className="flex min-w-0 items-center gap-2.5 group">
-              <div className={`w-9 h-9 neu-circle rounded-full flex items-center justify-center group-hover:scale-105 transition-transform overflow-hidden shrink-0 ${sidebarCollapsed ? "lg:w-8 lg:h-8" : ""}`}>
+              <div className={`w-9 h-9 bg-white border border-gray-200 shadow-sm rounded-full flex items-center justify-center group-hover:scale-105 transition-transform overflow-hidden shrink-0 ${sidebarCollapsed ? "lg:w-8 lg:h-8" : ""}`}>
                 <Image src="/logo.png" alt="Logo" width={28} height={28} className="w-7 h-7 object-contain" />
               </div>
               <span className={`font-bold text-lg tracking-tight text-[#111827] truncate ${sidebarCollapsed ? "lg:hidden" : ""}`}>
@@ -253,7 +253,7 @@ export default function DashboardPage() {
             </Link>
             <button
               onClick={() => setSidebarCollapsed((value) => !value)}
-              className="hidden lg:flex w-7 h-7 neu-circle rounded-full items-center justify-center shrink-0"
+              className="hidden lg:flex w-7 h-7 bg-white border border-gray-200 shadow-sm hover:bg-gray-50 rounded-full items-center justify-center shrink-0"
               title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
               <ChevronRight
@@ -269,7 +269,7 @@ export default function DashboardPage() {
         <div className={`px-3 pt-3 pb-2 shrink-0 ${sidebarCollapsed ? "lg:px-2" : ""}`}>
           <button
             onClick={handleNewChat}
-            className={`w-full neu-inset rounded-xl px-3 py-2.5 flex items-center gap-2.5 text-xs font-bold text-[#6B7280] hover:text-[#635BFF] hover:ring-2 hover:ring-[#635BFF]/20 transition-all ${
+            className={`w-full bg-white border border-gray-200 shadow-sm rounded-xl px-3 py-2.5 flex items-center gap-2.5 text-xs font-bold text-[#6B7280] hover:text-[#635BFF] hover:border-[#635BFF]/30 transition-all ${
               sidebarCollapsed ? "lg:justify-center lg:px-0" : ""
             }`}
             title="New Chat"
@@ -291,8 +291,8 @@ export default function DashboardPage() {
                   sidebarCollapsed ? "lg:justify-center lg:px-0" : ""
                 } ${
                   isActive
-                    ? "neu-pill-accent shadow-lg"
-                    : "text-[#6B7280] hover:text-[#111827] hover:bg-white/40"
+                    ? "bg-[#635BFF] text-white shadow-md"
+                    : "text-[#6B7280] hover:text-[#111827] hover:bg-white/60"
                 }`}
                 title={item.label}
               >
@@ -393,7 +393,7 @@ export default function DashboardPage() {
             </div>
             <button
               onClick={handleLogout}
-              className="w-8 h-8 neu-circle rounded-full flex items-center justify-center hover:text-red-500 transition-colors"
+              className="w-8 h-8 bg-white border border-gray-200 shadow-sm rounded-full flex items-center justify-center hover:text-red-500 transition-colors"
               title="Log out"
             >
               <LogOut className="w-3.5 h-3.5 text-[#9CA3AF]" />
@@ -410,7 +410,7 @@ export default function DashboardPage() {
           {/* Mobile menu trigger */}
           <button
             onClick={() => { setSidebarCollapsed(false); setSidebarOpen(true); }}
-            className="lg:hidden neu-circle rounded-full w-9 h-9 flex-shrink-0"
+            className="lg:hidden bg-white border border-gray-200 shadow-sm rounded-full w-9 h-9 flex-shrink-0"
           >
             <Menu className="w-4 h-4 text-[#4B5563]" />
           </button>
@@ -422,7 +422,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <button className="neu-circle rounded-full w-9 h-9 relative">
+            <button className="bg-white border border-gray-200 shadow-sm rounded-full w-9 h-9 relative hover:bg-gray-50 transition-colors">
               <Bell className="w-4 h-4 text-[#6B7280]" />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#635BFF]" />
             </button>
@@ -430,7 +430,7 @@ export default function DashboardPage() {
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              className="neu-pill-accent px-4 py-2 text-xs font-bold flex items-center gap-2 disabled:opacity-60"
+              className="bg-[#635BFF] hover:bg-[#524be3] text-white rounded-full px-4 py-2 text-xs font-bold flex items-center gap-2 shadow-sm disabled:opacity-60 transition-colors"
             >
               {uploading ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -505,7 +505,7 @@ export default function DashboardPage() {
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: 0.1 + i * 0.06 }}
-                    className="neu-card rounded-2xl p-5"
+                    className="bg-white border border-gray-200 shadow-sm rounded-2xl p-5 hover:shadow-md transition-shadow"
                   >
                     <div className="flex items-center justify-between mb-3">
                       <div className="w-9 h-9 neu-circle rounded-full">
@@ -535,7 +535,7 @@ export default function DashboardPage() {
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: 0.35 }}
-                    className="neu-card rounded-2xl p-6"
+                    className="bg-white border border-gray-200 shadow-sm rounded-2xl p-6"
                   >
                     <div className="flex items-center justify-between mb-4">
                       <div>
@@ -555,7 +555,7 @@ export default function DashboardPage() {
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: 0.45 }}
-                    className="neu-card rounded-2xl p-6"
+                    className="bg-white border border-gray-200 shadow-sm rounded-2xl p-6"
                   >
                     <div className="flex items-center justify-between mb-5">
                       <h3 className="text-sm font-bold text-[#111827]">Recent Files</h3>
@@ -610,7 +610,7 @@ export default function DashboardPage() {
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: 0.4 }}
-                  className="neu-card rounded-2xl p-6"
+                  className="bg-white border border-gray-200 shadow-sm rounded-2xl p-6"
                 >
                   <div className="flex items-center justify-between mb-5">
                     <h3 className="text-sm font-bold text-[#111827]">Quick Actions</h3>
@@ -618,7 +618,7 @@ export default function DashboardPage() {
                   <div className="space-y-3">
                     <button
                       onClick={() => fileInputRef.current?.click()}
-                      className="w-full neu-inset rounded-xl p-3.5 flex items-center gap-3 hover:ring-2 hover:ring-[#635BFF]/20 transition-all text-left"
+                      className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3.5 flex items-center gap-3 hover:border-[#635BFF]/40 hover:bg-white transition-all text-left"
                     >
                       <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: "#635BFF15" }}>
                         <Upload className="w-4 h-4" style={{ color: "#635BFF" }} />
@@ -631,7 +631,7 @@ export default function DashboardPage() {
 
                     <button
                       onClick={() => setActiveNav("drive")}
-                      className="w-full neu-inset rounded-xl p-3.5 flex items-center gap-3 hover:ring-2 hover:ring-[#635BFF]/20 transition-all text-left"
+                      className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3.5 flex items-center gap-3 hover:border-[#635BFF]/40 hover:bg-white transition-all text-left"
                     >
                       <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: "#8B85FF15" }}>
                         <HardDrive className="w-4 h-4" style={{ color: "#8B85FF" }} />
@@ -644,7 +644,7 @@ export default function DashboardPage() {
                   </div>
 
                   {/* Quick prompt */}
-                  <div className="mt-5 neu-inset rounded-xl p-3">
+                  <div className="mt-5 bg-gray-50 border border-gray-200 rounded-xl p-3">
                     <div className="flex items-center gap-2.5">
                       <MessageSquare className="w-3.5 h-3.5 text-[#635BFF] shrink-0" />
                       <span className="text-[10px] text-[#B0B7C3] font-medium flex-1">
@@ -677,7 +677,7 @@ export default function DashboardPage() {
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
-                  className="neu-pill-accent px-5 py-2.5 text-xs font-bold flex items-center gap-2 self-start disabled:opacity-60"
+                  className="bg-[#635BFF] hover:bg-[#524be3] text-white shadow-sm rounded-full px-5 py-2.5 text-xs font-bold flex items-center gap-2 self-start disabled:opacity-60 transition-colors"
                 >
                   {uploading ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -690,7 +690,7 @@ export default function DashboardPage() {
 
               {/* Files grid */}
               {allFiles.length === 0 ? (
-                <div className="neu-card rounded-2xl p-12 text-center">
+                <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-12 text-center flex flex-col items-center justify-center min-h-[300px]">
                   <HardDrive className="w-12 h-12 mx-auto mb-4 text-[#D1D5DB]" />
                   <h3 className="text-sm font-bold text-[#111827] mb-1">No files yet</h3>
                   <p className="text-xs text-[#9CA3AF] font-medium mb-4">
@@ -698,7 +698,7 @@ export default function DashboardPage() {
                   </p>
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="neu-pill-accent px-5 py-2.5 text-xs font-bold inline-flex items-center gap-2"
+                    className="bg-[#635BFF] hover:bg-[#524be3] text-white shadow-sm rounded-full px-5 py-2.5 text-xs font-bold inline-flex items-center gap-2 transition-colors"
                   >
                     <Upload className="w-3.5 h-3.5" />
                     Upload File
@@ -712,7 +712,7 @@ export default function DashboardPage() {
                       initial={{ opacity: 0, y: 12 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.04 }}
-                      className="neu-card rounded-2xl p-4 flex flex-col group relative hover:shadow-lg transition-shadow"
+                      className="bg-white border border-gray-200 shadow-sm rounded-2xl p-4 flex flex-col group relative hover:shadow-md hover:border-[#635BFF]/30 transition-all cursor-pointer"
                     >
                       {/* Delete button */}
                       <button
@@ -794,7 +794,7 @@ export default function DashboardPage() {
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              className="neu-card rounded-2xl p-8 text-center"
+              className="bg-white border border-gray-200 shadow-sm rounded-2xl p-8 text-center"
             >
               <Settings className="w-12 h-12 mx-auto mb-4 text-[#D1D5DB]" />
               <h3 className="text-sm font-bold text-[#111827] mb-1">Settings</h3>

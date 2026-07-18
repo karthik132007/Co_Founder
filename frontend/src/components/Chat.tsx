@@ -246,7 +246,7 @@ export default function Chat({
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-12rem)]">
+    <div className="flex flex-col h-[calc(100vh-8rem)]">
       {/* Chat header with title */}
       <div className="flex items-center shrink-0 pb-3 mb-1">
         <div className="flex items-center gap-2.5 min-w-0">
@@ -281,8 +281,9 @@ export default function Chat({
       )}
 
       {/* ── Messages area ── */}
-      <div className="flex-1 overflow-y-auto px-1 space-y-4 pb-4">
-        <AnimatePresence initial={false}>
+      <div className="flex-1 overflow-y-auto px-2 pb-4">
+        <div className="space-y-6">
+          <AnimatePresence initial={false}>
 
 
           {messages.map((msg) => (
@@ -304,8 +305,8 @@ export default function Chat({
               <div
                 className={`min-w-0 ${
                   msg.role === "user"
-                    ? "max-w-[75%] bg-[#635BFF] text-white rounded-2xl rounded-br-md px-4 py-3"
-                    : "max-w-[82%] text-[#111827]"
+                    ? "max-w-[75%] bg-[#635BFF] text-white rounded-2xl rounded-tr-md px-5 py-3.5 shadow-sm"
+                    : "max-w-[85%] text-[#111827] py-2"
                 }`}
               >
                 {msg.role === "assistant" ? (
@@ -378,12 +379,14 @@ export default function Chat({
           )}
         </AnimatePresence>
 
-        <div ref={messagesEndRef} />
+          <div ref={messagesEndRef} />
+        </div>
       </div>
 
       {/* ── Input area ── */}
-      <div className="shrink-0 pt-3 border-t border-white/60">
-        <div className="neu-inset rounded-2xl px-4 py-2 flex items-center gap-3 focus-within:ring-2 focus-within:ring-[#635BFF]/30 transition-all">
+      <div className="shrink-0 pt-2">
+        <div className="w-full">
+          <div className="bg-white border border-gray-300 shadow-sm rounded-full px-4 py-2 flex items-center gap-3 focus-within:ring-2 focus-within:ring-[#635BFF]/30 focus-within:border-transparent transition-all">
           <input
             ref={inputRef}
             type="text"
@@ -411,9 +414,10 @@ export default function Chat({
             )}
           </button>
         </div>
-        <p className="text-[10px] text-[#B0B7C3] font-medium text-center mt-2">
+        <p className="text-[11px] text-[#9CA3AF] font-medium text-center mt-3">
           Your CEO agent coordinates strategy and delegates to specialist agents.
         </p>
+        </div>
       </div>
     </div>
   );
