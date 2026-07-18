@@ -13,7 +13,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getSession } from "@/lib/session";
+import { clearSession, getSession } from "@/lib/session";
 import {
   fetchDashboard, fetchFiles, uploadFile, deleteFile, formatFileSize, isImageMime,
   fetchChatSessions,
@@ -235,7 +235,7 @@ export default function DashboardPage() {
   }
 
   const handleLogout = () => {
-    localStorage.removeItem("cofounder.session");
+    clearSession();
     router.replace("/auth");
   };
 
