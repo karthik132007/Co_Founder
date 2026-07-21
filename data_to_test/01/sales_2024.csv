@@ -1,0 +1,1001 @@
+OrderID,OrderDate,Region,State,City,Channel,Product,Category,UnitsSold,UnitPrice,DiscountPercent,Revenue,COGS,Profit,CustomerType,PaymentMethod,Salesperson
+IH2400001,2024-11-23,South,Andhra Pradesh,Rajahmundry,Website,Ayurvedic Body Oil,Body Care,82,712,5,55464.8,23967.02,31497.78,Retail,RTGS,Deepak
+IH2400002,2024-02-14,East,West Bengal,Kolkata,Website,Kumkumadi Tailam,Skincare,84,902,10,68191.2,29233.17,38958.03,Retail,Credit Card,Sneha
+IH2400003,2024-11-28,East,Odisha,Bhubaneswar,Flipkart,Sandalwood Cream,Creams,26,408,15,9016.8,3832.37,5184.43,Retail,Cash,Kiran
+IH2400004,2024-05-22,West,Maharashtra,Pune,Website,Herbal Aloe Gel,Skincare,122,351,5,40680.9,18100.65,22580.25,Retail,NEFT,Kiran
+IH2400005,2024-01-23,East,West Bengal,Kolkata,Website,Sandalwood Cream,Creams,100,408,18,33456.0,14895.11,18560.89,Retail,Debit Card,Deepak
+IH2400006,2024-04-08,South,Andhra Pradesh,Rajahmundry,Website,Ayurvedic Body Oil,Body Care,99,712,20,56390.4,26277.32,30113.08,Retail,UPI,Anjali
+IH2400007,2024-05-22,East,Assam,Guwahati,Amazon,Neem Face Wash,Face Care,78,313,12,21484.32,9205.53,12278.79,Retail,RTGS,Sneha
+IH2400008,2024-02-06,West,Rajasthan,Jaipur,Website,Ayurvedic Body Oil,Body Care,143,712,8,93670.72,44215.25,49455.47,Retail,RTGS,Sneha
+IH2400009,2024-10-12,West,Gujarat,Ahmedabad,Website,Kumkumadi Tailam,Skincare,33,902,18,24408.12,10875.1,13533.02,Retail,UPI,Priya
+IH2400010,2024-10-17,North,Punjab,Ludhiana,Amazon,Ayurvedic Body Oil,Body Care,142,712,5,96048.8,41664.37,54384.43,Retail,RTGS,Deepak
+IH2400011,2024-10-02,North,Haryana,Gurugram,Amazon,Ubtan Face Pack,Face Care,81,522,20,33825.6,14997.03,18828.57,Retail,Cash,Ramesh
+IH2400012,2024-01-25,South,Telangana,Hyderabad,Website,Ayurvedic Body Oil,Body Care,133,712,12,83332.48,37067.5,46264.98,Retail,NEFT,Anjali
+IH2400013,2024-09-27,North,Delhi,Delhi,Distributor,Ayurvedic Body Oil,Body Care,374,712,18,218356.16,100725.4,117630.76,Wholesale,RTGS,Kiran
+IH2400014,2024-02-27,North,Haryana,Gurugram,Amazon,Neem Face Wash,Face Care,92,313,20,23036.8,9928.92,13107.88,Retail,NEFT,Ramesh
+IH2400015,2024-11-16,North,Punjab,Ludhiana,Amazon,Neem Face Wash,Face Care,66,313,10,18592.2,8026.3,10565.9,Retail,NEFT,Ramesh
+IH2400016,2024-11-02,North,Haryana,Gurugram,Website,Kumkumadi Tailam,Skincare,117,902,18,86537.88,40233.62,46304.26,Retail,Debit Card,Priya
+IH2400017,2024-01-30,West,Rajasthan,Jaipur,Website,Kumkumadi Tailam,Skincare,149,902,18,110206.36,51963.32,58243.04,Retail,NEFT,Rahul
+IH2400018,2024-03-05,West,Gujarat,Surat,Website,Ubtan Face Pack,Face Care,160,522,18,68486.4,31261.6,37224.8,Retail,Credit Card,Deepak
+IH2400019,2024-12-19,West,Gujarat,Ahmedabad,Retail Store,Sandalwood Cream,Creams,120,408,10,44064.0,19422.24,24641.76,Retail,UPI,Priya
+IH2400020,2024-04-25,South,Karnataka,Bengaluru,Flipkart,Kumkumadi Tailam,Skincare,83,902,12,65882.08,28185.91,37696.17,Retail,RTGS,Sneha
+IH2400021,2024-01-31,West,Maharashtra,Mumbai,Retail Store,Kumkumadi Tailam,Skincare,43,902,10,34907.4,15360.35,19547.05,Retail,Cash,Priya
+IH2400022,2024-10-03,West,Rajasthan,Jaipur,Amazon,Ubtan Face Pack,Face Care,146,522,18,62493.84,27857.18,34636.66,Retail,UPI,Sneha
+IH2400023,2024-08-08,North,Haryana,Gurugram,Amazon,Sandalwood Cream,Creams,38,408,12,13643.52,6293.8,7349.72,Retail,UPI,Ramesh
+IH2400024,2024-07-25,North,Delhi,Delhi,Website,Neem Face Wash,Face Care,162,313,10,45635.4,19017.14,26618.26,Retail,Debit Card,Anjali
+IH2400025,2024-05-07,South,Tamil Nadu,Chennai,Website,Ubtan Face Pack,Face Care,163,522,18,69770.52,33599.66,36170.86,Retail,Credit Card,Priya
+IH2400026,2024-07-27,East,Bihar,Patna,Retail Store,Neem Face Wash,Face Care,40,313,5,11894.0,4746.78,7147.22,Retail,Cash,Kiran
+IH2400027,2024-08-20,North,Haryana,Gurugram,Retail Store,Ayurvedic Body Oil,Body Care,167,712,12,104635.52,47023.23,57612.29,Retail,Credit Card,Kiran
+IH2400028,2024-04-21,South,Kerala,Kochi,Flipkart,Ayurvedic Body Oil,Body Care,105,712,0,74760.0,33925.19,40834.81,Retail,NEFT,Rahul
+IH2400029,2024-09-28,West,Maharashtra,Mumbai,Website,Ubtan Face Pack,Face Care,72,522,0,37584.0,16541.7,21042.3,Retail,Credit Card,Anjali
+IH2400030,2024-03-02,West,Rajasthan,Jaipur,Website,Ubtan Face Pack,Face Care,45,522,10,21141.0,9806.23,11334.77,Retail,NEFT,Kiran
+IH2400031,2024-05-13,West,Gujarat,Ahmedabad,Website,Neem Face Wash,Face Care,58,313,12,15975.52,6575.52,9400.0,Retail,Debit Card,Rahul
+IH2400032,2024-02-07,South,Tamil Nadu,Chennai,Retail Store,Ubtan Face Pack,Face Care,50,522,0,26100.0,11661.61,14438.39,Retail,Debit Card,Priya
+IH2400033,2024-06-27,South,Telangana,Hyderabad,Website,Herbal Aloe Gel,Skincare,137,351,18,39431.34,17300.59,22130.75,Retail,NEFT,Rahul
+IH2400034,2024-11-30,South,Kerala,Kochi,Retail Store,Herbal Aloe Gel,Skincare,51,351,20,14320.8,5932.74,8388.06,Retail,UPI,Ramesh
+IH2400035,2024-10-10,West,Gujarat,Ahmedabad,Flipkart,Herbal Aloe Gel,Skincare,112,351,5,37346.4,16274.52,21071.88,Retail,Debit Card,Deepak
+IH2400036,2024-09-07,North,Delhi,Delhi,Flipkart,Kumkumadi Tailam,Skincare,95,902,0,85690.0,37918.69,47771.31,Retail,Credit Card,Sneha
+IH2400037,2024-05-14,West,Gujarat,Surat,Distributor,Ubtan Face Pack,Face Care,312,522,0,162864.0,71735.28,91128.72,Wholesale,RTGS,Priya
+IH2400038,2024-10-06,South,Karnataka,Bengaluru,Flipkart,Ubtan Face Pack,Face Care,135,522,5,66946.5,30204.91,36741.59,Retail,UPI,Kiran
+IH2400039,2024-04-17,West,Maharashtra,Mumbai,Distributor,Herbal Aloe Gel,Skincare,233,351,20,65426.4,28835.22,36591.18,Wholesale,Credit Card,Rahul
+IH2400040,2024-03-24,West,Gujarat,Surat,Website,Kumkumadi Tailam,Skincare,110,902,15,84337.0,37616.59,46720.41,Retail,RTGS,Rahul
+IH2400041,2024-05-07,North,Punjab,Ludhiana,Website,Ayurvedic Body Oil,Body Care,34,712,18,19850.56,8684.81,11165.75,Retail,Cash,Kiran
+IH2400042,2024-06-05,West,Maharashtra,Pune,Flipkart,Kumkumadi Tailam,Skincare,127,902,8,105389.68,49153.31,56236.37,Retail,Debit Card,Kiran
+IH2400043,2024-11-24,East,Assam,Guwahati,Website,Kumkumadi Tailam,Skincare,91,902,5,77977.9,36713.09,41264.81,Retail,Debit Card,Ramesh
+IH2400044,2024-02-25,East,Assam,Guwahati,Distributor,Ayurvedic Body Oil,Body Care,248,712,12,155386.88,70003.97,85382.91,Wholesale,Cash,Deepak
+IH2400045,2024-04-07,North,Delhi,Delhi,Amazon,Ayurvedic Body Oil,Body Care,158,712,20,89996.8,40654.29,49342.51,Retail,RTGS,Sneha
+IH2400046,2024-12-09,West,Gujarat,Ahmedabad,Website,Sandalwood Cream,Creams,109,408,12,39135.36,17500.9,21634.46,Retail,UPI,Sneha
+IH2400047,2024-06-02,North,Haryana,Gurugram,Amazon,Herbal Aloe Gel,Skincare,100,351,10,31590.0,13165.1,18424.9,Retail,RTGS,Anjali
+IH2400048,2024-12-12,West,Rajasthan,Jaipur,Amazon,Ubtan Face Pack,Face Care,165,522,18,70626.6,31851.06,38775.54,Retail,Credit Card,Anjali
+IH2400049,2024-10-23,North,Haryana,Gurugram,Amazon,Sandalwood Cream,Creams,79,408,10,29008.8,13138.79,15870.01,Retail,RTGS,Priya
+IH2400050,2024-12-03,South,Karnataka,Bengaluru,Flipkart,Ubtan Face Pack,Face Care,110,522,5,54549.0,26226.72,28322.28,Retail,Credit Card,Sneha
+IH2400051,2024-06-07,West,Maharashtra,Pune,Website,Neem Face Wash,Face Care,87,313,20,21784.8,9251.43,12533.37,Retail,UPI,Anjali
+IH2400052,2024-07-31,West,Gujarat,Surat,Amazon,Sandalwood Cream,Creams,62,408,12,22260.48,9310.31,12950.17,Retail,UPI,Rahul
+IH2400053,2024-08-05,West,Maharashtra,Pune,Amazon,Ayurvedic Body Oil,Body Care,37,712,10,23709.6,11114.73,12594.87,Retail,UPI,Anjali
+IH2400054,2024-03-09,East,Assam,Guwahati,Flipkart,Sandalwood Cream,Creams,154,408,10,56548.8,25893.79,30655.01,Retail,Cash,Priya
+IH2400055,2024-08-31,East,Assam,Guwahati,Distributor,Neem Face Wash,Face Care,166,313,15,44164.3,18588.52,25575.78,Wholesale,RTGS,Priya
+IH2400056,2024-05-20,East,West Bengal,Kolkata,Website,Ayurvedic Body Oil,Body Care,94,712,8,61573.76,28797.2,32776.56,Retail,UPI,Priya
+IH2400057,2024-03-18,West,Gujarat,Surat,Website,Ayurvedic Body Oil,Body Care,79,712,0,56248.0,25077.72,31170.28,Retail,NEFT,Anjali
+IH2400058,2024-07-31,South,Telangana,Hyderabad,Amazon,Sandalwood Cream,Creams,174,408,20,56793.6,23788.53,33005.07,Retail,NEFT,Anjali
+IH2400059,2024-09-01,South,Karnataka,Bengaluru,Distributor,Herbal Aloe Gel,Skincare,239,351,10,75500.1,33226.78,42273.32,Wholesale,NEFT,Priya
+IH2400060,2024-09-06,West,Gujarat,Ahmedabad,Amazon,Sandalwood Cream,Creams,124,408,8,46544.64,20846.52,25698.12,Retail,Cash,Sneha
+IH2400061,2024-03-25,East,Odisha,Bhubaneswar,Flipkart,Ubtan Face Pack,Face Care,125,522,12,57420.0,26843.73,30576.27,Retail,UPI,Sneha
+IH2400062,2024-08-07,West,Gujarat,Surat,Website,Neem Face Wash,Face Care,122,313,8,35131.12,14688.23,20442.89,Retail,Debit Card,Rahul
+IH2400063,2024-07-13,North,Haryana,Gurugram,Distributor,Herbal Aloe Gel,Skincare,265,351,0,93015.0,40154.11,52860.89,Wholesale,Debit Card,Priya
+IH2400064,2024-11-28,South,Andhra Pradesh,Rajahmundry,Retail Store,Kumkumadi Tailam,Skincare,76,902,18,56212.64,25602.61,30610.03,Retail,Credit Card,Priya
+IH2400065,2024-08-30,South,Kerala,Kochi,Amazon,Neem Face Wash,Face Care,90,313,15,23944.5,9722.6,14221.9,Retail,NEFT,Sneha
+IH2400066,2024-02-28,West,Gujarat,Ahmedabad,Flipkart,Kumkumadi Tailam,Skincare,104,902,10,84427.2,39542.42,44884.78,Retail,Cash,Anjali
+IH2400067,2024-04-11,South,Kerala,Kochi,Distributor,Ayurvedic Body Oil,Body Care,149,712,5,100783.6,46588.39,54195.21,Wholesale,RTGS,Deepak
+IH2400068,2024-03-02,South,Karnataka,Bengaluru,Amazon,Ubtan Face Pack,Face Care,119,522,0,62118.0,28995.87,33122.13,Retail,UPI,Rahul
+IH2400069,2024-08-03,East,West Bengal,Kolkata,Retail Store,Sandalwood Cream,Creams,142,408,15,49245.6,21528.28,27717.32,Retail,RTGS,Deepak
+IH2400070,2024-11-29,North,Haryana,Gurugram,Amazon,Sandalwood Cream,Creams,176,408,5,68217.6,31071.44,37146.16,Retail,UPI,Kiran
+IH2400071,2024-08-18,West,Gujarat,Surat,Flipkart,Ubtan Face Pack,Face Care,122,522,8,58589.28,26935.72,31653.56,Retail,Debit Card,Priya
+IH2400072,2024-09-06,West,Gujarat,Ahmedabad,Amazon,Herbal Aloe Gel,Skincare,177,351,15,52807.95,22199.38,30608.57,Retail,UPI,Deepak
+IH2400073,2024-04-07,South,Telangana,Hyderabad,Amazon,Ayurvedic Body Oil,Body Care,167,712,15,101068.4,46347.69,54720.71,Retail,RTGS,Sneha
+IH2400074,2024-09-08,East,West Bengal,Kolkata,Website,Kumkumadi Tailam,Skincare,128,902,15,98137.6,43306.09,54831.51,Retail,NEFT,Kiran
+IH2400075,2024-08-30,North,Haryana,Gurugram,Flipkart,Ayurvedic Body Oil,Body Care,115,712,15,69598.0,30601.63,38996.37,Retail,Debit Card,Priya
+IH2400076,2024-03-02,West,Gujarat,Ahmedabad,Distributor,Kumkumadi Tailam,Skincare,415,902,15,318180.5,138764.67,179415.83,Wholesale,RTGS,Anjali
+IH2400077,2024-05-21,North,Delhi,Delhi,Website,Neem Face Wash,Face Care,117,313,5,34789.95,13901.86,20888.09,Retail,NEFT,Priya
+IH2400078,2024-05-20,South,Andhra Pradesh,Rajahmundry,Website,Ubtan Face Pack,Face Care,57,522,12,26183.52,12348.89,13834.63,Retail,UPI,Rahul
+IH2400079,2024-01-07,North,Haryana,Gurugram,Amazon,Sandalwood Cream,Creams,72,408,20,23500.8,10084.41,13416.39,Retail,Cash,Ramesh
+IH2400080,2024-02-03,East,Bihar,Patna,Flipkart,Kumkumadi Tailam,Skincare,38,902,5,32562.2,15108.91,17453.29,Retail,Debit Card,Ramesh
+IH2400081,2024-05-07,South,Kerala,Kochi,Flipkart,Sandalwood Cream,Creams,82,408,15,28437.6,12362.87,16074.73,Retail,Cash,Kiran
+IH2400082,2024-10-28,East,Assam,Guwahati,Flipkart,Ubtan Face Pack,Face Care,50,522,20,20880.0,9324.14,11555.86,Retail,Credit Card,Kiran
+IH2400083,2024-12-04,South,Telangana,Hyderabad,Website,Neem Face Wash,Face Care,44,313,5,13083.4,5444.76,7638.64,Retail,RTGS,Deepak
+IH2400084,2024-08-28,North,Delhi,Delhi,Website,Neem Face Wash,Face Care,97,313,15,25806.85,10789.05,15017.8,Retail,RTGS,Priya
+IH2400085,2024-05-15,West,Gujarat,Surat,Flipkart,Kumkumadi Tailam,Skincare,63,902,20,45460.8,21125.56,24335.24,Retail,UPI,Ramesh
+IH2400086,2024-03-25,North,Uttar Pradesh,Lucknow,Website,Sandalwood Cream,Creams,102,408,15,35373.6,16253.38,19120.22,Retail,NEFT,Deepak
+IH2400087,2024-09-09,East,West Bengal,Kolkata,Website,Ubtan Face Pack,Face Care,135,522,15,59899.5,27839.54,32059.96,Retail,UPI,Ramesh
+IH2400088,2024-04-27,South,Karnataka,Bengaluru,Website,Ubtan Face Pack,Face Care,69,522,10,32416.2,15137.37,17278.83,Retail,Debit Card,Priya
+IH2400089,2024-10-26,East,Bihar,Patna,Amazon,Kumkumadi Tailam,Skincare,129,902,8,107049.36,48991.78,58057.58,Retail,Credit Card,Kiran
+IH2400090,2024-07-29,East,Assam,Guwahati,Retail Store,Ayurvedic Body Oil,Body Care,165,712,0,117480.0,50688.24,66791.76,Retail,Debit Card,Kiran
+IH2400091,2024-02-29,East,West Bengal,Kolkata,Retail Store,Ayurvedic Body Oil,Body Care,143,712,10,91634.4,39947.21,51687.19,Retail,Debit Card,Deepak
+IH2400092,2024-09-12,East,West Bengal,Kolkata,Website,Neem Face Wash,Face Care,58,313,20,14523.2,6062.0,8461.2,Retail,RTGS,Anjali
+IH2400093,2024-03-03,South,Kerala,Kochi,Distributor,Neem Face Wash,Face Care,184,313,10,51832.8,21883.53,29949.27,Wholesale,UPI,Priya
+IH2400094,2024-02-28,East,West Bengal,Kolkata,Distributor,Ayurvedic Body Oil,Body Care,280,712,20,159488.0,70275.8,89212.2,Wholesale,RTGS,Kiran
+IH2400095,2024-07-31,East,Bihar,Patna,Amazon,Neem Face Wash,Face Care,62,313,8,17853.52,7814.82,10038.7,Retail,NEFT,Sneha
+IH2400096,2024-03-10,South,Karnataka,Bengaluru,Amazon,Sandalwood Cream,Creams,154,408,5,59690.4,24957.32,34733.08,Retail,RTGS,Kiran
+IH2400097,2024-10-27,East,Odisha,Bhubaneswar,Flipkart,Sandalwood Cream,Creams,113,408,8,42415.68,19153.5,23262.18,Retail,Cash,Anjali
+IH2400098,2024-06-13,West,Maharashtra,Pune,Amazon,Ubtan Face Pack,Face Care,130,522,0,67860.0,31979.46,35880.54,Retail,RTGS,Rahul
+IH2400099,2024-07-14,East,Odisha,Bhubaneswar,Retail Store,Sandalwood Cream,Creams,57,408,10,20930.4,9292.43,11637.97,Retail,UPI,Rahul
+IH2400100,2024-08-13,South,Kerala,Kochi,Website,Sandalwood Cream,Creams,61,408,10,22399.2,10008.2,12391.0,Retail,Credit Card,Ramesh
+IH2400101,2024-08-28,North,Uttar Pradesh,Lucknow,Flipkart,Ubtan Face Pack,Face Care,45,522,18,19261.8,9172.62,10089.18,Retail,NEFT,Anjali
+IH2400102,2024-06-11,East,West Bengal,Kolkata,Website,Ubtan Face Pack,Face Care,98,522,20,40924.8,19289.96,21634.84,Retail,Cash,Ramesh
+IH2400103,2024-11-20,South,Tamil Nadu,Chennai,Flipkart,Neem Face Wash,Face Care,32,313,0,10016.0,4331.3,5684.7,Retail,Debit Card,Kiran
+IH2400104,2024-07-10,East,Odisha,Bhubaneswar,Flipkart,Neem Face Wash,Face Care,169,313,15,44962.45,18280.04,26682.41,Retail,Credit Card,Ramesh
+IH2400105,2024-11-08,East,Odisha,Bhubaneswar,Retail Store,Sandalwood Cream,Creams,61,408,5,23643.6,10546.65,13096.95,Retail,Cash,Kiran
+IH2400106,2024-12-07,South,Tamil Nadu,Chennai,Flipkart,Herbal Aloe Gel,Skincare,65,351,0,22815.0,10247.25,12567.75,Retail,NEFT,Kiran
+IH2400107,2024-11-23,East,Assam,Guwahati,Distributor,Sandalwood Cream,Creams,126,408,20,41126.4,18735.0,22391.4,Wholesale,UPI,Priya
+IH2400108,2024-07-14,North,Uttar Pradesh,Lucknow,Website,Ayurvedic Body Oil,Body Care,126,712,5,85226.4,38604.73,46621.67,Retail,RTGS,Rahul
+IH2400109,2024-01-26,East,Assam,Guwahati,Flipkart,Neem Face Wash,Face Care,115,313,5,34195.25,13916.97,20278.28,Retail,Debit Card,Sneha
+IH2400110,2024-12-03,West,Maharashtra,Mumbai,Flipkart,Ayurvedic Body Oil,Body Care,104,712,15,62940.8,27001.69,35939.11,Retail,Debit Card,Sneha
+IH2400111,2024-03-08,South,Karnataka,Bengaluru,Distributor,Herbal Aloe Gel,Skincare,114,351,5,38013.3,16814.04,21199.26,Wholesale,Debit Card,Deepak
+IH2400112,2024-09-13,North,Punjab,Ludhiana,Retail Store,Herbal Aloe Gel,Skincare,148,351,20,41558.4,17504.03,24054.37,Retail,Debit Card,Rahul
+IH2400113,2024-02-28,East,West Bengal,Kolkata,Distributor,Neem Face Wash,Face Care,140,313,18,35932.4,15429.99,20502.41,Wholesale,Cash,Rahul
+IH2400114,2024-10-12,North,Delhi,Delhi,Website,Sandalwood Cream,Creams,162,408,5,62791.2,27265.05,35526.15,Retail,RTGS,Sneha
+IH2400115,2024-05-14,East,Assam,Guwahati,Flipkart,Kumkumadi Tailam,Skincare,145,902,0,130790.0,61116.93,69673.07,Retail,NEFT,Kiran
+IH2400116,2024-11-08,West,Maharashtra,Mumbai,Distributor,Ayurvedic Body Oil,Body Care,383,712,8,250880.32,111860.84,139019.48,Wholesale,Credit Card,Ramesh
+IH2400117,2024-01-20,North,Haryana,Gurugram,Website,Kumkumadi Tailam,Skincare,162,902,5,138817.8,62178.43,76639.37,Retail,RTGS,Sneha
+IH2400118,2024-12-22,East,Odisha,Bhubaneswar,Flipkart,Sandalwood Cream,Creams,150,408,12,53856.0,24737.05,29118.95,Retail,Debit Card,Ramesh
+IH2400119,2024-12-19,North,Punjab,Ludhiana,Amazon,Sandalwood Cream,Creams,85,408,18,28437.6,12011.23,16426.37,Retail,RTGS,Kiran
+IH2400120,2024-10-05,North,Delhi,Delhi,Website,Sandalwood Cream,Creams,56,408,20,18278.4,8303.23,9975.17,Retail,UPI,Sneha
+IH2400121,2024-04-18,South,Andhra Pradesh,Rajahmundry,Website,Herbal Aloe Gel,Skincare,57,351,15,17005.95,7096.99,9908.96,Retail,NEFT,Priya
+IH2400122,2024-10-27,West,Maharashtra,Pune,Distributor,Herbal Aloe Gel,Skincare,330,351,0,115830.0,51592.01,64237.99,Wholesale,Credit Card,Priya
+IH2400123,2024-10-03,North,Punjab,Ludhiana,Flipkart,Kumkumadi Tailam,Skincare,31,902,5,26563.9,11784.3,14779.6,Retail,Credit Card,Deepak
+IH2400124,2024-06-14,South,Telangana,Hyderabad,Website,Herbal Aloe Gel,Skincare,132,351,10,41698.8,18370.97,23327.83,Retail,Cash,Anjali
+IH2400125,2024-07-04,South,Tamil Nadu,Chennai,Website,Ubtan Face Pack,Face Care,36,522,15,15973.2,7648.01,8325.19,Retail,RTGS,Deepak
+IH2400126,2024-06-03,East,West Bengal,Kolkata,Retail Store,Kumkumadi Tailam,Skincare,127,902,10,103098.6,44575.53,58523.07,Retail,RTGS,Anjali
+IH2400127,2024-02-07,South,Karnataka,Bengaluru,Website,Ubtan Face Pack,Face Care,57,522,5,28266.3,13175.53,15090.77,Retail,NEFT,Sneha
+IH2400128,2024-06-15,East,Assam,Guwahati,Amazon,Sandalwood Cream,Creams,135,408,5,52326.0,23488.01,28837.99,Retail,RTGS,Sneha
+IH2400129,2024-10-09,West,Gujarat,Surat,Retail Store,Sandalwood Cream,Creams,130,408,8,48796.8,21370.75,27426.05,Retail,Cash,Sneha
+IH2400130,2024-02-18,North,Haryana,Gurugram,Flipkart,Herbal Aloe Gel,Skincare,120,351,20,33696.0,14759.97,18936.03,Retail,Cash,Ramesh
+IH2400131,2024-02-16,South,Andhra Pradesh,Rajahmundry,Website,Sandalwood Cream,Creams,120,408,18,40147.2,17764.35,22382.85,Retail,NEFT,Deepak
+IH2400132,2024-10-14,North,Delhi,Delhi,Amazon,Sandalwood Cream,Creams,133,408,18,44496.48,20011.25,24485.23,Retail,Debit Card,Deepak
+IH2400133,2024-06-08,North,Delhi,Delhi,Amazon,Ubtan Face Pack,Face Care,64,522,12,29399.04,13150.64,16248.4,Retail,UPI,Kiran
+IH2400134,2024-10-11,North,Delhi,Delhi,Flipkart,Herbal Aloe Gel,Skincare,134,351,18,38567.88,17371.19,21196.69,Retail,NEFT,Deepak
+IH2400135,2024-12-11,South,Kerala,Kochi,Distributor,Ayurvedic Body Oil,Body Care,161,712,0,114632.0,50414.83,64217.17,Wholesale,Debit Card,Kiran
+IH2400136,2024-06-28,South,Telangana,Hyderabad,Flipkart,Neem Face Wash,Face Care,127,313,0,39751.0,17097.73,22653.27,Retail,UPI,Ramesh
+IH2400137,2024-09-28,West,Gujarat,Surat,Amazon,Sandalwood Cream,Creams,65,408,8,24398.4,10973.19,13425.21,Retail,NEFT,Deepak
+IH2400138,2024-02-13,South,Telangana,Hyderabad,Distributor,Neem Face Wash,Face Care,50,313,12,13772.0,5652.42,8119.58,Wholesale,RTGS,Anjali
+IH2400139,2024-09-05,East,Bihar,Patna,Website,Herbal Aloe Gel,Skincare,156,351,5,52018.2,22211.06,29807.14,Retail,Debit Card,Sneha
+IH2400140,2024-12-13,East,Assam,Guwahati,Website,Kumkumadi Tailam,Skincare,178,902,0,160556.0,70114.65,90441.35,Retail,Credit Card,Rahul
+IH2400141,2024-03-11,North,Uttar Pradesh,Lucknow,Website,Herbal Aloe Gel,Skincare,152,351,15,45349.2,18867.76,26481.44,Retail,Cash,Deepak
+IH2400142,2024-12-26,West,Rajasthan,Jaipur,Distributor,Ubtan Face Pack,Face Care,206,522,0,107532.0,51254.18,56277.82,Wholesale,UPI,Anjali
+IH2400143,2024-01-10,East,West Bengal,Kolkata,Flipkart,Herbal Aloe Gel,Skincare,171,351,10,54018.9,23553.65,30465.25,Retail,Debit Card,Ramesh
+IH2400144,2024-07-26,South,Karnataka,Bengaluru,Distributor,Neem Face Wash,Face Care,341,313,10,96059.7,41110.06,54949.64,Wholesale,Debit Card,Ramesh
+IH2400145,2024-08-11,South,Telangana,Hyderabad,Flipkart,Sandalwood Cream,Creams,159,408,0,64872.0,29601.29,35270.71,Retail,RTGS,Kiran
+IH2400146,2024-04-23,North,Punjab,Ludhiana,Amazon,Kumkumadi Tailam,Skincare,54,902,10,43837.2,19122.91,24714.29,Retail,Debit Card,Kiran
+IH2400147,2024-11-26,West,Maharashtra,Pune,Website,Kumkumadi Tailam,Skincare,75,902,5,64267.5,27916.46,36351.04,Retail,RTGS,Ramesh
+IH2400148,2024-03-31,East,Bihar,Patna,Distributor,Ubtan Face Pack,Face Care,254,522,15,112699.8,53822.52,58877.28,Wholesale,RTGS,Sneha
+IH2400149,2024-11-15,North,Uttar Pradesh,Lucknow,Amazon,Neem Face Wash,Face Care,145,313,10,40846.5,16817.26,24029.24,Retail,Debit Card,Deepak
+IH2400150,2024-01-29,North,Delhi,Delhi,Amazon,Herbal Aloe Gel,Skincare,34,351,0,11934.0,5301.83,6632.17,Retail,UPI,Sneha
+IH2400151,2024-02-16,East,Bihar,Patna,Flipkart,Ubtan Face Pack,Face Care,35,522,10,16443.0,7798.12,8644.88,Retail,RTGS,Priya
+IH2400152,2024-06-13,East,Odisha,Bhubaneswar,Amazon,Kumkumadi Tailam,Skincare,112,902,20,80819.2,34856.9,45962.3,Retail,RTGS,Priya
+IH2400153,2024-01-21,West,Gujarat,Surat,Flipkart,Sandalwood Cream,Creams,65,408,8,24398.4,11183.96,13214.44,Retail,Cash,Anjali
+IH2400154,2024-06-22,South,Karnataka,Bengaluru,Amazon,Kumkumadi Tailam,Skincare,167,902,12,132557.92,58363.48,74194.44,Retail,RTGS,Rahul
+IH2400155,2024-12-02,West,Gujarat,Ahmedabad,Flipkart,Kumkumadi Tailam,Skincare,61,902,20,44017.6,19432.03,24585.57,Retail,RTGS,Sneha
+IH2400156,2024-12-05,East,Odisha,Bhubaneswar,Distributor,Ubtan Face Pack,Face Care,68,522,8,32656.32,14836.66,17819.66,Wholesale,Debit Card,Rahul
+IH2400157,2024-03-06,South,Tamil Nadu,Chennai,Amazon,Ubtan Face Pack,Face Care,117,522,8,56188.08,27012.63,29175.45,Retail,Debit Card,Rahul
+IH2400158,2024-09-05,West,Maharashtra,Pune,Website,Neem Face Wash,Face Care,100,313,18,25666.0,10349.76,15316.24,Retail,NEFT,Rahul
+IH2400159,2024-09-26,South,Karnataka,Bengaluru,Website,Ubtan Face Pack,Face Care,121,522,5,60003.9,26720.87,33283.03,Retail,RTGS,Rahul
+IH2400160,2024-11-15,West,Gujarat,Surat,Amazon,Kumkumadi Tailam,Skincare,85,902,20,61336.0,27906.46,33429.54,Retail,RTGS,Rahul
+IH2400161,2024-08-17,West,Rajasthan,Jaipur,Amazon,Neem Face Wash,Face Care,145,313,20,36308.0,14782.75,21525.25,Retail,RTGS,Deepak
+IH2400162,2024-08-13,East,Assam,Guwahati,Amazon,Sandalwood Cream,Creams,132,408,20,43084.8,19558.05,23526.75,Retail,NEFT,Priya
+IH2400163,2024-05-08,South,Tamil Nadu,Chennai,Flipkart,Herbal Aloe Gel,Skincare,51,351,15,15215.85,6553.22,8662.63,Retail,UPI,Kiran
+IH2400164,2024-02-12,West,Gujarat,Ahmedabad,Retail Store,Sandalwood Cream,Creams,62,408,18,20742.72,8754.16,11988.56,Retail,Credit Card,Rahul
+IH2400165,2024-08-18,North,Delhi,Delhi,Website,Sandalwood Cream,Creams,153,408,8,57430.08,24981.59,32448.49,Retail,UPI,Kiran
+IH2400166,2024-04-24,South,Karnataka,Bengaluru,Distributor,Kumkumadi Tailam,Skincare,357,902,8,296252.88,128595.14,167657.74,Wholesale,UPI,Kiran
+IH2400167,2024-08-29,West,Gujarat,Surat,Flipkart,Sandalwood Cream,Creams,45,408,0,18360.0,7848.69,10511.31,Retail,Credit Card,Deepak
+IH2400168,2024-11-07,East,West Bengal,Kolkata,Website,Herbal Aloe Gel,Skincare,56,351,0,19656.0,8384.32,11271.68,Retail,NEFT,Anjali
+IH2400169,2024-02-02,South,Tamil Nadu,Chennai,Flipkart,Ubtan Face Pack,Face Care,156,522,10,73288.8,34449.62,38839.18,Retail,Debit Card,Anjali
+IH2400170,2024-01-01,North,Punjab,Ludhiana,Amazon,Ubtan Face Pack,Face Care,46,522,10,21610.8,9802.39,11808.41,Retail,NEFT,Deepak
+IH2400171,2024-09-16,South,Tamil Nadu,Chennai,Website,Sandalwood Cream,Creams,124,408,20,40473.6,17369.67,23103.93,Retail,UPI,Kiran
+IH2400172,2024-02-04,North,Punjab,Ludhiana,Flipkart,Ayurvedic Body Oil,Body Care,51,712,15,30865.2,14216.0,16649.2,Retail,Debit Card,Priya
+IH2400173,2024-01-23,North,Uttar Pradesh,Lucknow,Website,Ayurvedic Body Oil,Body Care,143,712,20,81452.8,36575.07,44877.73,Retail,Credit Card,Rahul
+IH2400174,2024-03-10,South,Tamil Nadu,Chennai,Website,Kumkumadi Tailam,Skincare,36,902,15,27601.2,12899.71,14701.49,Retail,Debit Card,Kiran
+IH2400175,2024-09-20,East,Bihar,Patna,Website,Herbal Aloe Gel,Skincare,73,351,8,23573.16,10503.54,13069.62,Retail,UPI,Rahul
+IH2400176,2024-12-01,North,Uttar Pradesh,Lucknow,Distributor,Kumkumadi Tailam,Skincare,248,902,18,183430.72,84552.18,98878.54,Wholesale,Cash,Kiran
+IH2400177,2024-04-05,East,Bihar,Patna,Retail Store,Herbal Aloe Gel,Skincare,157,351,5,52351.65,21571.62,30780.03,Retail,Cash,Ramesh
+IH2400178,2024-08-08,West,Rajasthan,Jaipur,Amazon,Herbal Aloe Gel,Skincare,45,351,8,14531.4,6120.81,8410.59,Retail,Cash,Deepak
+IH2400179,2024-08-06,West,Gujarat,Surat,Amazon,Herbal Aloe Gel,Skincare,115,351,12,35521.2,15174.74,20346.46,Retail,RTGS,Rahul
+IH2400180,2024-01-30,South,Tamil Nadu,Chennai,Amazon,Herbal Aloe Gel,Skincare,65,351,20,18252.0,7568.0,10684.0,Retail,NEFT,Sneha
+IH2400181,2024-08-12,South,Telangana,Hyderabad,Website,Kumkumadi Tailam,Skincare,118,902,8,97921.12,46045.06,51876.06,Retail,UPI,Deepak
+IH2400182,2024-03-19,East,Assam,Guwahati,Amazon,Herbal Aloe Gel,Skincare,44,351,10,13899.6,5994.44,7905.16,Retail,Cash,Kiran
+IH2400183,2024-11-28,North,Punjab,Ludhiana,Website,Kumkumadi Tailam,Skincare,72,902,10,58449.6,26005.07,32444.53,Retail,NEFT,Ramesh
+IH2400184,2024-05-14,North,Haryana,Gurugram,Retail Store,Neem Face Wash,Face Care,98,313,15,26072.9,11496.65,14576.25,Retail,Credit Card,Ramesh
+IH2400185,2024-03-10,South,Tamil Nadu,Chennai,Retail Store,Neem Face Wash,Face Care,138,313,20,34555.2,14963.84,19591.36,Retail,Debit Card,Sneha
+IH2400186,2024-06-26,South,Kerala,Kochi,Website,Ubtan Face Pack,Face Care,101,522,18,43232.04,20307.96,22924.08,Retail,RTGS,Sneha
+IH2400187,2024-03-30,North,Punjab,Ludhiana,Retail Store,Kumkumadi Tailam,Skincare,60,902,5,51414.0,23122.47,28291.53,Retail,Debit Card,Deepak
+IH2400188,2024-10-20,North,Haryana,Gurugram,Website,Ubtan Face Pack,Face Care,47,522,0,24534.0,11170.71,13363.29,Retail,RTGS,Sneha
+IH2400189,2024-09-02,East,Bihar,Patna,Website,Ubtan Face Pack,Face Care,106,522,12,48692.16,22286.34,26405.82,Retail,RTGS,Deepak
+IH2400190,2024-06-25,West,Rajasthan,Jaipur,Flipkart,Ayurvedic Body Oil,Body Care,58,712,10,37166.4,17411.79,19754.61,Retail,UPI,Rahul
+IH2400191,2024-03-04,West,Gujarat,Ahmedabad,Website,Neem Face Wash,Face Care,82,313,8,23612.72,10354.6,13258.12,Retail,Debit Card,Rahul
+IH2400192,2024-02-10,North,Punjab,Ludhiana,Retail Store,Ayurvedic Body Oil,Body Care,95,712,5,64258.0,28345.95,35912.05,Retail,NEFT,Ramesh
+IH2400193,2024-09-14,West,Rajasthan,Jaipur,Website,Ubtan Face Pack,Face Care,179,522,8,85962.96,41219.31,44743.65,Retail,UPI,Rahul
+IH2400194,2024-01-15,South,Andhra Pradesh,Rajahmundry,Distributor,Ayurvedic Body Oil,Body Care,160,712,12,100249.6,46316.63,53932.97,Wholesale,Cash,Deepak
+IH2400195,2024-11-23,South,Tamil Nadu,Chennai,Flipkart,Ayurvedic Body Oil,Body Care,102,712,10,65361.6,30308.89,35052.71,Retail,RTGS,Anjali
+IH2400196,2024-06-01,East,West Bengal,Kolkata,Website,Ayurvedic Body Oil,Body Care,137,712,10,87789.6,39364.85,48424.75,Retail,Debit Card,Deepak
+IH2400197,2024-03-14,North,Uttar Pradesh,Lucknow,Retail Store,Ayurvedic Body Oil,Body Care,113,712,20,64364.8,27894.71,36470.09,Retail,Debit Card,Deepak
+IH2400198,2024-10-14,South,Karnataka,Bengaluru,Amazon,Neem Face Wash,Face Care,93,313,10,26198.1,10608.05,15590.05,Retail,UPI,Kiran
+IH2400199,2024-07-15,East,Odisha,Bhubaneswar,Distributor,Neem Face Wash,Face Care,320,313,15,85136.0,34648.06,50487.94,Wholesale,Credit Card,Anjali
+IH2400200,2024-09-20,East,Bihar,Patna,Amazon,Herbal Aloe Gel,Skincare,48,351,20,13478.4,5798.87,7679.53,Retail,Credit Card,Priya
+IH2400201,2024-10-25,North,Delhi,Delhi,Website,Kumkumadi Tailam,Skincare,177,902,18,130916.28,59821.11,71095.17,Retail,Cash,Kiran
+IH2400202,2024-10-01,South,Andhra Pradesh,Rajahmundry,Website,Sandalwood Cream,Creams,92,408,15,31905.6,14408.88,17496.72,Retail,Debit Card,Ramesh
+IH2400203,2024-07-24,South,Kerala,Kochi,Website,Ubtan Face Pack,Face Care,166,522,8,79719.84,36254.35,43465.49,Retail,Cash,Rahul
+IH2400204,2024-10-08,North,Delhi,Delhi,Retail Store,Neem Face Wash,Face Care,125,313,8,35995.0,15853.82,20141.18,Retail,NEFT,Kiran
+IH2400205,2024-03-14,West,Rajasthan,Jaipur,Amazon,Ubtan Face Pack,Face Care,35,522,0,18270.0,8099.16,10170.84,Retail,Debit Card,Rahul
+IH2400206,2024-08-30,East,Odisha,Bhubaneswar,Retail Store,Ubtan Face Pack,Face Care,60,522,8,28814.4,13404.49,15409.91,Retail,Credit Card,Anjali
+IH2400207,2024-11-11,North,Uttar Pradesh,Lucknow,Distributor,Ubtan Face Pack,Face Care,297,522,10,139530.6,64587.95,74942.65,Wholesale,Cash,Rahul
+IH2400208,2024-01-09,North,Uttar Pradesh,Lucknow,Website,Ayurvedic Body Oil,Body Care,131,712,12,82079.36,38031.8,44047.56,Retail,RTGS,Rahul
+IH2400209,2024-12-18,South,Kerala,Kochi,Website,Sandalwood Cream,Creams,173,408,10,63525.6,28570.11,34955.49,Retail,NEFT,Anjali
+IH2400210,2024-03-28,East,Odisha,Bhubaneswar,Website,Ayurvedic Body Oil,Body Care,171,712,20,97401.6,42120.86,55280.74,Retail,UPI,Anjali
+IH2400211,2024-06-09,East,Odisha,Bhubaneswar,Flipkart,Sandalwood Cream,Creams,130,408,10,47736.0,21237.99,26498.01,Retail,Cash,Rahul
+IH2400212,2024-02-01,West,Rajasthan,Jaipur,Flipkart,Neem Face Wash,Face Care,147,313,10,41409.9,17068.23,24341.67,Retail,Credit Card,Anjali
+IH2400213,2024-09-29,North,Uttar Pradesh,Lucknow,Distributor,Ayurvedic Body Oil,Body Care,394,712,15,238448.8,110560.21,127888.59,Wholesale,Debit Card,Deepak
+IH2400214,2024-09-04,West,Maharashtra,Pune,Flipkart,Herbal Aloe Gel,Skincare,82,351,20,23025.6,10378.49,12647.11,Retail,Debit Card,Sneha
+IH2400215,2024-04-16,East,Assam,Guwahati,Amazon,Sandalwood Cream,Creams,95,408,8,35659.2,15805.33,19853.87,Retail,NEFT,Anjali
+IH2400216,2024-07-21,North,Punjab,Ludhiana,Website,Herbal Aloe Gel,Skincare,45,351,8,14531.4,6212.5,8318.9,Retail,Debit Card,Sneha
+IH2400217,2024-09-02,West,Maharashtra,Pune,Website,Ubtan Face Pack,Face Care,168,522,15,74541.6,33045.38,41496.22,Retail,NEFT,Sneha
+IH2400218,2024-10-27,West,Maharashtra,Pune,Flipkart,Kumkumadi Tailam,Skincare,160,902,5,137104.0,60048.49,77055.51,Retail,UPI,Anjali
+IH2400219,2024-06-18,East,West Bengal,Kolkata,Distributor,Ayurvedic Body Oil,Body Care,27,712,20,15379.2,7251.38,8127.82,Wholesale,Credit Card,Anjali
+IH2400220,2024-11-30,East,Bihar,Patna,Website,Ayurvedic Body Oil,Body Care,98,712,8,64193.92,29308.72,34885.2,Retail,UPI,Sneha
+IH2400221,2024-10-20,West,Rajasthan,Jaipur,Distributor,Ayurvedic Body Oil,Body Care,44,712,20,25062.4,10911.62,14150.78,Wholesale,Credit Card,Ramesh
+IH2400222,2024-07-22,East,Odisha,Bhubaneswar,Retail Store,Ayurvedic Body Oil,Body Care,99,712,18,57800.16,24733.67,33066.49,Retail,NEFT,Deepak
+IH2400223,2024-02-24,North,Uttar Pradesh,Lucknow,Retail Store,Sandalwood Cream,Creams,164,408,10,60220.8,27528.58,32692.22,Retail,Credit Card,Rahul
+IH2400224,2024-09-15,East,Assam,Guwahati,Distributor,Neem Face Wash,Face Care,194,313,5,57685.9,24128.54,33557.36,Wholesale,Debit Card,Sneha
+IH2400225,2024-04-05,South,Karnataka,Bengaluru,Flipkart,Herbal Aloe Gel,Skincare,74,351,5,24675.3,10988.26,13687.04,Retail,Cash,Rahul
+IH2400226,2024-08-06,North,Delhi,Delhi,Flipkart,Sandalwood Cream,Creams,72,408,20,23500.8,10317.04,13183.76,Retail,Credit Card,Ramesh
+IH2400227,2024-05-13,East,Odisha,Bhubaneswar,Distributor,Sandalwood Cream,Creams,193,408,8,72444.48,32586.02,39858.46,Wholesale,UPI,Kiran
+IH2400228,2024-11-30,North,Punjab,Ludhiana,Flipkart,Kumkumadi Tailam,Skincare,144,902,8,119496.96,53265.02,66231.94,Retail,NEFT,Sneha
+IH2400229,2024-06-08,South,Karnataka,Bengaluru,Flipkart,Herbal Aloe Gel,Skincare,81,351,20,22744.8,9758.93,12985.87,Retail,Cash,Sneha
+IH2400230,2024-11-06,North,Haryana,Gurugram,Flipkart,Ayurvedic Body Oil,Body Care,145,712,15,87754.0,40681.86,47072.14,Retail,Credit Card,Rahul
+IH2400231,2024-05-06,South,Kerala,Kochi,Flipkart,Sandalwood Cream,Creams,117,408,0,47736.0,21138.62,26597.38,Retail,UPI,Rahul
+IH2400232,2024-10-07,West,Rajasthan,Jaipur,Website,Ubtan Face Pack,Face Care,108,522,18,46228.32,21141.35,25086.97,Retail,RTGS,Priya
+IH2400233,2024-10-25,East,West Bengal,Kolkata,Amazon,Ubtan Face Pack,Face Care,39,522,10,18322.2,8439.38,9882.82,Retail,Cash,Deepak
+IH2400234,2024-01-30,East,Assam,Guwahati,Website,Ayurvedic Body Oil,Body Care,90,712,18,52545.6,24226.74,28318.86,Retail,NEFT,Ramesh
+IH2400235,2024-01-24,East,Assam,Guwahati,Website,Ayurvedic Body Oil,Body Care,40,712,20,22784.0,9810.92,12973.08,Retail,Cash,Ramesh
+IH2400236,2024-05-26,East,Odisha,Bhubaneswar,Distributor,Neem Face Wash,Face Care,398,313,12,109625.12,45675.88,63949.24,Wholesale,Cash,Anjali
+IH2400237,2024-07-12,East,West Bengal,Kolkata,Retail Store,Ayurvedic Body Oil,Body Care,163,712,5,110253.2,51401.46,58851.74,Retail,UPI,Priya
+IH2400238,2024-10-02,East,Odisha,Bhubaneswar,Retail Store,Ayurvedic Body Oil,Body Care,25,712,15,15130.0,7134.28,7995.72,Retail,Cash,Sneha
+IH2400239,2024-10-05,East,Bihar,Patna,Website,Neem Face Wash,Face Care,113,313,5,33600.55,13672.61,19927.94,Retail,RTGS,Rahul
+IH2400240,2024-02-27,South,Tamil Nadu,Chennai,Distributor,Ubtan Face Pack,Face Care,33,522,5,16364.7,7202.03,9162.67,Wholesale,NEFT,Ramesh
+IH2400241,2024-08-16,South,Telangana,Hyderabad,Website,Ayurvedic Body Oil,Body Care,137,712,5,92666.8,40521.07,52145.73,Retail,UPI,Priya
+IH2400242,2024-09-14,North,Punjab,Ludhiana,Flipkart,Ayurvedic Body Oil,Body Care,172,712,12,107768.32,49332.45,58435.87,Retail,Debit Card,Priya
+IH2400243,2024-06-03,West,Rajasthan,Jaipur,Amazon,Neem Face Wash,Face Care,95,313,0,29735.0,13048.84,16686.16,Retail,RTGS,Priya
+IH2400244,2024-11-16,East,Bihar,Patna,Retail Store,Kumkumadi Tailam,Skincare,122,902,15,93537.4,41328.85,52208.55,Retail,Cash,Anjali
+IH2400245,2024-03-17,North,Haryana,Gurugram,Distributor,Neem Face Wash,Face Care,267,313,5,79392.45,32429.0,46963.45,Wholesale,RTGS,Priya
+IH2400246,2024-08-25,South,Kerala,Kochi,Retail Store,Sandalwood Cream,Creams,167,408,10,61322.4,26680.79,34641.61,Retail,Debit Card,Priya
+IH2400247,2024-06-18,South,Tamil Nadu,Chennai,Website,Herbal Aloe Gel,Skincare,73,351,0,25623.0,10882.56,14740.44,Retail,NEFT,Deepak
+IH2400248,2024-01-21,South,Telangana,Hyderabad,Distributor,Ubtan Face Pack,Face Care,311,522,5,154224.9,68878.21,85346.69,Wholesale,Debit Card,Kiran
+IH2400249,2024-01-08,West,Maharashtra,Pune,Website,Ayurvedic Body Oil,Body Care,147,712,20,83731.2,38416.14,45315.06,Retail,RTGS,Priya
+IH2400250,2024-07-22,West,Rajasthan,Jaipur,Distributor,Herbal Aloe Gel,Skincare,219,351,10,69182.1,30190.72,38991.38,Wholesale,Debit Card,Kiran
+IH2400251,2024-07-03,East,Bihar,Patna,Distributor,Kumkumadi Tailam,Skincare,394,902,10,319849.2,148821.96,171027.24,Wholesale,Credit Card,Kiran
+IH2400252,2024-06-09,East,West Bengal,Kolkata,Retail Store,Ubtan Face Pack,Face Care,62,522,0,32364.0,14966.81,17397.19,Retail,NEFT,Deepak
+IH2400253,2024-08-01,North,Punjab,Ludhiana,Amazon,Neem Face Wash,Face Care,122,313,10,34367.4,14067.29,20300.11,Retail,NEFT,Sneha
+IH2400254,2024-12-16,North,Uttar Pradesh,Lucknow,Retail Store,Sandalwood Cream,Creams,150,408,10,55080.0,24799.33,30280.67,Retail,Debit Card,Priya
+IH2400255,2024-03-12,East,Odisha,Bhubaneswar,Retail Store,Ubtan Face Pack,Face Care,40,522,10,18792.0,8937.42,9854.58,Retail,UPI,Rahul
+IH2400256,2024-12-08,South,Andhra Pradesh,Rajahmundry,Website,Sandalwood Cream,Creams,84,408,0,34272.0,14553.44,19718.56,Retail,Credit Card,Deepak
+IH2400257,2024-08-21,North,Delhi,Delhi,Flipkart,Ubtan Face Pack,Face Care,148,522,12,67985.28,29758.77,38226.51,Retail,NEFT,Deepak
+IH2400258,2024-07-29,South,Andhra Pradesh,Rajahmundry,Distributor,Ubtan Face Pack,Face Care,299,522,20,124862.4,54663.33,70199.07,Wholesale,RTGS,Sneha
+IH2400259,2024-08-08,West,Maharashtra,Mumbai,Flipkart,Kumkumadi Tailam,Skincare,86,902,5,73693.4,33249.76,40443.64,Retail,Debit Card,Kiran
+IH2400260,2024-07-22,South,Karnataka,Bengaluru,Amazon,Sandalwood Cream,Creams,87,408,20,28396.8,12152.06,16244.74,Retail,RTGS,Rahul
+IH2400261,2024-02-11,South,Andhra Pradesh,Rajahmundry,Amazon,Sandalwood Cream,Creams,166,408,10,60955.2,27187.05,33768.15,Retail,RTGS,Priya
+IH2400262,2024-02-12,East,Bihar,Patna,Distributor,Ayurvedic Body Oil,Body Care,314,712,20,178854.4,84298.15,94556.25,Wholesale,NEFT,Ramesh
+IH2400263,2024-04-27,West,Rajasthan,Jaipur,Website,Sandalwood Cream,Creams,44,408,15,15259.2,6566.59,8692.61,Retail,NEFT,Deepak
+IH2400264,2024-12-02,South,Telangana,Hyderabad,Website,Herbal Aloe Gel,Skincare,78,351,12,24092.64,10621.17,13471.47,Retail,RTGS,Rahul
+IH2400265,2024-07-22,South,Karnataka,Bengaluru,Flipkart,Neem Face Wash,Face Care,170,313,18,43632.2,18122.4,25509.8,Retail,NEFT,Kiran
+IH2400266,2024-07-15,West,Maharashtra,Mumbai,Distributor,Ubtan Face Pack,Face Care,202,522,0,105444.0,48199.09,57244.91,Wholesale,UPI,Kiran
+IH2400267,2024-11-05,East,Assam,Guwahati,Flipkart,Kumkumadi Tailam,Skincare,140,902,10,113652.0,50405.97,63246.03,Retail,Cash,Anjali
+IH2400268,2024-04-05,East,West Bengal,Kolkata,Website,Ubtan Face Pack,Face Care,88,522,15,39045.6,17210.28,21835.32,Retail,Credit Card,Anjali
+IH2400269,2024-12-30,West,Gujarat,Surat,Amazon,Herbal Aloe Gel,Skincare,48,351,0,16848.0,7105.74,9742.26,Retail,Debit Card,Rahul
+IH2400270,2024-05-18,South,Telangana,Hyderabad,Website,Kumkumadi Tailam,Skincare,139,902,10,112840.2,50841.26,61998.94,Retail,UPI,Ramesh
+IH2400271,2024-02-15,North,Delhi,Delhi,Flipkart,Ubtan Face Pack,Face Care,108,522,18,46228.32,20228.02,26000.3,Retail,Cash,Anjali
+IH2400272,2024-02-13,West,Rajasthan,Jaipur,Website,Ubtan Face Pack,Face Care,122,522,5,60499.8,27186.81,33312.99,Retail,Debit Card,Anjali
+IH2400273,2024-03-15,South,Telangana,Hyderabad,Website,Sandalwood Cream,Creams,101,408,10,37087.2,15627.97,21459.23,Retail,Debit Card,Priya
+IH2400274,2024-11-16,East,Odisha,Bhubaneswar,Website,Sandalwood Cream,Creams,102,408,0,41616.0,18120.04,23495.96,Retail,NEFT,Anjali
+IH2400275,2024-06-17,East,Assam,Guwahati,Distributor,Sandalwood Cream,Creams,358,408,20,116851.2,49543.68,67307.52,Wholesale,Debit Card,Deepak
+IH2400276,2024-12-21,West,Gujarat,Surat,Website,Herbal Aloe Gel,Skincare,126,351,20,35380.8,14896.46,20484.34,Retail,RTGS,Sneha
+IH2400277,2024-09-08,West,Gujarat,Ahmedabad,Website,Sandalwood Cream,Creams,125,408,8,46920.0,21536.79,25383.21,Retail,Credit Card,Deepak
+IH2400278,2024-10-06,West,Rajasthan,Jaipur,Retail Store,Kumkumadi Tailam,Skincare,143,902,20,103188.8,45086.71,58102.09,Retail,Debit Card,Rahul
+IH2400279,2024-12-20,South,Tamil Nadu,Chennai,Amazon,Ayurvedic Body Oil,Body Care,102,712,5,68992.8,31539.36,37453.44,Retail,RTGS,Anjali
+IH2400280,2024-07-12,South,Tamil Nadu,Chennai,Amazon,Ubtan Face Pack,Face Care,127,522,10,59664.6,28608.03,31056.57,Retail,RTGS,Anjali
+IH2400281,2024-10-05,South,Karnataka,Bengaluru,Retail Store,Ayurvedic Body Oil,Body Care,162,712,12,101502.72,47569.05,53933.67,Retail,UPI,Rahul
+IH2400282,2024-05-07,North,Punjab,Ludhiana,Flipkart,Ayurvedic Body Oil,Body Care,169,712,20,96262.4,44086.85,52175.55,Retail,Cash,Rahul
+IH2400283,2024-06-18,East,West Bengal,Kolkata,Website,Kumkumadi Tailam,Skincare,81,902,10,65755.8,29645.73,36110.07,Retail,NEFT,Sneha
+IH2400284,2024-10-21,West,Gujarat,Surat,Amazon,Herbal Aloe Gel,Skincare,175,351,15,52211.25,21666.73,30544.52,Retail,UPI,Anjali
+IH2400285,2024-02-23,North,Haryana,Gurugram,Website,Kumkumadi Tailam,Skincare,61,902,8,50620.24,22421.63,28198.61,Retail,Credit Card,Deepak
+IH2400286,2024-09-04,North,Haryana,Gurugram,Amazon,Kumkumadi Tailam,Skincare,140,902,8,116177.6,51235.7,64941.9,Retail,RTGS,Ramesh
+IH2400287,2024-01-12,North,Delhi,Delhi,Distributor,Ayurvedic Body Oil,Body Care,404,712,5,273265.6,118966.29,154299.31,Wholesale,Credit Card,Kiran
+IH2400288,2024-10-13,East,Bihar,Patna,Distributor,Neem Face Wash,Face Care,347,313,5,103180.45,43944.57,59235.88,Wholesale,Cash,Anjali
+IH2400289,2024-01-15,West,Gujarat,Surat,Amazon,Ubtan Face Pack,Face Care,26,522,15,11536.2,5150.52,6385.68,Retail,RTGS,Rahul
+IH2400290,2024-02-02,South,Kerala,Kochi,Amazon,Neem Face Wash,Face Care,75,313,10,21127.5,8662.67,12464.83,Retail,Cash,Deepak
+IH2400291,2024-11-23,North,Haryana,Gurugram,Amazon,Ubtan Face Pack,Face Care,54,522,8,25932.96,12341.34,13591.62,Retail,NEFT,Priya
+IH2400292,2024-12-10,North,Delhi,Delhi,Website,Ayurvedic Body Oil,Body Care,55,712,5,37202.0,16099.64,21102.36,Retail,Debit Card,Sneha
+IH2400293,2024-03-13,East,Bihar,Patna,Website,Ubtan Face Pack,Face Care,123,522,10,57785.4,26545.85,31239.55,Retail,NEFT,Sneha
+IH2400294,2024-11-26,West,Rajasthan,Jaipur,Amazon,Neem Face Wash,Face Care,60,313,5,17841.0,7749.48,10091.52,Retail,NEFT,Ramesh
+IH2400295,2024-07-02,South,Tamil Nadu,Chennai,Website,Neem Face Wash,Face Care,123,313,20,30799.2,12942.7,17856.5,Retail,Cash,Anjali
+IH2400296,2024-12-16,East,Bihar,Patna,Distributor,Ayurvedic Body Oil,Body Care,275,712,5,186010.0,84251.91,101758.09,Wholesale,Credit Card,Kiran
+IH2400297,2024-01-17,North,Punjab,Ludhiana,Website,Ubtan Face Pack,Face Care,142,522,10,66711.6,31523.71,35187.89,Retail,Cash,Deepak
+IH2400298,2024-09-18,South,Kerala,Kochi,Website,Kumkumadi Tailam,Skincare,164,902,18,121300.96,53858.69,67442.27,Retail,UPI,Rahul
+IH2400299,2024-08-13,West,Gujarat,Surat,Distributor,Kumkumadi Tailam,Skincare,359,902,15,275245.3,121354.8,153890.5,Wholesale,UPI,Anjali
+IH2400300,2024-05-14,North,Delhi,Delhi,Retail Store,Sandalwood Cream,Creams,55,408,15,19074.0,8171.79,10902.21,Retail,RTGS,Deepak
+IH2400301,2024-12-18,North,Haryana,Gurugram,Flipkart,Neem Face Wash,Face Care,77,313,18,19762.82,8553.91,11208.91,Retail,NEFT,Kiran
+IH2400302,2024-09-29,North,Punjab,Ludhiana,Retail Store,Herbal Aloe Gel,Skincare,99,351,8,31969.08,13426.88,18542.2,Retail,NEFT,Sneha
+IH2400303,2024-02-18,West,Gujarat,Surat,Retail Store,Kumkumadi Tailam,Skincare,57,902,15,43701.9,18943.51,24758.39,Retail,Credit Card,Sneha
+IH2400304,2024-06-13,West,Gujarat,Surat,Website,Sandalwood Cream,Creams,93,408,12,33390.72,14508.52,18882.2,Retail,UPI,Sneha
+IH2400305,2024-02-17,East,Assam,Guwahati,Retail Store,Ayurvedic Body Oil,Body Care,119,712,10,76255.2,34273.81,41981.39,Retail,NEFT,Ramesh
+IH2400306,2024-02-17,East,Assam,Guwahati,Distributor,Kumkumadi Tailam,Skincare,228,902,5,195373.2,87299.38,108073.82,Wholesale,Credit Card,Anjali
+IH2400307,2024-05-17,North,Uttar Pradesh,Lucknow,Flipkart,Herbal Aloe Gel,Skincare,58,351,10,18322.2,7866.99,10455.21,Retail,Debit Card,Sneha
+IH2400308,2024-01-25,South,Andhra Pradesh,Rajahmundry,Distributor,Ayurvedic Body Oil,Body Care,260,712,0,185120.0,86881.35,98238.65,Wholesale,Credit Card,Anjali
+IH2400309,2024-08-21,South,Tamil Nadu,Chennai,Retail Store,Neem Face Wash,Face Care,58,313,18,14886.28,6128.36,8757.92,Retail,Debit Card,Ramesh
+IH2400310,2024-12-01,North,Uttar Pradesh,Lucknow,Amazon,Kumkumadi Tailam,Skincare,67,902,0,60434.0,27536.88,32897.12,Retail,RTGS,Sneha
+IH2400311,2024-04-29,East,West Bengal,Kolkata,Website,Ayurvedic Body Oil,Body Care,79,712,10,50623.2,21943.71,28679.49,Retail,Credit Card,Deepak
+IH2400312,2024-12-14,East,West Bengal,Kolkata,Flipkart,Kumkumadi Tailam,Skincare,55,902,20,39688.0,17720.86,21967.14,Retail,Credit Card,Anjali
+IH2400313,2024-02-06,West,Gujarat,Surat,Distributor,Kumkumadi Tailam,Skincare,77,902,5,65981.3,29298.35,36682.95,Wholesale,Debit Card,Priya
+IH2400314,2024-07-14,West,Maharashtra,Pune,Flipkart,Kumkumadi Tailam,Skincare,27,902,12,21431.52,9320.25,12111.27,Retail,Debit Card,Sneha
+IH2400315,2024-04-19,West,Gujarat,Surat,Flipkart,Ubtan Face Pack,Face Care,80,522,5,39672.0,17520.0,22152.0,Retail,UPI,Deepak
+IH2400316,2024-07-15,North,Haryana,Gurugram,Distributor,Herbal Aloe Gel,Skincare,151,351,5,50350.95,20750.77,29600.18,Wholesale,NEFT,Deepak
+IH2400317,2024-11-03,North,Delhi,Delhi,Retail Store,Ayurvedic Body Oil,Body Care,77,712,10,49341.6,22224.86,27116.74,Retail,RTGS,Anjali
+IH2400318,2024-05-31,South,Telangana,Hyderabad,Amazon,Sandalwood Cream,Creams,86,408,10,31579.2,14025.36,17553.84,Retail,NEFT,Ramesh
+IH2400319,2024-07-03,North,Punjab,Ludhiana,Retail Store,Sandalwood Cream,Creams,170,408,10,62424.0,27593.88,34830.12,Retail,Credit Card,Rahul
+IH2400320,2024-08-29,South,Andhra Pradesh,Rajahmundry,Website,Ubtan Face Pack,Face Care,92,522,5,45622.8,21873.33,23749.47,Retail,Cash,Deepak
+IH2400321,2024-05-26,East,Bihar,Patna,Amazon,Ayurvedic Body Oil,Body Care,162,712,10,103809.6,45091.84,58717.76,Retail,UPI,Kiran
+IH2400322,2024-02-10,West,Maharashtra,Pune,Amazon,Ubtan Face Pack,Face Care,175,522,12,80388.0,38215.51,42172.49,Retail,RTGS,Sneha
+IH2400323,2024-02-03,North,Haryana,Gurugram,Retail Store,Ayurvedic Body Oil,Body Care,86,712,0,61232.0,26414.23,34817.77,Retail,Cash,Ramesh
+IH2400324,2024-08-20,South,Karnataka,Bengaluru,Distributor,Ayurvedic Body Oil,Body Care,404,712,5,273265.6,116976.78,156288.82,Wholesale,Credit Card,Sneha
+IH2400325,2024-01-06,West,Gujarat,Surat,Flipkart,Herbal Aloe Gel,Skincare,91,351,5,30343.95,12561.12,17782.83,Retail,Debit Card,Sneha
+IH2400326,2024-03-01,South,Karnataka,Bengaluru,Website,Sandalwood Cream,Creams,41,408,5,15891.6,7324.47,8567.13,Retail,RTGS,Ramesh
+IH2400327,2024-09-11,East,Assam,Guwahati,Amazon,Kumkumadi Tailam,Skincare,170,902,5,145673.0,63306.42,82366.58,Retail,UPI,Deepak
+IH2400328,2024-12-11,South,Telangana,Hyderabad,Amazon,Ayurvedic Body Oil,Body Care,36,712,18,21018.24,8996.92,12021.32,Retail,UPI,Anjali
+IH2400329,2024-07-05,East,Odisha,Bhubaneswar,Retail Store,Neem Face Wash,Face Care,34,313,10,9577.8,4189.19,5388.61,Retail,RTGS,Sneha
+IH2400330,2024-08-02,West,Gujarat,Ahmedabad,Amazon,Neem Face Wash,Face Care,106,313,5,31519.1,12679.23,18839.87,Retail,Debit Card,Ramesh
+IH2400331,2024-09-14,South,Telangana,Hyderabad,Distributor,Neem Face Wash,Face Care,48,313,20,12019.2,4830.46,7188.74,Wholesale,Cash,Rahul
+IH2400332,2024-05-24,North,Uttar Pradesh,Lucknow,Flipkart,Kumkumadi Tailam,Skincare,27,902,8,22405.68,9872.43,12533.25,Retail,Debit Card,Sneha
+IH2400333,2024-11-14,West,Gujarat,Surat,Flipkart,Herbal Aloe Gel,Skincare,151,351,20,42400.8,18735.35,23665.45,Retail,RTGS,Deepak
+IH2400334,2024-05-05,West,Maharashtra,Mumbai,Website,Sandalwood Cream,Creams,163,408,8,61183.68,27834.98,33348.7,Retail,UPI,Kiran
+IH2400335,2024-01-01,East,Assam,Guwahati,Website,Kumkumadi Tailam,Skincare,85,902,10,69003.0,32483.39,36519.61,Retail,Credit Card,Sneha
+IH2400336,2024-05-23,South,Andhra Pradesh,Rajahmundry,Retail Store,Neem Face Wash,Face Care,158,313,10,44508.6,19433.09,25075.51,Retail,Cash,Sneha
+IH2400337,2024-02-13,South,Kerala,Kochi,Flipkart,Neem Face Wash,Face Care,125,313,0,39125.0,16543.95,22581.05,Retail,Cash,Sneha
+IH2400338,2024-03-07,West,Gujarat,Ahmedabad,Retail Store,Herbal Aloe Gel,Skincare,125,351,15,37293.75,16413.73,20880.02,Retail,Debit Card,Anjali
+IH2400339,2024-05-19,West,Maharashtra,Mumbai,Website,Neem Face Wash,Face Care,174,313,5,51738.9,20873.42,30865.48,Retail,Cash,Anjali
+IH2400340,2024-06-09,East,West Bengal,Kolkata,Amazon,Ubtan Face Pack,Face Care,78,522,10,36644.4,16794.64,19849.76,Retail,UPI,Ramesh
+IH2400341,2024-03-21,North,Delhi,Delhi,Distributor,Neem Face Wash,Face Care,192,313,5,57091.2,24484.62,32606.58,Wholesale,Debit Card,Anjali
+IH2400342,2024-09-19,South,Karnataka,Bengaluru,Distributor,Herbal Aloe Gel,Skincare,114,351,0,40014.0,17041.52,22972.48,Wholesale,Cash,Deepak
+IH2400343,2024-10-08,West,Maharashtra,Mumbai,Website,Sandalwood Cream,Creams,60,408,5,23256.0,9784.11,13471.89,Retail,Credit Card,Priya
+IH2400344,2024-04-11,East,Assam,Guwahati,Flipkart,Ayurvedic Body Oil,Body Care,46,712,12,28821.76,12656.99,16164.77,Retail,UPI,Ramesh
+IH2400345,2024-02-03,West,Gujarat,Surat,Website,Neem Face Wash,Face Care,109,313,5,32411.15,14214.75,18196.4,Retail,UPI,Priya
+IH2400346,2024-10-20,East,Bihar,Patna,Website,Sandalwood Cream,Creams,134,408,5,51938.4,22200.94,29737.46,Retail,Credit Card,Kiran
+IH2400347,2024-05-23,East,Odisha,Bhubaneswar,Flipkart,Kumkumadi Tailam,Skincare,87,902,12,69057.12,31072.26,37984.86,Retail,NEFT,Anjali
+IH2400348,2024-02-01,South,Karnataka,Bengaluru,Website,Sandalwood Cream,Creams,76,408,12,27287.04,12363.12,14923.92,Retail,Credit Card,Sneha
+IH2400349,2024-10-05,South,Tamil Nadu,Chennai,Amazon,Ayurvedic Body Oil,Body Care,164,712,15,99252.8,43967.16,55285.64,Retail,NEFT,Deepak
+IH2400350,2024-06-13,East,Assam,Guwahati,Website,Neem Face Wash,Face Care,177,313,5,52630.95,22979.84,29651.11,Retail,Debit Card,Ramesh
+IH2400351,2024-08-29,North,Punjab,Ludhiana,Website,Neem Face Wash,Face Care,86,313,5,25572.1,11079.98,14492.12,Retail,RTGS,Ramesh
+IH2400352,2024-04-22,East,Assam,Guwahati,Website,Neem Face Wash,Face Care,176,313,8,50680.96,21792.83,28888.13,Retail,Debit Card,Deepak
+IH2400353,2024-01-15,North,Punjab,Ludhiana,Retail Store,Ubtan Face Pack,Face Care,151,522,10,70939.8,31573.57,39366.23,Retail,UPI,Ramesh
+IH2400354,2024-01-29,West,Rajasthan,Jaipur,Website,Neem Face Wash,Face Care,147,313,0,46011.0,20132.19,25878.81,Retail,Credit Card,Rahul
+IH2400355,2024-03-07,North,Punjab,Ludhiana,Website,Herbal Aloe Gel,Skincare,62,351,12,19150.56,8578.31,10572.25,Retail,UPI,Rahul
+IH2400356,2024-09-26,North,Delhi,Delhi,Distributor,Herbal Aloe Gel,Skincare,364,351,8,117542.88,48526.92,69015.96,Wholesale,Debit Card,Kiran
+IH2400357,2024-03-10,West,Gujarat,Surat,Retail Store,Ayurvedic Body Oil,Body Care,106,712,5,71698.4,33776.65,37921.75,Retail,RTGS,Deepak
+IH2400358,2024-07-01,West,Rajasthan,Jaipur,Amazon,Neem Face Wash,Face Care,100,313,5,29735.0,12774.48,16960.52,Retail,RTGS,Deepak
+IH2400359,2024-07-19,South,Telangana,Hyderabad,Amazon,Ubtan Face Pack,Face Care,81,522,12,37208.16,16438.16,20770.0,Retail,Cash,Priya
+IH2400360,2024-06-18,South,Telangana,Hyderabad,Retail Store,Herbal Aloe Gel,Skincare,67,351,12,20694.96,9310.92,11384.04,Retail,RTGS,Sneha
+IH2400361,2024-11-23,North,Haryana,Gurugram,Website,Kumkumadi Tailam,Skincare,88,902,15,67469.6,29907.36,37562.24,Retail,UPI,Sneha
+IH2400362,2024-01-01,South,Tamil Nadu,Chennai,Distributor,Sandalwood Cream,Creams,110,408,18,36801.6,16181.5,20620.1,Wholesale,Cash,Kiran
+IH2400363,2024-10-06,East,West Bengal,Kolkata,Distributor,Sandalwood Cream,Creams,320,408,12,114892.8,51498.98,63393.82,Wholesale,Credit Card,Anjali
+IH2400364,2024-02-07,South,Karnataka,Bengaluru,Amazon,Kumkumadi Tailam,Skincare,51,902,0,46002.0,20017.99,25984.01,Retail,Cash,Priya
+IH2400365,2024-02-08,South,Karnataka,Bengaluru,Retail Store,Ubtan Face Pack,Face Care,148,522,15,65667.6,29999.64,35667.96,Retail,RTGS,Priya
+IH2400366,2024-11-06,East,Odisha,Bhubaneswar,Website,Kumkumadi Tailam,Skincare,77,902,20,55563.2,24776.61,30786.59,Retail,NEFT,Sneha
+IH2400367,2024-10-03,North,Uttar Pradesh,Lucknow,Website,Herbal Aloe Gel,Skincare,37,351,8,11948.04,5163.17,6784.87,Retail,Cash,Priya
+IH2400368,2024-01-28,North,Delhi,Delhi,Website,Sandalwood Cream,Creams,178,408,10,65361.6,27600.07,37761.53,Retail,Credit Card,Priya
+IH2400369,2024-11-22,North,Delhi,Delhi,Distributor,Sandalwood Cream,Creams,182,408,15,63117.6,27691.05,35426.55,Wholesale,RTGS,Kiran
+IH2400370,2024-02-16,East,Odisha,Bhubaneswar,Retail Store,Herbal Aloe Gel,Skincare,119,351,5,39680.55,16285.63,23394.92,Retail,Cash,Anjali
+IH2400371,2024-05-14,West,Gujarat,Ahmedabad,Website,Ubtan Face Pack,Face Care,49,522,5,24299.1,11002.98,13296.12,Retail,NEFT,Anjali
+IH2400372,2024-10-28,West,Rajasthan,Jaipur,Distributor,Kumkumadi Tailam,Skincare,292,902,10,237045.6,107049.35,129996.25,Wholesale,Cash,Deepak
+IH2400373,2024-04-30,East,Assam,Guwahati,Amazon,Kumkumadi Tailam,Skincare,33,902,10,26789.4,12537.99,14251.41,Retail,NEFT,Sneha
+IH2400374,2024-11-13,West,Maharashtra,Mumbai,Website,Sandalwood Cream,Creams,67,408,20,21868.8,9919.08,11949.72,Retail,Credit Card,Ramesh
+IH2400375,2024-08-04,South,Tamil Nadu,Chennai,Retail Store,Neem Face Wash,Face Care,62,313,18,15912.92,6521.61,9391.31,Retail,RTGS,Rahul
+IH2400376,2024-02-04,South,Tamil Nadu,Chennai,Amazon,Ubtan Face Pack,Face Care,108,522,18,46228.32,21306.89,24921.43,Retail,UPI,Rahul
+IH2400377,2024-12-24,East,West Bengal,Kolkata,Website,Sandalwood Cream,Creams,170,408,12,61036.8,27550.1,33486.7,Retail,UPI,Ramesh
+IH2400378,2024-10-15,South,Karnataka,Bengaluru,Retail Store,Ubtan Face Pack,Face Care,130,522,5,64467.0,30113.84,34353.16,Retail,NEFT,Deepak
+IH2400379,2024-08-30,South,Telangana,Hyderabad,Amazon,Herbal Aloe Gel,Skincare,180,351,15,53703.0,22865.34,30837.66,Retail,Cash,Kiran
+IH2400380,2024-12-19,West,Maharashtra,Mumbai,Amazon,Ayurvedic Body Oil,Body Care,93,712,18,54297.12,23261.46,31035.66,Retail,Debit Card,Kiran
+IH2400381,2024-05-23,East,West Bengal,Kolkata,Website,Neem Face Wash,Face Care,138,313,15,36714.9,15144.03,21570.87,Retail,RTGS,Anjali
+IH2400382,2024-11-05,South,Telangana,Hyderabad,Website,Sandalwood Cream,Creams,129,408,15,44737.2,20195.16,24542.04,Retail,Debit Card,Rahul
+IH2400383,2024-01-29,West,Maharashtra,Mumbai,Distributor,Herbal Aloe Gel,Skincare,231,351,5,77026.95,34285.13,42741.82,Wholesale,NEFT,Ramesh
+IH2400384,2024-03-29,West,Maharashtra,Pune,Website,Kumkumadi Tailam,Skincare,141,902,0,127182.0,56432.8,70749.2,Retail,Credit Card,Kiran
+IH2400385,2024-07-07,East,Bihar,Patna,Retail Store,Ayurvedic Body Oil,Body Care,32,712,5,21644.8,9729.24,11915.56,Retail,Cash,Priya
+IH2400386,2024-08-30,North,Uttar Pradesh,Lucknow,Distributor,Neem Face Wash,Face Care,157,313,15,41769.85,17874.64,23895.21,Wholesale,Debit Card,Ramesh
+IH2400387,2024-07-16,South,Telangana,Hyderabad,Distributor,Ubtan Face Pack,Face Care,134,522,18,57357.36,26773.24,30584.12,Wholesale,RTGS,Priya
+IH2400388,2024-05-17,East,West Bengal,Kolkata,Website,Ayurvedic Body Oil,Body Care,58,712,12,36340.48,16518.62,19821.86,Retail,UPI,Priya
+IH2400389,2024-05-09,North,Uttar Pradesh,Lucknow,Retail Store,Sandalwood Cream,Creams,114,408,10,41860.8,17899.73,23961.07,Retail,Debit Card,Sneha
+IH2400390,2024-09-23,East,West Bengal,Kolkata,Amazon,Kumkumadi Tailam,Skincare,120,902,10,97416.0,44248.27,53167.73,Retail,Debit Card,Kiran
+IH2400391,2024-12-16,South,Tamil Nadu,Chennai,Amazon,Kumkumadi Tailam,Skincare,95,902,12,75407.2,35159.9,40247.3,Retail,Debit Card,Sneha
+IH2400392,2024-12-30,North,Punjab,Ludhiana,Amazon,Neem Face Wash,Face Care,86,313,18,22072.76,9553.71,12519.05,Retail,NEFT,Anjali
+IH2400393,2024-12-04,North,Punjab,Ludhiana,Website,Ayurvedic Body Oil,Body Care,152,712,20,86579.2,38023.35,48555.85,Retail,Cash,Anjali
+IH2400394,2024-07-17,South,Kerala,Kochi,Retail Store,Ayurvedic Body Oil,Body Care,73,712,8,47817.92,21977.19,25840.73,Retail,RTGS,Deepak
+IH2400395,2024-11-22,East,Assam,Guwahati,Amazon,Ubtan Face Pack,Face Care,68,522,18,29106.72,13893.18,15213.54,Retail,Credit Card,Kiran
+IH2400396,2024-02-19,East,Odisha,Bhubaneswar,Website,Ayurvedic Body Oil,Body Care,168,712,15,101673.6,44303.06,57370.54,Retail,RTGS,Kiran
+IH2400397,2024-12-01,South,Telangana,Hyderabad,Website,Herbal Aloe Gel,Skincare,103,351,10,32537.7,14532.45,18005.25,Retail,Debit Card,Kiran
+IH2400398,2024-10-26,North,Haryana,Gurugram,Amazon,Kumkumadi Tailam,Skincare,174,902,12,138114.24,62901.29,75212.95,Retail,Cash,Priya
+IH2400399,2024-09-13,South,Tamil Nadu,Chennai,Website,Ubtan Face Pack,Face Care,38,522,18,16265.52,7220.85,9044.67,Retail,Credit Card,Kiran
+IH2400400,2024-07-28,East,Odisha,Bhubaneswar,Retail Store,Herbal Aloe Gel,Skincare,71,351,15,21182.85,9097.31,12085.54,Retail,RTGS,Priya
+IH2400401,2024-06-09,South,Andhra Pradesh,Rajahmundry,Website,Sandalwood Cream,Creams,68,408,10,24969.6,10611.36,14358.24,Retail,UPI,Priya
+IH2400402,2024-11-10,East,Bihar,Patna,Amazon,Sandalwood Cream,Creams,147,408,8,55177.92,23155.96,32021.96,Retail,Credit Card,Sneha
+IH2400403,2024-07-10,South,Karnataka,Bengaluru,Website,Ubtan Face Pack,Face Care,26,522,12,11943.36,5355.95,6587.41,Retail,RTGS,Kiran
+IH2400404,2024-06-08,West,Maharashtra,Mumbai,Amazon,Sandalwood Cream,Creams,103,408,5,39922.8,18134.9,21787.9,Retail,Debit Card,Kiran
+IH2400405,2024-08-21,North,Haryana,Gurugram,Retail Store,Ayurvedic Body Oil,Body Care,112,712,20,63795.2,28679.65,35115.55,Retail,Credit Card,Priya
+IH2400406,2024-07-25,South,Telangana,Hyderabad,Distributor,Neem Face Wash,Face Care,92,313,5,27356.2,10940.3,16415.9,Wholesale,NEFT,Priya
+IH2400407,2024-03-04,North,Delhi,Delhi,Retail Store,Sandalwood Cream,Creams,90,408,15,31212.0,13902.38,17309.62,Retail,NEFT,Ramesh
+IH2400408,2024-12-04,South,Andhra Pradesh,Rajahmundry,Flipkart,Kumkumadi Tailam,Skincare,131,902,10,106345.8,46054.3,60291.5,Retail,Debit Card,Anjali
+IH2400409,2024-12-25,West,Maharashtra,Pune,Flipkart,Ayurvedic Body Oil,Body Care,27,712,8,17686.08,8087.4,9598.68,Retail,RTGS,Deepak
+IH2400410,2024-05-18,West,Gujarat,Surat,Amazon,Kumkumadi Tailam,Skincare,55,902,8,45641.2,21123.4,24517.8,Retail,Cash,Priya
+IH2400411,2024-11-07,West,Gujarat,Ahmedabad,Retail Store,Ubtan Face Pack,Face Care,116,522,15,51469.2,23191.31,28277.89,Retail,UPI,Deepak
+IH2400412,2024-09-11,West,Gujarat,Surat,Website,Herbal Aloe Gel,Skincare,28,351,12,8648.64,3870.23,4778.41,Retail,NEFT,Sneha
+IH2400413,2024-09-09,West,Maharashtra,Mumbai,Website,Ubtan Face Pack,Face Care,50,522,20,20880.0,9743.43,11136.57,Retail,Cash,Kiran
+IH2400414,2024-05-15,East,West Bengal,Kolkata,Distributor,Kumkumadi Tailam,Skincare,45,902,18,33283.8,14768.34,18515.46,Wholesale,RTGS,Kiran
+IH2400415,2024-08-06,South,Andhra Pradesh,Rajahmundry,Website,Kumkumadi Tailam,Skincare,60,902,12,47625.6,20725.38,26900.22,Retail,Debit Card,Anjali
+IH2400416,2024-11-14,North,Delhi,Delhi,Distributor,Herbal Aloe Gel,Skincare,118,351,5,39347.1,16750.48,22596.62,Wholesale,Cash,Kiran
+IH2400417,2024-07-16,East,Bihar,Patna,Retail Store,Ayurvedic Body Oil,Body Care,67,712,5,45318.8,20793.52,24525.28,Retail,UPI,Rahul
+IH2400418,2024-03-22,South,Tamil Nadu,Chennai,Amazon,Ubtan Face Pack,Face Care,170,522,12,78091.2,34776.98,43314.22,Retail,Cash,Rahul
+IH2400419,2024-07-02,South,Telangana,Hyderabad,Retail Store,Sandalwood Cream,Creams,53,408,18,17731.68,7755.66,9976.02,Retail,UPI,Kiran
+IH2400420,2024-12-01,North,Delhi,Delhi,Retail Store,Ayurvedic Body Oil,Body Care,159,712,15,96226.8,43633.97,52592.83,Retail,NEFT,Priya
+IH2400421,2024-12-08,North,Delhi,Delhi,Flipkart,Sandalwood Cream,Creams,88,408,10,32313.6,14450.75,17862.85,Retail,RTGS,Anjali
+IH2400422,2024-03-17,South,Andhra Pradesh,Rajahmundry,Retail Store,Ayurvedic Body Oil,Body Care,154,712,18,89911.36,41883.79,48027.57,Retail,Credit Card,Ramesh
+IH2400423,2024-09-08,North,Punjab,Ludhiana,Retail Store,Herbal Aloe Gel,Skincare,37,351,10,11688.3,5051.35,6636.95,Retail,Cash,Anjali
+IH2400424,2024-04-30,South,Tamil Nadu,Chennai,Distributor,Sandalwood Cream,Creams,254,408,5,98450.4,43311.49,55138.91,Wholesale,Debit Card,Ramesh
+IH2400425,2024-09-11,South,Andhra Pradesh,Rajahmundry,Amazon,Sandalwood Cream,Creams,167,408,10,61322.4,27861.22,33461.18,Retail,NEFT,Deepak
+IH2400426,2024-11-22,North,Punjab,Ludhiana,Flipkart,Ayurvedic Body Oil,Body Care,112,712,8,73364.48,31542.5,41821.98,Retail,Credit Card,Rahul
+IH2400427,2024-08-20,North,Haryana,Gurugram,Flipkart,Ayurvedic Body Oil,Body Care,140,712,5,94696.0,43718.25,50977.75,Retail,Credit Card,Ramesh
+IH2400428,2024-06-23,North,Uttar Pradesh,Lucknow,Flipkart,Ubtan Face Pack,Face Care,52,522,0,27144.0,12066.9,15077.1,Retail,Credit Card,Rahul
+IH2400429,2024-07-28,South,Karnataka,Bengaluru,Website,Ubtan Face Pack,Face Care,55,522,20,22968.0,10452.12,12515.88,Retail,Cash,Rahul
+IH2400430,2024-04-07,North,Delhi,Delhi,Website,Sandalwood Cream,Creams,175,408,5,67830.0,31014.4,36815.6,Retail,Cash,Sneha
+IH2400431,2024-10-28,West,Gujarat,Surat,Flipkart,Kumkumadi Tailam,Skincare,37,902,10,30036.6,13425.65,16610.95,Retail,NEFT,Anjali
+IH2400432,2024-09-17,West,Rajasthan,Jaipur,Distributor,Neem Face Wash,Face Care,90,313,5,26761.5,11416.88,15344.62,Wholesale,NEFT,Kiran
+IH2400433,2024-09-15,East,Bihar,Patna,Retail Store,Ubtan Face Pack,Face Care,88,522,5,43639.2,21004.65,22634.55,Retail,Debit Card,Anjali
+IH2400434,2024-03-09,West,Gujarat,Surat,Distributor,Ubtan Face Pack,Face Care,408,522,10,191678.4,91197.02,100481.38,Wholesale,NEFT,Rahul
+IH2400435,2024-06-09,West,Maharashtra,Pune,Flipkart,Neem Face Wash,Face Care,99,313,15,26338.95,11528.3,14810.65,Retail,Credit Card,Sneha
+IH2400436,2024-11-28,West,Rajasthan,Jaipur,Flipkart,Ubtan Face Pack,Face Care,107,522,15,47475.9,22408.42,25067.48,Retail,NEFT,Anjali
+IH2400437,2024-10-25,East,Assam,Guwahati,Distributor,Sandalwood Cream,Creams,292,408,5,113179.2,49205.6,63973.6,Wholesale,UPI,Sneha
+IH2400438,2024-01-29,West,Gujarat,Ahmedabad,Retail Store,Neem Face Wash,Face Care,89,313,5,26464.15,10628.14,15836.01,Retail,Debit Card,Priya
+IH2400439,2024-10-04,South,Karnataka,Bengaluru,Website,Sandalwood Cream,Creams,168,408,18,56206.08,25330.18,30875.9,Retail,NEFT,Anjali
+IH2400440,2024-05-01,North,Delhi,Delhi,Amazon,Sandalwood Cream,Creams,105,408,20,34272.0,14406.83,19865.17,Retail,RTGS,Kiran
+IH2400441,2024-04-13,East,Odisha,Bhubaneswar,Distributor,Ayurvedic Body Oil,Body Care,356,712,8,233194.24,105864.9,127329.34,Wholesale,RTGS,Deepak
+IH2400442,2024-04-10,West,Gujarat,Ahmedabad,Website,Sandalwood Cream,Creams,44,408,5,17054.4,7259.15,9795.25,Retail,NEFT,Ramesh
+IH2400443,2024-07-12,South,Tamil Nadu,Chennai,Flipkart,Herbal Aloe Gel,Skincare,58,351,5,19340.1,8604.0,10736.1,Retail,UPI,Kiran
+IH2400444,2024-08-26,West,Maharashtra,Mumbai,Retail Store,Neem Face Wash,Face Care,177,313,0,55401.0,24274.5,31126.5,Retail,NEFT,Rahul
+IH2400445,2024-12-04,North,Haryana,Gurugram,Flipkart,Ubtan Face Pack,Face Care,43,522,15,19079.1,8616.53,10462.57,Retail,Credit Card,Priya
+IH2400446,2024-09-23,South,Kerala,Kochi,Amazon,Neem Face Wash,Face Care,162,313,10,45635.4,18878.22,26757.18,Retail,Credit Card,Sneha
+IH2400447,2024-06-18,North,Uttar Pradesh,Lucknow,Website,Herbal Aloe Gel,Skincare,160,351,10,50544.0,21867.22,28676.78,Retail,RTGS,Ramesh
+IH2400448,2024-02-28,North,Haryana,Gurugram,Retail Store,Neem Face Wash,Face Care,87,313,20,21784.8,9316.64,12468.16,Retail,Debit Card,Anjali
+IH2400449,2024-02-28,East,Assam,Guwahati,Distributor,Ubtan Face Pack,Face Care,37,522,20,15451.2,7336.49,8114.71,Wholesale,Debit Card,Deepak
+IH2400450,2024-09-17,East,Bihar,Patna,Website,Kumkumadi Tailam,Skincare,74,902,8,61408.16,26479.54,34928.62,Retail,UPI,Priya
+IH2400451,2024-10-02,South,Andhra Pradesh,Rajahmundry,Flipkart,Neem Face Wash,Face Care,79,313,18,20276.14,8451.44,11824.7,Retail,UPI,Priya
+IH2400452,2024-10-02,East,West Bengal,Kolkata,Flipkart,Ayurvedic Body Oil,Body Care,31,712,10,19864.8,8788.73,11076.07,Retail,UPI,Ramesh
+IH2400453,2024-01-28,West,Gujarat,Ahmedabad,Website,Ubtan Face Pack,Face Care,83,522,20,34660.8,15796.7,18864.1,Retail,Cash,Sneha
+IH2400454,2024-07-26,East,Assam,Guwahati,Amazon,Kumkumadi Tailam,Skincare,55,902,10,44649.0,20376.2,24272.8,Retail,NEFT,Ramesh
+IH2400455,2024-10-26,South,Andhra Pradesh,Rajahmundry,Retail Store,Herbal Aloe Gel,Skincare,52,351,8,16791.84,7354.7,9437.14,Retail,NEFT,Ramesh
+IH2400456,2024-05-24,East,Bihar,Patna,Distributor,Sandalwood Cream,Creams,40,408,10,14688.0,6484.35,8203.65,Wholesale,Credit Card,Sneha
+IH2400457,2024-07-19,North,Punjab,Ludhiana,Flipkart,Herbal Aloe Gel,Skincare,120,351,20,33696.0,13780.97,19915.03,Retail,NEFT,Priya
+IH2400458,2024-03-04,South,Andhra Pradesh,Rajahmundry,Flipkart,Ubtan Face Pack,Face Care,162,522,10,76107.6,33557.05,42550.55,Retail,Credit Card,Sneha
+IH2400459,2024-06-25,West,Gujarat,Surat,Retail Store,Ayurvedic Body Oil,Body Care,61,712,5,41260.4,18048.76,23211.64,Retail,Debit Card,Priya
+IH2400460,2024-02-28,West,Rajasthan,Jaipur,Retail Store,Kumkumadi Tailam,Skincare,165,902,10,133947.0,60575.51,73371.49,Retail,Debit Card,Sneha
+IH2400461,2024-02-04,North,Delhi,Delhi,Distributor,Neem Face Wash,Face Care,274,313,20,68609.6,28404.36,40205.24,Wholesale,RTGS,Sneha
+IH2400462,2024-04-30,South,Karnataka,Bengaluru,Website,Ubtan Face Pack,Face Care,74,522,8,35537.76,16266.69,19271.07,Retail,NEFT,Sneha
+IH2400463,2024-06-05,West,Rajasthan,Jaipur,Amazon,Ubtan Face Pack,Face Care,105,522,20,43848.0,19501.72,24346.28,Retail,Debit Card,Priya
+IH2400464,2024-04-23,East,Assam,Guwahati,Website,Herbal Aloe Gel,Skincare,109,351,18,31372.38,13440.01,17932.37,Retail,Debit Card,Rahul
+IH2400465,2024-06-05,East,West Bengal,Kolkata,Flipkart,Neem Face Wash,Face Care,45,313,18,11549.7,5024.88,6524.82,Retail,Credit Card,Deepak
+IH2400466,2024-04-10,North,Delhi,Delhi,Website,Ayurvedic Body Oil,Body Care,29,712,18,16931.36,7719.4,9211.96,Retail,NEFT,Deepak
+IH2400467,2024-07-26,West,Maharashtra,Mumbai,Website,Ubtan Face Pack,Face Care,163,522,10,76577.4,36195.0,40382.4,Retail,Debit Card,Anjali
+IH2400468,2024-04-24,North,Punjab,Ludhiana,Amazon,Sandalwood Cream,Creams,48,408,8,18017.28,7929.32,10087.96,Retail,RTGS,Priya
+IH2400469,2024-11-10,West,Rajasthan,Jaipur,Amazon,Neem Face Wash,Face Care,70,313,10,19719.0,8336.49,11382.51,Retail,Credit Card,Sneha
+IH2400470,2024-09-04,North,Delhi,Delhi,Distributor,Neem Face Wash,Face Care,143,313,0,44759.0,18553.33,26205.67,Wholesale,UPI,Sneha
+IH2400471,2024-04-15,North,Haryana,Gurugram,Retail Store,Sandalwood Cream,Creams,36,408,0,14688.0,6558.71,8129.29,Retail,UPI,Sneha
+IH2400472,2024-09-23,North,Uttar Pradesh,Lucknow,Flipkart,Ubtan Face Pack,Face Care,69,522,8,33136.56,15057.65,18078.91,Retail,NEFT,Sneha
+IH2400473,2024-02-09,North,Haryana,Gurugram,Amazon,Neem Face Wash,Face Care,115,313,18,29515.9,12204.57,17311.33,Retail,Cash,Deepak
+IH2400474,2024-01-04,West,Gujarat,Surat,Website,Neem Face Wash,Face Care,156,313,12,42968.64,17526.21,25442.43,Retail,Credit Card,Priya
+IH2400475,2024-07-04,South,Telangana,Hyderabad,Distributor,Sandalwood Cream,Creams,393,408,5,152326.8,68198.25,84128.55,Wholesale,Cash,Priya
+IH2400476,2024-10-29,West,Gujarat,Surat,Website,Kumkumadi Tailam,Skincare,57,902,10,46272.6,20117.05,26155.55,Retail,RTGS,Deepak
+IH2400477,2024-01-21,West,Maharashtra,Mumbai,Website,Neem Face Wash,Face Care,71,313,10,20000.7,8320.87,11679.83,Retail,NEFT,Sneha
+IH2400478,2024-01-10,North,Delhi,Delhi,Amazon,Neem Face Wash,Face Care,145,313,18,37215.7,15115.67,22100.03,Retail,Cash,Deepak
+IH2400479,2024-03-14,West,Rajasthan,Jaipur,Amazon,Ayurvedic Body Oil,Body Care,67,712,15,40548.4,17959.71,22588.69,Retail,Cash,Deepak
+IH2400480,2024-10-29,South,Telangana,Hyderabad,Amazon,Sandalwood Cream,Creams,52,408,0,21216.0,9356.24,11859.76,Retail,NEFT,Sneha
+IH2400481,2024-08-02,West,Rajasthan,Jaipur,Website,Kumkumadi Tailam,Skincare,178,902,0,160556.0,74301.15,86254.85,Retail,NEFT,Rahul
+IH2400482,2024-03-01,South,Tamil Nadu,Chennai,Website,Ayurvedic Body Oil,Body Care,179,712,10,114703.2,49041.81,65661.39,Retail,RTGS,Sneha
+IH2400483,2024-08-08,East,Assam,Guwahati,Flipkart,Kumkumadi Tailam,Skincare,134,902,5,114824.6,53233.09,61591.51,Retail,Cash,Kiran
+IH2400484,2024-10-28,South,Tamil Nadu,Chennai,Website,Neem Face Wash,Face Care,84,313,20,21033.6,8466.45,12567.15,Retail,NEFT,Deepak
+IH2400485,2024-07-28,North,Punjab,Ludhiana,Distributor,Kumkumadi Tailam,Skincare,28,902,10,22730.4,9837.77,12892.63,Wholesale,UPI,Anjali
+IH2400486,2024-12-01,West,Gujarat,Ahmedabad,Amazon,Sandalwood Cream,Creams,64,408,10,23500.8,10428.63,13072.17,Retail,Debit Card,Rahul
+IH2400487,2024-10-01,East,Assam,Guwahati,Website,Ubtan Face Pack,Face Care,126,522,15,55906.2,25493.7,30412.5,Retail,NEFT,Anjali
+IH2400488,2024-04-01,North,Haryana,Gurugram,Retail Store,Herbal Aloe Gel,Skincare,172,351,8,55542.24,24373.95,31168.29,Retail,RTGS,Priya
+IH2400489,2024-12-03,South,Telangana,Hyderabad,Distributor,Sandalwood Cream,Creams,107,408,5,41473.2,18263.43,23209.77,Wholesale,Debit Card,Rahul
+IH2400490,2024-10-08,South,Telangana,Hyderabad,Retail Store,Sandalwood Cream,Creams,26,408,18,8698.56,3951.09,4747.47,Retail,Cash,Deepak
+IH2400491,2024-08-10,South,Andhra Pradesh,Rajahmundry,Website,Herbal Aloe Gel,Skincare,45,351,12,13899.6,6111.0,7788.6,Retail,Cash,Deepak
+IH2400492,2024-12-01,North,Delhi,Delhi,Flipkart,Neem Face Wash,Face Care,137,313,0,42881.0,18641.39,24239.61,Retail,NEFT,Kiran
+IH2400493,2024-04-09,South,Kerala,Kochi,Amazon,Ubtan Face Pack,Face Care,84,522,12,38586.24,18058.56,20527.68,Retail,Debit Card,Priya
+IH2400494,2024-12-01,South,Telangana,Hyderabad,Retail Store,Kumkumadi Tailam,Skincare,127,902,8,105389.68,46928.07,58461.61,Retail,NEFT,Priya
+IH2400495,2024-09-22,South,Andhra Pradesh,Rajahmundry,Flipkart,Kumkumadi Tailam,Skincare,168,902,20,121228.8,53724.27,67504.53,Retail,Debit Card,Priya
+IH2400496,2024-11-06,West,Gujarat,Surat,Flipkart,Sandalwood Cream,Creams,91,408,5,35271.6,15529.19,19742.41,Retail,NEFT,Ramesh
+IH2400497,2024-09-14,North,Uttar Pradesh,Lucknow,Distributor,Kumkumadi Tailam,Skincare,156,902,18,115383.84,53548.67,61835.17,Wholesale,NEFT,Kiran
+IH2400498,2024-12-21,East,Bihar,Patna,Amazon,Ubtan Face Pack,Face Care,87,522,15,38601.9,18575.89,20026.01,Retail,Cash,Sneha
+IH2400499,2024-08-23,South,Tamil Nadu,Chennai,Website,Kumkumadi Tailam,Skincare,122,902,12,96838.72,45731.01,51107.71,Retail,RTGS,Sneha
+IH2400500,2024-04-27,North,Haryana,Gurugram,Amazon,Herbal Aloe Gel,Skincare,27,351,15,8055.45,3381.87,4673.58,Retail,Debit Card,Ramesh
+IH2400501,2024-07-23,North,Delhi,Delhi,Retail Store,Ubtan Face Pack,Face Care,146,522,8,70115.04,31345.21,38769.83,Retail,NEFT,Kiran
+IH2400502,2024-04-03,West,Gujarat,Surat,Website,Ayurvedic Body Oil,Body Care,86,712,18,50210.24,21932.09,28278.15,Retail,Credit Card,Rahul
+IH2400503,2024-05-07,North,Punjab,Ludhiana,Website,Kumkumadi Tailam,Skincare,45,902,12,35719.2,16336.32,19382.88,Retail,NEFT,Ramesh
+IH2400504,2024-10-04,South,Tamil Nadu,Chennai,Flipkart,Herbal Aloe Gel,Skincare,151,351,18,43460.82,19400.15,24060.67,Retail,NEFT,Rahul
+IH2400505,2024-05-20,East,Odisha,Bhubaneswar,Website,Ubtan Face Pack,Face Care,81,522,15,35939.7,15917.67,20022.03,Retail,NEFT,Rahul
+IH2400506,2024-08-04,East,West Bengal,Kolkata,Amazon,Ubtan Face Pack,Face Care,69,522,10,32416.2,14345.37,18070.83,Retail,NEFT,Anjali
+IH2400507,2024-06-10,South,Andhra Pradesh,Rajahmundry,Website,Ayurvedic Body Oil,Body Care,173,712,5,117017.2,51928.97,65088.23,Retail,Debit Card,Priya
+IH2400508,2024-10-07,North,Punjab,Ludhiana,Amazon,Herbal Aloe Gel,Skincare,112,351,8,36167.04,15549.91,20617.13,Retail,Credit Card,Anjali
+IH2400509,2024-12-24,North,Uttar Pradesh,Lucknow,Website,Sandalwood Cream,Creams,71,408,10,26071.2,12021.12,14050.08,Retail,RTGS,Priya
+IH2400510,2024-02-21,North,Punjab,Ludhiana,Amazon,Ubtan Face Pack,Face Care,122,522,5,60499.8,28664.91,31834.89,Retail,RTGS,Priya
+IH2400511,2024-08-30,South,Telangana,Hyderabad,Amazon,Sandalwood Cream,Creams,157,408,10,57650.4,24898.75,32751.65,Retail,Cash,Kiran
+IH2400512,2024-05-08,South,Tamil Nadu,Chennai,Flipkart,Kumkumadi Tailam,Skincare,40,902,5,34276.0,15045.21,19230.79,Retail,RTGS,Ramesh
+IH2400513,2024-08-18,North,Uttar Pradesh,Lucknow,Amazon,Herbal Aloe Gel,Skincare,167,351,20,46893.6,19675.7,27217.9,Retail,UPI,Anjali
+IH2400514,2024-03-03,North,Punjab,Ludhiana,Flipkart,Ubtan Face Pack,Face Care,162,522,5,80335.8,37990.34,42345.46,Retail,Debit Card,Kiran
+IH2400515,2024-12-10,East,Bihar,Patna,Amazon,Kumkumadi Tailam,Skincare,98,902,10,79556.4,37435.01,42121.39,Retail,Credit Card,Sneha
+IH2400516,2024-06-21,East,Bihar,Patna,Website,Kumkumadi Tailam,Skincare,112,902,5,95972.8,42396.9,53575.9,Retail,Debit Card,Sneha
+IH2400517,2024-05-16,East,Assam,Guwahati,Distributor,Sandalwood Cream,Creams,210,408,15,72828.0,32111.41,40716.59,Wholesale,Cash,Anjali
+IH2400518,2024-03-26,West,Maharashtra,Mumbai,Distributor,Neem Face Wash,Face Care,363,313,5,107938.05,46439.57,61498.48,Wholesale,RTGS,Ramesh
+IH2400519,2024-04-17,West,Gujarat,Surat,Website,Kumkumadi Tailam,Skincare,146,902,10,118522.8,50809.11,67713.69,Retail,Cash,Deepak
+IH2400520,2024-02-12,South,Karnataka,Bengaluru,Website,Ubtan Face Pack,Face Care,124,522,8,59549.76,26700.94,32848.82,Retail,Debit Card,Anjali
+IH2400521,2024-11-16,West,Maharashtra,Pune,Distributor,Ubtan Face Pack,Face Care,39,522,0,20358.0,9230.62,11127.38,Wholesale,Debit Card,Rahul
+IH2400522,2024-08-31,East,Assam,Guwahati,Amazon,Ubtan Face Pack,Face Care,163,522,5,80831.7,37545.43,43286.27,Retail,RTGS,Sneha
+IH2400523,2024-11-21,East,Assam,Guwahati,Amazon,Herbal Aloe Gel,Skincare,83,351,18,23889.06,10212.57,13676.49,Retail,Debit Card,Anjali
+IH2400524,2024-05-13,West,Gujarat,Ahmedabad,Website,Kumkumadi Tailam,Skincare,59,902,8,48960.56,21964.39,26996.17,Retail,UPI,Sneha
+IH2400525,2024-09-08,East,Assam,Guwahati,Distributor,Kumkumadi Tailam,Skincare,174,902,12,138114.24,63995.86,74118.38,Wholesale,NEFT,Kiran
+IH2400526,2024-04-06,East,Bihar,Patna,Website,Sandalwood Cream,Creams,124,408,18,41485.44,17743.57,23741.87,Retail,UPI,Anjali
+IH2400527,2024-11-16,West,Rajasthan,Jaipur,Distributor,Ubtan Face Pack,Face Care,375,522,5,185962.5,86812.69,99149.81,Wholesale,NEFT,Rahul
+IH2400528,2024-05-17,East,Odisha,Bhubaneswar,Website,Kumkumadi Tailam,Skincare,99,902,5,84833.1,38004.42,46828.68,Retail,Cash,Kiran
+IH2400529,2024-12-24,East,Odisha,Bhubaneswar,Website,Herbal Aloe Gel,Skincare,37,351,20,10389.6,4254.04,6135.56,Retail,UPI,Kiran
+IH2400530,2024-05-17,West,Gujarat,Surat,Website,Ayurvedic Body Oil,Body Care,48,712,5,32467.2,14600.86,17866.34,Retail,Debit Card,Anjali
+IH2400531,2024-06-08,East,Assam,Guwahati,Flipkart,Sandalwood Cream,Creams,33,408,8,12386.88,5637.47,6749.41,Retail,Credit Card,Ramesh
+IH2400532,2024-05-16,East,West Bengal,Kolkata,Amazon,Ubtan Face Pack,Face Care,74,522,18,31674.96,14206.34,17468.62,Retail,Cash,Rahul
+IH2400533,2024-01-07,South,Telangana,Hyderabad,Distributor,Sandalwood Cream,Creams,251,408,5,97287.6,44923.48,52364.12,Wholesale,Credit Card,Anjali
+IH2400534,2024-02-18,West,Gujarat,Surat,Flipkart,Sandalwood Cream,Creams,104,408,20,33945.6,14426.16,19519.44,Retail,RTGS,Ramesh
+IH2400535,2024-10-08,South,Karnataka,Bengaluru,Flipkart,Sandalwood Cream,Creams,75,408,8,28152.0,11832.06,16319.94,Retail,RTGS,Priya
+IH2400536,2024-02-27,West,Gujarat,Surat,Website,Herbal Aloe Gel,Skincare,95,351,12,29343.6,12486.28,16857.32,Retail,Credit Card,Ramesh
+IH2400537,2024-01-22,East,Odisha,Bhubaneswar,Distributor,Herbal Aloe Gel,Skincare,152,351,5,50684.4,20903.78,29780.62,Wholesale,NEFT,Kiran
+IH2400538,2024-11-16,South,Andhra Pradesh,Rajahmundry,Flipkart,Herbal Aloe Gel,Skincare,162,351,15,48332.7,20005.42,28327.28,Retail,Credit Card,Kiran
+IH2400539,2024-10-12,North,Haryana,Gurugram,Website,Ayurvedic Body Oil,Body Care,121,712,8,79259.84,34364.13,44895.71,Retail,UPI,Anjali
+IH2400540,2024-12-27,East,Assam,Guwahati,Flipkart,Ubtan Face Pack,Face Care,73,522,10,34295.4,15844.7,18450.7,Retail,Debit Card,Sneha
+IH2400541,2024-08-27,North,Punjab,Ludhiana,Flipkart,Kumkumadi Tailam,Skincare,140,902,8,116177.6,51042.71,65134.89,Retail,Debit Card,Anjali
+IH2400542,2024-01-01,East,Odisha,Bhubaneswar,Flipkart,Kumkumadi Tailam,Skincare,118,902,15,90470.6,39648.32,50822.28,Retail,RTGS,Ramesh
+IH2400543,2024-12-03,East,Odisha,Bhubaneswar,Flipkart,Ubtan Face Pack,Face Care,166,522,5,82319.4,37045.7,45273.7,Retail,Cash,Sneha
+IH2400544,2024-06-13,South,Andhra Pradesh,Rajahmundry,Flipkart,Ubtan Face Pack,Face Care,36,522,18,15409.44,6825.91,8583.53,Retail,UPI,Priya
+IH2400545,2024-02-24,East,Odisha,Bhubaneswar,Website,Kumkumadi Tailam,Skincare,124,902,12,98426.24,44406.18,54020.06,Retail,RTGS,Deepak
+IH2400546,2024-05-11,South,Karnataka,Bengaluru,Flipkart,Neem Face Wash,Face Care,43,313,0,13459.0,5890.78,7568.22,Retail,RTGS,Anjali
+IH2400547,2024-02-10,East,West Bengal,Kolkata,Flipkart,Herbal Aloe Gel,Skincare,131,351,18,37704.42,16689.96,21014.46,Retail,UPI,Rahul
+IH2400548,2024-11-11,North,Delhi,Delhi,Website,Ayurvedic Body Oil,Body Care,102,712,0,72624.0,31752.34,40871.66,Retail,NEFT,Ramesh
+IH2400549,2024-02-21,West,Rajasthan,Jaipur,Website,Sandalwood Cream,Creams,159,408,12,57087.36,25294.34,31793.02,Retail,Credit Card,Deepak
+IH2400550,2024-10-12,East,West Bengal,Kolkata,Flipkart,Ayurvedic Body Oil,Body Care,142,712,15,85938.4,38390.26,47548.14,Retail,UPI,Priya
+IH2400551,2024-04-02,East,Assam,Guwahati,Website,Ayurvedic Body Oil,Body Care,178,712,10,114062.4,50570.09,63492.31,Retail,Debit Card,Deepak
+IH2400552,2024-06-15,North,Haryana,Gurugram,Amazon,Ayurvedic Body Oil,Body Care,107,712,12,67041.92,30359.36,36682.56,Retail,Credit Card,Anjali
+IH2400553,2024-10-08,North,Uttar Pradesh,Lucknow,Amazon,Sandalwood Cream,Creams,126,408,0,51408.0,21566.95,29841.05,Retail,Debit Card,Deepak
+IH2400554,2024-01-09,West,Gujarat,Ahmedabad,Amazon,Kumkumadi Tailam,Skincare,81,902,5,69408.9,30655.88,38753.02,Retail,RTGS,Rahul
+IH2400555,2024-05-21,West,Maharashtra,Mumbai,Amazon,Kumkumadi Tailam,Skincare,64,902,5,54841.6,24350.7,30490.9,Retail,NEFT,Priya
+IH2400556,2024-04-29,North,Uttar Pradesh,Lucknow,Flipkart,Kumkumadi Tailam,Skincare,170,902,20,122672.0,56495.6,66176.4,Retail,RTGS,Kiran
+IH2400557,2024-09-04,West,Gujarat,Surat,Distributor,Ayurvedic Body Oil,Body Care,73,712,12,45738.88,20171.66,25567.22,Wholesale,RTGS,Rahul
+IH2400558,2024-10-22,East,West Bengal,Kolkata,Retail Store,Kumkumadi Tailam,Skincare,110,902,8,91282.4,42379.81,48902.59,Retail,Cash,Rahul
+IH2400559,2024-03-02,West,Rajasthan,Jaipur,Flipkart,Kumkumadi Tailam,Skincare,122,902,0,110044.0,49640.55,60403.45,Retail,Debit Card,Deepak
+IH2400560,2024-10-16,West,Gujarat,Ahmedabad,Flipkart,Ubtan Face Pack,Face Care,64,522,0,33408.0,15723.56,17684.44,Retail,Cash,Anjali
+IH2400561,2024-10-31,South,Telangana,Hyderabad,Website,Sandalwood Cream,Creams,125,408,5,48450.0,20968.74,27481.26,Retail,Cash,Deepak
+IH2400562,2024-01-26,East,Assam,Guwahati,Amazon,Kumkumadi Tailam,Skincare,136,902,15,104271.2,45187.68,59083.52,Retail,Credit Card,Anjali
+IH2400563,2024-10-13,West,Gujarat,Surat,Flipkart,Sandalwood Cream,Creams,75,408,10,27540.0,12719.94,14820.06,Retail,NEFT,Priya
+IH2400564,2024-05-04,South,Karnataka,Bengaluru,Amazon,Sandalwood Cream,Creams,172,408,5,66667.2,29837.36,36829.84,Retail,Cash,Kiran
+IH2400565,2024-06-27,West,Gujarat,Ahmedabad,Flipkart,Herbal Aloe Gel,Skincare,31,351,15,9248.85,3845.47,5403.38,Retail,Debit Card,Deepak
+IH2400566,2024-08-14,West,Gujarat,Surat,Retail Store,Kumkumadi Tailam,Skincare,84,902,5,71979.6,31982.12,39997.48,Retail,RTGS,Rahul
+IH2400567,2024-02-13,South,Andhra Pradesh,Rajahmundry,Retail Store,Neem Face Wash,Face Care,62,313,18,15912.92,6897.39,9015.53,Retail,UPI,Kiran
+IH2400568,2024-12-21,South,Karnataka,Bengaluru,Amazon,Sandalwood Cream,Creams,109,408,5,42248.4,18659.95,23588.45,Retail,Credit Card,Deepak
+IH2400569,2024-09-24,North,Haryana,Gurugram,Distributor,Ubtan Face Pack,Face Care,97,522,15,43038.9,20131.01,22907.89,Wholesale,Cash,Deepak
+IH2400570,2024-12-05,South,Karnataka,Bengaluru,Website,Neem Face Wash,Face Care,76,313,15,20219.8,8592.5,11627.3,Retail,UPI,Anjali
+IH2400571,2024-12-01,South,Andhra Pradesh,Rajahmundry,Flipkart,Sandalwood Cream,Creams,117,408,18,39143.52,16394.85,22748.67,Retail,RTGS,Anjali
+IH2400572,2024-04-28,East,West Bengal,Kolkata,Amazon,Herbal Aloe Gel,Skincare,177,351,10,55914.3,23289.2,32625.1,Retail,NEFT,Anjali
+IH2400573,2024-10-14,South,Andhra Pradesh,Rajahmundry,Retail Store,Neem Face Wash,Face Care,103,313,8,29659.88,12324.36,17335.52,Retail,Credit Card,Ramesh
+IH2400574,2024-06-26,North,Uttar Pradesh,Lucknow,Amazon,Ayurvedic Body Oil,Body Care,153,712,5,103489.2,44530.41,58958.79,Retail,Debit Card,Anjali
+IH2400575,2024-01-16,North,Punjab,Ludhiana,Amazon,Neem Face Wash,Face Care,125,313,12,34430.0,13864.53,20565.47,Retail,Cash,Deepak
+IH2400576,2024-12-13,West,Gujarat,Surat,Flipkart,Neem Face Wash,Face Care,134,313,20,33553.6,14669.93,18883.67,Retail,Debit Card,Anjali
+IH2400577,2024-10-04,West,Maharashtra,Pune,Website,Ayurvedic Body Oil,Body Care,163,712,15,98647.6,43069.93,55577.67,Retail,Credit Card,Kiran
+IH2400578,2024-12-18,West,Gujarat,Surat,Flipkart,Neem Face Wash,Face Care,169,313,20,42317.6,17449.02,24868.58,Retail,NEFT,Deepak
+IH2400579,2024-03-01,West,Gujarat,Ahmedabad,Distributor,Neem Face Wash,Face Care,416,313,8,119791.36,52691.62,67099.74,Wholesale,Cash,Kiran
+IH2400580,2024-08-14,North,Punjab,Ludhiana,Website,Neem Face Wash,Face Care,72,313,0,22536.0,9925.08,12610.92,Retail,NEFT,Kiran
+IH2400581,2024-11-06,West,Rajasthan,Jaipur,Website,Neem Face Wash,Face Care,31,313,8,8926.76,3819.78,5106.98,Retail,Cash,Priya
+IH2400582,2024-09-14,East,Assam,Guwahati,Retail Store,Neem Face Wash,Face Care,150,313,10,42255.0,17150.42,25104.58,Retail,Credit Card,Ramesh
+IH2400583,2024-07-28,South,Karnataka,Bengaluru,Website,Sandalwood Cream,Creams,76,408,15,26356.8,11093.84,15262.96,Retail,Cash,Rahul
+IH2400584,2024-11-11,East,Assam,Guwahati,Retail Store,Sandalwood Cream,Creams,134,408,10,49204.8,20658.16,28546.64,Retail,RTGS,Rahul
+IH2400585,2024-07-13,North,Haryana,Gurugram,Retail Store,Ubtan Face Pack,Face Care,171,522,12,78550.56,36224.42,42326.14,Retail,RTGS,Rahul
+IH2400586,2024-01-20,South,Tamil Nadu,Chennai,Distributor,Sandalwood Cream,Creams,46,408,18,15389.76,6599.31,8790.45,Wholesale,NEFT,Anjali
+IH2400587,2024-01-21,East,West Bengal,Kolkata,Website,Neem Face Wash,Face Care,126,313,18,32339.16,13954.17,18384.99,Retail,Debit Card,Anjali
+IH2400588,2024-03-26,East,Assam,Guwahati,Retail Store,Ubtan Face Pack,Face Care,157,522,20,65563.2,30049.23,35513.97,Retail,RTGS,Anjali
+IH2400589,2024-02-16,South,Telangana,Hyderabad,Retail Store,Ubtan Face Pack,Face Care,164,522,5,81327.6,37087.32,44240.28,Retail,Cash,Ramesh
+IH2400590,2024-04-01,East,Odisha,Bhubaneswar,Website,Sandalwood Cream,Creams,107,408,15,37107.6,16992.13,20115.47,Retail,Credit Card,Sneha
+IH2400591,2024-03-04,South,Andhra Pradesh,Rajahmundry,Amazon,Ayurvedic Body Oil,Body Care,117,712,5,79138.8,36350.63,42788.17,Retail,RTGS,Rahul
+IH2400592,2024-09-18,West,Gujarat,Surat,Amazon,Ubtan Face Pack,Face Care,68,522,20,28396.8,13148.08,15248.72,Retail,RTGS,Rahul
+IH2400593,2024-03-17,West,Maharashtra,Pune,Distributor,Neem Face Wash,Face Care,51,313,10,14366.7,5919.08,8447.62,Wholesale,Cash,Kiran
+IH2400594,2024-11-16,West,Maharashtra,Mumbai,Retail Store,Neem Face Wash,Face Care,25,313,12,6886.0,2820.72,4065.28,Retail,Cash,Anjali
+IH2400595,2024-09-12,South,Kerala,Kochi,Website,Sandalwood Cream,Creams,175,408,12,62832.0,27518.19,35313.81,Retail,Cash,Ramesh
+IH2400596,2024-11-03,South,Telangana,Hyderabad,Website,Ubtan Face Pack,Face Care,167,522,18,71482.68,31920.69,39561.99,Retail,Credit Card,Priya
+IH2400597,2024-01-29,North,Delhi,Delhi,Retail Store,Neem Face Wash,Face Care,172,313,18,44145.52,18167.41,25978.11,Retail,UPI,Ramesh
+IH2400598,2024-02-25,East,Odisha,Bhubaneswar,Flipkart,Neem Face Wash,Face Care,177,313,10,49860.9,21071.79,28789.11,Retail,Cash,Sneha
+IH2400599,2024-10-23,North,Delhi,Delhi,Distributor,Kumkumadi Tailam,Skincare,190,902,8,157669.6,70092.38,87577.22,Wholesale,UPI,Rahul
+IH2400600,2024-08-06,South,Karnataka,Bengaluru,Website,Sandalwood Cream,Creams,95,408,8,35659.2,15554.73,20104.47,Retail,Credit Card,Sneha
+IH2400601,2024-04-17,South,Andhra Pradesh,Rajahmundry,Distributor,Ubtan Face Pack,Face Care,347,522,10,163020.6,71897.43,91123.17,Wholesale,RTGS,Sneha
+IH2400602,2024-11-05,North,Haryana,Gurugram,Distributor,Ubtan Face Pack,Face Care,157,522,10,73758.6,35608.52,38150.08,Wholesale,Debit Card,Priya
+IH2400603,2024-11-10,East,Bihar,Patna,Distributor,Sandalwood Cream,Creams,337,408,5,130621.2,56269.19,74352.01,Wholesale,Credit Card,Ramesh
+IH2400604,2024-03-01,South,Tamil Nadu,Chennai,Distributor,Ayurvedic Body Oil,Body Care,402,712,18,234703.68,108780.55,125923.13,Wholesale,Cash,Anjali
+IH2400605,2024-01-24,North,Uttar Pradesh,Lucknow,Distributor,Ubtan Face Pack,Face Care,133,522,0,69426.0,30981.67,38444.33,Wholesale,Debit Card,Kiran
+IH2400606,2024-02-04,North,Uttar Pradesh,Lucknow,Flipkart,Ubtan Face Pack,Face Care,26,522,5,12893.4,5832.08,7061.32,Retail,Cash,Sneha
+IH2400607,2024-10-18,South,Telangana,Hyderabad,Amazon,Neem Face Wash,Face Care,111,313,20,27794.4,11649.26,16145.14,Retail,Cash,Rahul
+IH2400608,2024-01-19,West,Gujarat,Surat,Flipkart,Neem Face Wash,Face Care,162,313,18,41578.92,17397.61,24181.31,Retail,Cash,Sneha
+IH2400609,2024-01-29,North,Uttar Pradesh,Lucknow,Flipkart,Ubtan Face Pack,Face Care,78,522,10,36644.4,16572.76,20071.64,Retail,Debit Card,Ramesh
+IH2400610,2024-03-17,North,Delhi,Delhi,Retail Store,Herbal Aloe Gel,Skincare,161,351,18,46339.02,20067.22,26271.8,Retail,Cash,Priya
+IH2400611,2024-10-31,South,Karnataka,Bengaluru,Retail Store,Ayurvedic Body Oil,Body Care,33,712,5,22321.2,9629.5,12691.7,Retail,Credit Card,Kiran
+IH2400612,2024-08-19,North,Punjab,Ludhiana,Amazon,Ubtan Face Pack,Face Care,53,522,8,25452.72,11166.62,14286.1,Retail,Credit Card,Ramesh
+IH2400613,2024-08-15,South,Tamil Nadu,Chennai,Website,Ubtan Face Pack,Face Care,112,522,20,46771.2,22014.84,24756.36,Retail,NEFT,Kiran
+IH2400614,2024-06-16,West,Maharashtra,Mumbai,Flipkart,Ubtan Face Pack,Face Care,58,522,5,28762.2,12617.44,16144.76,Retail,Cash,Sneha
+IH2400615,2024-09-24,South,Andhra Pradesh,Rajahmundry,Retail Store,Herbal Aloe Gel,Skincare,177,351,18,50944.14,21540.79,29403.35,Retail,UPI,Ramesh
+IH2400616,2024-09-23,North,Delhi,Delhi,Distributor,Ubtan Face Pack,Face Care,352,522,18,150670.08,68066.79,82603.29,Wholesale,Credit Card,Kiran
+IH2400617,2024-05-21,North,Haryana,Gurugram,Website,Ayurvedic Body Oil,Body Care,63,712,5,42613.2,18436.63,24176.57,Retail,NEFT,Deepak
+IH2400618,2024-09-20,South,Telangana,Hyderabad,Amazon,Ubtan Face Pack,Face Care,106,522,5,52565.4,25251.93,27313.47,Retail,Debit Card,Deepak
+IH2400619,2024-05-05,West,Maharashtra,Mumbai,Flipkart,Herbal Aloe Gel,Skincare,111,351,10,35064.9,14400.5,20664.4,Retail,UPI,Anjali
+IH2400620,2024-12-11,South,Andhra Pradesh,Rajahmundry,Website,Sandalwood Cream,Creams,134,408,8,50298.24,22584.2,27714.04,Retail,NEFT,Sneha
+IH2400621,2024-12-19,East,Assam,Guwahati,Amazon,Herbal Aloe Gel,Skincare,75,351,15,22376.25,9786.2,12590.05,Retail,NEFT,Ramesh
+IH2400622,2024-08-26,West,Maharashtra,Mumbai,Amazon,Ayurvedic Body Oil,Body Care,141,712,8,92360.64,42162.52,50198.12,Retail,Cash,Anjali
+IH2400623,2024-04-28,West,Maharashtra,Pune,Website,Ubtan Face Pack,Face Care,118,522,8,56668.32,26587.77,30080.55,Retail,RTGS,Kiran
+IH2400624,2024-06-15,East,Bihar,Patna,Website,Kumkumadi Tailam,Skincare,53,902,8,43981.52,19714.97,24266.55,Retail,Credit Card,Kiran
+IH2400625,2024-06-27,West,Rajasthan,Jaipur,Amazon,Kumkumadi Tailam,Skincare,52,902,8,43151.68,19708.46,23443.22,Retail,Debit Card,Deepak
+IH2400626,2024-08-24,East,Bihar,Patna,Flipkart,Neem Face Wash,Face Care,165,313,5,49062.75,20570.04,28492.71,Retail,UPI,Kiran
+IH2400627,2024-04-16,East,Bihar,Patna,Distributor,Ubtan Face Pack,Face Care,303,522,15,134441.1,59821.17,74619.93,Wholesale,RTGS,Ramesh
+IH2400628,2024-12-30,East,West Bengal,Kolkata,Flipkart,Ubtan Face Pack,Face Care,108,522,10,50738.4,24091.25,26647.15,Retail,Credit Card,Kiran
+IH2400629,2024-07-26,South,Kerala,Kochi,Flipkart,Kumkumadi Tailam,Skincare,177,902,15,135705.9,60328.19,75377.71,Retail,Cash,Sneha
+IH2400630,2024-12-04,South,Andhra Pradesh,Rajahmundry,Distributor,Neem Face Wash,Face Care,322,313,20,80628.8,34325.1,46303.7,Wholesale,UPI,Rahul
+IH2400631,2024-03-16,West,Gujarat,Surat,Website,Ubtan Face Pack,Face Care,172,522,10,80805.6,36076.5,44729.1,Retail,Debit Card,Kiran
+IH2400632,2024-10-18,North,Haryana,Gurugram,Retail Store,Ayurvedic Body Oil,Body Care,113,712,20,64364.8,29203.77,35161.03,Retail,NEFT,Deepak
+IH2400633,2024-07-25,West,Gujarat,Ahmedabad,Amazon,Kumkumadi Tailam,Skincare,165,902,20,119064.0,50904.38,68159.62,Retail,NEFT,Rahul
+IH2400634,2024-07-02,South,Karnataka,Bengaluru,Website,Kumkumadi Tailam,Skincare,176,902,8,146051.84,64528.0,81523.84,Retail,Cash,Anjali
+IH2400635,2024-07-14,East,Odisha,Bhubaneswar,Website,Ayurvedic Body Oil,Body Care,60,712,5,40584.0,18052.04,22531.96,Retail,Debit Card,Rahul
+IH2400636,2024-08-01,West,Gujarat,Ahmedabad,Website,Ayurvedic Body Oil,Body Care,27,712,0,19224.0,8231.85,10992.15,Retail,RTGS,Anjali
+IH2400637,2024-12-02,East,Odisha,Bhubaneswar,Website,Kumkumadi Tailam,Skincare,131,902,18,96892.84,45317.87,51574.97,Retail,RTGS,Deepak
+IH2400638,2024-08-05,West,Gujarat,Surat,Amazon,Ubtan Face Pack,Face Care,140,522,8,67233.6,30079.24,37154.36,Retail,Cash,Deepak
+IH2400639,2024-01-04,East,Odisha,Bhubaneswar,Amazon,Ayurvedic Body Oil,Body Care,130,712,20,74048.0,33576.02,40471.98,Retail,UPI,Ramesh
+IH2400640,2024-10-17,East,Assam,Guwahati,Flipkart,Kumkumadi Tailam,Skincare,45,902,5,38560.5,17753.57,20806.93,Retail,Debit Card,Anjali
+IH2400641,2024-09-21,South,Kerala,Kochi,Website,Ubtan Face Pack,Face Care,145,522,12,66607.2,31140.99,35466.21,Retail,RTGS,Ramesh
+IH2400642,2024-12-16,North,Delhi,Delhi,Flipkart,Herbal Aloe Gel,Skincare,27,351,10,8529.3,3672.24,4857.06,Retail,Cash,Deepak
+IH2400643,2024-06-18,East,Assam,Guwahati,Website,Herbal Aloe Gel,Skincare,34,351,15,10143.9,4404.46,5739.44,Retail,Debit Card,Sneha
+IH2400644,2024-10-15,North,Delhi,Delhi,Amazon,Ayurvedic Body Oil,Body Care,68,712,10,43574.4,19915.0,23659.4,Retail,Debit Card,Rahul
+IH2400645,2024-11-15,South,Karnataka,Bengaluru,Website,Sandalwood Cream,Creams,154,408,0,62832.0,28430.57,34401.43,Retail,Debit Card,Priya
+IH2400646,2024-11-11,North,Uttar Pradesh,Lucknow,Website,Herbal Aloe Gel,Skincare,53,351,12,16370.64,7328.08,9042.56,Retail,RTGS,Priya
+IH2400647,2024-12-03,East,Assam,Guwahati,Website,Neem Face Wash,Face Care,85,313,10,23944.5,10357.76,13586.74,Retail,UPI,Kiran
+IH2400648,2024-02-13,West,Rajasthan,Jaipur,Distributor,Neem Face Wash,Face Care,410,313,20,102664.0,44284.68,58379.32,Wholesale,Credit Card,Sneha
+IH2400649,2024-08-13,West,Maharashtra,Pune,Distributor,Ubtan Face Pack,Face Care,201,522,0,104922.0,47127.0,57795.0,Wholesale,UPI,Ramesh
+IH2400650,2024-03-26,East,Bihar,Patna,Amazon,Sandalwood Cream,Creams,161,408,5,62403.6,27961.46,34442.14,Retail,Cash,Anjali
+IH2400651,2024-05-14,West,Rajasthan,Jaipur,Website,Sandalwood Cream,Creams,139,408,8,52175.04,22533.89,29641.15,Retail,NEFT,Sneha
+IH2400652,2024-01-22,South,Kerala,Kochi,Amazon,Ayurvedic Body Oil,Body Care,135,712,12,84585.6,38642.34,45943.26,Retail,Debit Card,Kiran
+IH2400653,2024-05-18,North,Delhi,Delhi,Flipkart,Herbal Aloe Gel,Skincare,125,351,10,39487.5,17277.26,22210.24,Retail,Credit Card,Sneha
+IH2400654,2024-12-10,West,Rajasthan,Jaipur,Flipkart,Herbal Aloe Gel,Skincare,71,351,8,22927.32,9376.24,13551.08,Retail,UPI,Rahul
+IH2400655,2024-02-04,South,Tamil Nadu,Chennai,Flipkart,Kumkumadi Tailam,Skincare,139,902,8,115347.76,53075.69,62272.07,Retail,Debit Card,Priya
+IH2400656,2024-01-18,South,Kerala,Kochi,Website,Kumkumadi Tailam,Skincare,177,902,12,140495.52,65343.86,75151.66,Retail,NEFT,Sneha
+IH2400657,2024-03-03,South,Andhra Pradesh,Rajahmundry,Website,Ubtan Face Pack,Face Care,169,522,18,72338.76,32226.87,40111.89,Retail,UPI,Sneha
+IH2400658,2024-04-04,North,Uttar Pradesh,Lucknow,Flipkart,Sandalwood Cream,Creams,44,408,12,15797.76,7244.83,8552.93,Retail,Debit Card,Rahul
+IH2400659,2024-08-06,North,Uttar Pradesh,Lucknow,Distributor,Neem Face Wash,Face Care,166,313,15,44164.3,18331.61,25832.69,Wholesale,Debit Card,Ramesh
+IH2400660,2024-05-12,North,Punjab,Ludhiana,Website,Sandalwood Cream,Creams,76,408,12,27287.04,11620.23,15666.81,Retail,Cash,Ramesh
+IH2400661,2024-03-14,East,Odisha,Bhubaneswar,Flipkart,Ubtan Face Pack,Face Care,138,522,15,61230.6,27048.69,34181.91,Retail,UPI,Ramesh
+IH2400662,2024-10-19,North,Haryana,Gurugram,Retail Store,Kumkumadi Tailam,Skincare,63,902,12,50006.88,21379.89,28626.99,Retail,UPI,Sneha
+IH2400663,2024-07-18,North,Punjab,Ludhiana,Amazon,Ayurvedic Body Oil,Body Care,125,712,10,80100.0,36100.45,43999.55,Retail,Cash,Anjali
+IH2400664,2024-08-11,East,West Bengal,Kolkata,Website,Ubtan Face Pack,Face Care,123,522,20,51364.8,24379.12,26985.68,Retail,Cash,Ramesh
+IH2400665,2024-10-17,North,Uttar Pradesh,Lucknow,Amazon,Ayurvedic Body Oil,Body Care,39,712,12,24435.84,11500.66,12935.18,Retail,UPI,Kiran
+IH2400666,2024-09-30,North,Delhi,Delhi,Distributor,Sandalwood Cream,Creams,173,408,12,62113.92,26446.32,35667.6,Wholesale,UPI,Anjali
+IH2400667,2024-12-04,West,Gujarat,Ahmedabad,Amazon,Ayurvedic Body Oil,Body Care,52,712,12,32581.12,14455.16,18125.96,Retail,UPI,Sneha
+IH2400668,2024-08-12,West,Maharashtra,Pune,Website,Kumkumadi Tailam,Skincare,176,902,5,150814.4,67111.58,83702.82,Retail,NEFT,Sneha
+IH2400669,2024-06-06,East,Bihar,Patna,Website,Kumkumadi Tailam,Skincare,39,902,8,32363.76,14885.57,17478.19,Retail,Cash,Ramesh
+IH2400670,2024-04-18,East,Odisha,Bhubaneswar,Flipkart,Ayurvedic Body Oil,Body Care,43,712,0,30616.0,13283.41,17332.59,Retail,RTGS,Ramesh
+IH2400671,2024-08-29,South,Telangana,Hyderabad,Flipkart,Ayurvedic Body Oil,Body Care,28,712,5,18939.2,8139.09,10800.11,Retail,Debit Card,Rahul
+IH2400672,2024-02-19,East,Odisha,Bhubaneswar,Website,Ubtan Face Pack,Face Care,52,522,5,25786.8,11974.59,13812.21,Retail,NEFT,Priya
+IH2400673,2024-02-02,West,Gujarat,Surat,Distributor,Herbal Aloe Gel,Skincare,402,351,12,124169.76,52454.53,71715.23,Wholesale,RTGS,Deepak
+IH2400674,2024-10-06,West,Gujarat,Ahmedabad,Distributor,Neem Face Wash,Face Care,328,313,5,97530.8,39173.76,58357.04,Wholesale,Debit Card,Priya
+IH2400675,2024-07-31,West,Gujarat,Ahmedabad,Website,Ubtan Face Pack,Face Care,87,522,20,36331.2,15944.75,20386.45,Retail,UPI,Rahul
+IH2400676,2024-11-19,East,Odisha,Bhubaneswar,Retail Store,Kumkumadi Tailam,Skincare,45,902,0,40590.0,17679.93,22910.07,Retail,UPI,Sneha
+IH2400677,2024-11-29,North,Haryana,Gurugram,Distributor,Ayurvedic Body Oil,Body Care,420,712,10,269136.0,116592.45,152543.55,Wholesale,Credit Card,Sneha
+IH2400678,2024-05-18,East,Bihar,Patna,Retail Store,Neem Face Wash,Face Care,34,313,12,9364.96,4018.71,5346.25,Retail,NEFT,Ramesh
+IH2400679,2024-11-17,North,Uttar Pradesh,Lucknow,Website,Sandalwood Cream,Creams,85,408,5,32946.0,15201.63,17744.37,Retail,UPI,Deepak
+IH2400680,2024-07-04,West,Gujarat,Surat,Flipkart,Ayurvedic Body Oil,Body Care,95,712,0,67640.0,29259.07,38380.93,Retail,Credit Card,Sneha
+IH2400681,2024-08-30,East,Odisha,Bhubaneswar,Flipkart,Neem Face Wash,Face Care,36,313,0,11268.0,4668.29,6599.71,Retail,Credit Card,Anjali
+IH2400682,2024-05-08,North,Haryana,Gurugram,Website,Kumkumadi Tailam,Skincare,38,902,20,27420.8,11939.43,15481.37,Retail,UPI,Anjali
+IH2400683,2024-09-20,South,Andhra Pradesh,Rajahmundry,Distributor,Neem Face Wash,Face Care,328,313,10,92397.6,38492.91,53904.69,Wholesale,RTGS,Sneha
+IH2400684,2024-06-15,West,Maharashtra,Mumbai,Website,Herbal Aloe Gel,Skincare,85,351,15,25359.75,11308.04,14051.71,Retail,Cash,Priya
+IH2400685,2024-02-07,East,Bihar,Patna,Retail Store,Kumkumadi Tailam,Skincare,62,902,5,53127.8,24169.14,28958.66,Retail,Credit Card,Anjali
+IH2400686,2024-07-10,West,Gujarat,Surat,Website,Ayurvedic Body Oil,Body Care,116,712,20,66073.6,28847.7,37225.9,Retail,Credit Card,Ramesh
+IH2400687,2024-12-20,South,Karnataka,Bengaluru,Website,Neem Face Wash,Face Care,144,313,10,40564.8,16477.03,24087.77,Retail,Debit Card,Priya
+IH2400688,2024-05-31,West,Rajasthan,Jaipur,Flipkart,Neem Face Wash,Face Care,166,313,18,42605.56,17154.36,25451.2,Retail,NEFT,Anjali
+IH2400689,2024-04-20,East,Bihar,Patna,Website,Herbal Aloe Gel,Skincare,134,351,15,39978.9,16755.4,23223.5,Retail,Debit Card,Anjali
+IH2400690,2024-10-23,West,Rajasthan,Jaipur,Retail Store,Neem Face Wash,Face Care,26,313,10,7324.2,2935.96,4388.24,Retail,Cash,Sneha
+IH2400691,2024-09-15,South,Tamil Nadu,Chennai,Amazon,Ubtan Face Pack,Face Care,50,522,10,23490.0,10525.01,12964.99,Retail,NEFT,Rahul
+IH2400692,2024-01-07,East,Odisha,Bhubaneswar,Amazon,Neem Face Wash,Face Care,86,313,12,23687.84,9541.71,14146.13,Retail,Cash,Sneha
+IH2400693,2024-06-05,West,Gujarat,Surat,Distributor,Ubtan Face Pack,Face Care,37,522,20,15451.2,7081.79,8369.41,Wholesale,Credit Card,Rahul
+IH2400694,2024-12-26,East,Odisha,Bhubaneswar,Flipkart,Herbal Aloe Gel,Skincare,25,351,18,7195.5,2961.24,4234.26,Retail,RTGS,Kiran
+IH2400695,2024-09-28,South,Karnataka,Bengaluru,Distributor,Sandalwood Cream,Creams,382,408,20,124684.8,55094.12,69590.68,Wholesale,Credit Card,Rahul
+IH2400696,2024-12-16,South,Kerala,Kochi,Distributor,Herbal Aloe Gel,Skincare,53,351,10,16742.7,7494.54,9248.16,Wholesale,Debit Card,Ramesh
+IH2400697,2024-02-26,East,Assam,Guwahati,Flipkart,Sandalwood Cream,Creams,118,408,8,44292.48,19777.46,24515.02,Retail,RTGS,Ramesh
+IH2400698,2024-10-14,West,Maharashtra,Pune,Website,Herbal Aloe Gel,Skincare,54,351,12,16679.52,7342.45,9337.07,Retail,NEFT,Rahul
+IH2400699,2024-12-25,West,Maharashtra,Pune,Amazon,Herbal Aloe Gel,Skincare,93,351,10,29378.7,12535.48,16843.22,Retail,UPI,Ramesh
+IH2400700,2024-07-09,North,Haryana,Gurugram,Amazon,Sandalwood Cream,Creams,56,408,10,20563.2,9076.67,11486.53,Retail,NEFT,Kiran
+IH2400701,2024-08-19,North,Delhi,Delhi,Retail Store,Neem Face Wash,Face Care,142,313,5,42223.7,17540.09,24683.61,Retail,Credit Card,Kiran
+IH2400702,2024-02-09,South,Telangana,Hyderabad,Website,Herbal Aloe Gel,Skincare,62,351,10,19585.8,8737.71,10848.09,Retail,NEFT,Sneha
+IH2400703,2024-01-12,North,Haryana,Gurugram,Flipkart,Ayurvedic Body Oil,Body Care,58,712,10,37166.4,16591.3,20575.1,Retail,RTGS,Sneha
+IH2400704,2024-01-11,North,Punjab,Ludhiana,Website,Kumkumadi Tailam,Skincare,84,902,18,62129.76,28013.25,34116.51,Retail,Debit Card,Anjali
+IH2400705,2024-10-23,North,Uttar Pradesh,Lucknow,Flipkart,Sandalwood Cream,Creams,160,408,18,53529.6,23424.09,30105.51,Retail,Debit Card,Deepak
+IH2400706,2024-03-08,North,Punjab,Ludhiana,Website,Herbal Aloe Gel,Skincare,120,351,20,33696.0,14880.13,18815.87,Retail,UPI,Priya
+IH2400707,2024-06-29,North,Haryana,Gurugram,Flipkart,Neem Face Wash,Face Care,66,313,15,17559.3,7216.53,10342.77,Retail,Credit Card,Rahul
+IH2400708,2024-12-28,West,Maharashtra,Pune,Website,Neem Face Wash,Face Care,106,313,10,29860.2,12467.15,17393.05,Retail,Debit Card,Priya
+IH2400709,2024-04-15,South,Karnataka,Bengaluru,Website,Herbal Aloe Gel,Skincare,139,351,10,43910.1,18244.28,25665.82,Retail,Debit Card,Ramesh
+IH2400710,2024-01-13,East,Bihar,Patna,Retail Store,Neem Face Wash,Face Care,106,313,5,31519.1,13860.41,17658.69,Retail,NEFT,Deepak
+IH2400711,2024-06-18,North,Haryana,Gurugram,Retail Store,Herbal Aloe Gel,Skincare,171,351,12,52818.48,23392.34,29426.14,Retail,RTGS,Anjali
+IH2400712,2024-06-22,South,Tamil Nadu,Chennai,Website,Kumkumadi Tailam,Skincare,166,902,5,142245.4,60968.63,81276.77,Retail,NEFT,Rahul
+IH2400713,2024-04-22,East,Assam,Guwahati,Amazon,Kumkumadi Tailam,Skincare,180,902,12,142876.8,64830.98,78045.82,Retail,Credit Card,Rahul
+IH2400714,2024-05-22,West,Maharashtra,Mumbai,Flipkart,Kumkumadi Tailam,Skincare,139,902,12,110332.64,51921.78,58410.86,Retail,NEFT,Anjali
+IH2400715,2024-04-09,East,Assam,Guwahati,Flipkart,Ubtan Face Pack,Face Care,39,522,20,16286.4,7387.66,8898.74,Retail,Credit Card,Sneha
+IH2400716,2024-08-06,North,Haryana,Gurugram,Website,Herbal Aloe Gel,Skincare,113,351,8,36489.96,16439.95,20050.01,Retail,NEFT,Ramesh
+IH2400717,2024-04-20,East,Bihar,Patna,Website,Sandalwood Cream,Creams,133,408,15,46124.4,20120.59,26003.81,Retail,NEFT,Deepak
+IH2400718,2024-02-14,West,Maharashtra,Pune,Amazon,Herbal Aloe Gel,Skincare,159,351,20,44647.2,18365.31,26281.89,Retail,NEFT,Rahul
+IH2400719,2024-07-11,South,Andhra Pradesh,Rajahmundry,Flipkart,Sandalwood Cream,Creams,94,408,10,34516.8,15272.16,19244.64,Retail,RTGS,Deepak
+IH2400720,2024-03-11,West,Maharashtra,Pune,Website,Sandalwood Cream,Creams,150,408,0,61200.0,27806.52,33393.48,Retail,NEFT,Kiran
+IH2400721,2024-09-09,East,Odisha,Bhubaneswar,Distributor,Kumkumadi Tailam,Skincare,103,902,5,88260.7,41528.53,46732.17,Wholesale,RTGS,Anjali
+IH2400722,2024-03-04,North,Haryana,Gurugram,Amazon,Neem Face Wash,Face Care,87,313,0,27231.0,11739.78,15491.22,Retail,Cash,Ramesh
+IH2400723,2024-11-02,North,Haryana,Gurugram,Amazon,Ubtan Face Pack,Face Care,91,522,12,41801.76,19182.74,22619.02,Retail,RTGS,Rahul
+IH2400724,2024-03-02,North,Delhi,Delhi,Website,Herbal Aloe Gel,Skincare,39,351,5,13004.55,5570.17,7434.38,Retail,RTGS,Priya
+IH2400725,2024-07-01,West,Maharashtra,Mumbai,Amazon,Herbal Aloe Gel,Skincare,116,351,0,40716.0,17143.13,23572.87,Retail,RTGS,Ramesh
+IH2400726,2024-09-20,West,Maharashtra,Pune,Flipkart,Kumkumadi Tailam,Skincare,67,902,10,54390.6,25387.35,29003.25,Retail,RTGS,Rahul
+IH2400727,2024-06-03,North,Uttar Pradesh,Lucknow,Flipkart,Kumkumadi Tailam,Skincare,115,902,18,85058.6,36411.92,48646.68,Retail,NEFT,Kiran
+IH2400728,2024-07-09,East,Bihar,Patna,Retail Store,Herbal Aloe Gel,Skincare,66,351,5,22007.7,9136.41,12871.29,Retail,Credit Card,Rahul
+IH2400729,2024-04-06,South,Tamil Nadu,Chennai,Retail Store,Sandalwood Cream,Creams,54,408,18,18066.24,8285.72,9780.52,Retail,Cash,Kiran
+IH2400730,2024-06-08,North,Punjab,Ludhiana,Retail Store,Sandalwood Cream,Creams,177,408,10,64994.4,29941.94,35052.46,Retail,Credit Card,Sneha
+IH2400731,2024-06-04,South,Andhra Pradesh,Rajahmundry,Website,Neem Face Wash,Face Care,61,313,15,16229.05,6684.94,9544.11,Retail,Credit Card,Priya
+IH2400732,2024-02-10,East,West Bengal,Kolkata,Website,Kumkumadi Tailam,Skincare,148,902,15,113471.6,48726.21,64745.39,Retail,UPI,Ramesh
+IH2400733,2024-12-03,South,Tamil Nadu,Chennai,Retail Store,Kumkumadi Tailam,Skincare,36,902,0,32472.0,14857.28,17614.72,Retail,UPI,Rahul
+IH2400734,2024-03-04,West,Rajasthan,Jaipur,Website,Neem Face Wash,Face Care,114,313,0,35682.0,14455.26,21226.74,Retail,RTGS,Kiran
+IH2400735,2024-10-23,North,Uttar Pradesh,Lucknow,Retail Store,Neem Face Wash,Face Care,86,313,10,24226.2,9735.79,14490.41,Retail,NEFT,Rahul
+IH2400736,2024-01-08,West,Maharashtra,Pune,Website,Herbal Aloe Gel,Skincare,162,351,0,56862.0,25001.65,31860.35,Retail,Credit Card,Deepak
+IH2400737,2024-12-28,East,Assam,Guwahati,Flipkart,Ayurvedic Body Oil,Body Care,137,712,12,85838.72,37110.62,48728.1,Retail,Debit Card,Anjali
+IH2400738,2024-08-05,West,Rajasthan,Jaipur,Amazon,Neem Face Wash,Face Care,105,313,5,31221.75,12602.14,18619.61,Retail,Credit Card,Anjali
+IH2400739,2024-07-03,North,Delhi,Delhi,Amazon,Kumkumadi Tailam,Skincare,54,902,8,44811.36,20078.29,24733.07,Retail,RTGS,Kiran
+IH2400740,2024-12-17,East,Odisha,Bhubaneswar,Amazon,Ubtan Face Pack,Face Care,134,522,5,66450.6,29251.69,37198.91,Retail,Cash,Sneha
+IH2400741,2024-07-07,West,Maharashtra,Mumbai,Amazon,Ayurvedic Body Oil,Body Care,51,712,8,33407.04,15067.24,18339.8,Retail,RTGS,Ramesh
+IH2400742,2024-03-02,West,Gujarat,Surat,Flipkart,Sandalwood Cream,Creams,51,408,15,17686.8,8087.59,9599.21,Retail,Credit Card,Ramesh
+IH2400743,2024-07-05,West,Gujarat,Ahmedabad,Flipkart,Neem Face Wash,Face Care,128,313,5,38060.8,16526.02,21534.78,Retail,RTGS,Anjali
+IH2400744,2024-05-22,North,Haryana,Gurugram,Amazon,Herbal Aloe Gel,Skincare,179,351,20,50263.2,22666.87,27596.33,Retail,NEFT,Kiran
+IH2400745,2024-03-16,East,West Bengal,Kolkata,Website,Kumkumadi Tailam,Skincare,152,902,5,130248.8,61204.97,69043.83,Retail,UPI,Ramesh
+IH2400746,2024-01-28,South,Tamil Nadu,Chennai,Website,Ayurvedic Body Oil,Body Care,70,712,8,45852.8,21003.53,24849.27,Retail,Credit Card,Kiran
+IH2400747,2024-11-14,South,Andhra Pradesh,Rajahmundry,Distributor,Ayurvedic Body Oil,Body Care,417,712,10,267213.6,119837.55,147376.05,Wholesale,Debit Card,Sneha
+IH2400748,2024-09-11,East,Assam,Guwahati,Amazon,Ubtan Face Pack,Face Care,163,522,10,76577.4,36819.85,39757.55,Retail,UPI,Anjali
+IH2400749,2024-03-01,East,Bihar,Patna,Retail Store,Herbal Aloe Gel,Skincare,138,351,10,43594.2,17869.83,25724.37,Retail,NEFT,Sneha
+IH2400750,2024-06-04,West,Gujarat,Surat,Website,Sandalwood Cream,Creams,124,408,10,45532.8,19251.85,26280.95,Retail,RTGS,Anjali
+IH2400751,2024-12-03,East,Bihar,Patna,Retail Store,Ubtan Face Pack,Face Care,154,522,0,80388.0,36103.54,44284.46,Retail,NEFT,Anjali
+IH2400752,2024-11-11,North,Uttar Pradesh,Lucknow,Website,Herbal Aloe Gel,Skincare,176,351,0,61776.0,27458.7,34317.3,Retail,Debit Card,Rahul
+IH2400753,2024-10-25,South,Karnataka,Bengaluru,Website,Sandalwood Cream,Creams,113,408,20,36883.2,16085.68,20797.52,Retail,UPI,Sneha
+IH2400754,2024-05-05,West,Maharashtra,Pune,Amazon,Ayurvedic Body Oil,Body Care,46,712,20,26201.6,11278.41,14923.19,Retail,Debit Card,Ramesh
+IH2400755,2024-06-21,West,Maharashtra,Mumbai,Amazon,Ubtan Face Pack,Face Care,142,522,12,65229.12,29772.77,35456.35,Retail,NEFT,Anjali
+IH2400756,2024-05-16,South,Tamil Nadu,Chennai,Website,Ubtan Face Pack,Face Care,106,522,8,50905.44,23159.63,27745.81,Retail,NEFT,Ramesh
+IH2400757,2024-09-07,South,Telangana,Hyderabad,Amazon,Herbal Aloe Gel,Skincare,111,351,5,37012.95,15596.49,21416.46,Retail,Cash,Priya
+IH2400758,2024-09-11,South,Kerala,Kochi,Website,Neem Face Wash,Face Care,37,313,8,10654.52,4507.8,6146.72,Retail,Credit Card,Deepak
+IH2400759,2024-02-17,South,Kerala,Kochi,Website,Herbal Aloe Gel,Skincare,170,351,18,48929.4,20987.61,27941.79,Retail,Credit Card,Kiran
+IH2400760,2024-02-09,North,Uttar Pradesh,Lucknow,Flipkart,Sandalwood Cream,Creams,105,408,5,40698.0,17732.17,22965.83,Retail,NEFT,Deepak
+IH2400761,2024-08-20,West,Maharashtra,Mumbai,Distributor,Ayurvedic Body Oil,Body Care,120,712,10,76896.0,33609.92,43286.08,Wholesale,RTGS,Anjali
+IH2400762,2024-05-17,East,West Bengal,Kolkata,Website,Ubtan Face Pack,Face Care,143,522,5,70913.7,31480.13,39433.57,Retail,RTGS,Rahul
+IH2400763,2024-06-02,East,Bihar,Patna,Retail Store,Herbal Aloe Gel,Skincare,41,351,12,12664.08,5633.95,7030.13,Retail,Debit Card,Rahul
+IH2400764,2024-05-26,West,Gujarat,Ahmedabad,Flipkart,Ayurvedic Body Oil,Body Care,128,712,5,86579.2,37596.87,48982.33,Retail,UPI,Priya
+IH2400765,2024-06-07,East,Bihar,Patna,Retail Store,Ubtan Face Pack,Face Care,133,522,12,61094.88,26802.46,34292.42,Retail,Credit Card,Kiran
+IH2400766,2024-03-10,South,Karnataka,Bengaluru,Flipkart,Herbal Aloe Gel,Skincare,70,351,12,21621.6,8871.69,12749.91,Retail,RTGS,Anjali
+IH2400767,2024-01-11,South,Andhra Pradesh,Rajahmundry,Flipkart,Herbal Aloe Gel,Skincare,41,351,20,11512.8,4904.47,6608.33,Retail,Debit Card,Sneha
+IH2400768,2024-12-02,South,Tamil Nadu,Chennai,Distributor,Ayurvedic Body Oil,Body Care,145,712,5,98078.0,45169.98,52908.02,Wholesale,UPI,Deepak
+IH2400769,2024-12-06,North,Haryana,Gurugram,Website,Kumkumadi Tailam,Skincare,56,902,15,42935.2,18960.33,23974.87,Retail,NEFT,Sneha
+IH2400770,2024-07-18,West,Gujarat,Surat,Website,Neem Face Wash,Face Care,69,313,5,20517.15,8422.93,12094.22,Retail,Cash,Kiran
+IH2400771,2024-10-28,South,Tamil Nadu,Chennai,Amazon,Ubtan Face Pack,Face Care,53,522,8,25452.72,11619.01,13833.71,Retail,RTGS,Priya
+IH2400772,2024-05-22,West,Gujarat,Ahmedabad,Distributor,Sandalwood Cream,Creams,182,408,0,74256.0,34197.82,40058.18,Wholesale,NEFT,Ramesh
+IH2400773,2024-12-05,South,Telangana,Hyderabad,Flipkart,Herbal Aloe Gel,Skincare,104,351,12,32123.52,14090.23,18033.29,Retail,RTGS,Ramesh
+IH2400774,2024-09-30,West,Gujarat,Surat,Website,Sandalwood Cream,Creams,125,408,20,40800.0,18702.26,22097.74,Retail,Debit Card,Ramesh
+IH2400775,2024-04-30,North,Punjab,Ludhiana,Retail Store,Neem Face Wash,Face Care,106,313,18,27205.96,11731.29,15474.67,Retail,Cash,Rahul
+IH2400776,2024-01-18,North,Delhi,Delhi,Amazon,Sandalwood Cream,Creams,130,408,20,42432.0,18357.77,24074.23,Retail,Cash,Rahul
+IH2400777,2024-02-21,West,Gujarat,Ahmedabad,Website,Ubtan Face Pack,Face Care,132,522,12,60635.52,28766.56,31868.96,Retail,RTGS,Kiran
+IH2400778,2024-08-20,South,Andhra Pradesh,Rajahmundry,Flipkart,Ayurvedic Body Oil,Body Care,138,712,15,83517.6,36215.25,47302.35,Retail,Cash,Priya
+IH2400779,2024-11-17,North,Uttar Pradesh,Lucknow,Website,Ubtan Face Pack,Face Care,65,522,5,32233.5,15144.07,17089.43,Retail,RTGS,Rahul
+IH2400780,2024-03-07,East,Assam,Guwahati,Amazon,Sandalwood Cream,Creams,59,408,5,22868.4,10250.73,12617.67,Retail,Debit Card,Rahul
+IH2400781,2024-05-24,West,Maharashtra,Mumbai,Amazon,Sandalwood Cream,Creams,125,408,18,41820.0,19219.19,22600.81,Retail,NEFT,Priya
+IH2400782,2024-01-11,South,Kerala,Kochi,Flipkart,Ayurvedic Body Oil,Body Care,83,712,20,47276.8,22283.25,24993.55,Retail,Credit Card,Kiran
+IH2400783,2024-12-25,West,Maharashtra,Mumbai,Flipkart,Sandalwood Cream,Creams,178,408,5,68992.8,29109.35,39883.45,Retail,Debit Card,Priya
+IH2400784,2024-10-17,South,Andhra Pradesh,Rajahmundry,Flipkart,Ayurvedic Body Oil,Body Care,141,712,18,82321.44,37022.97,45298.47,Retail,Credit Card,Sneha
+IH2400785,2024-04-14,West,Gujarat,Ahmedabad,Distributor,Herbal Aloe Gel,Skincare,220,351,5,73359.0,32668.41,40690.59,Wholesale,NEFT,Priya
+IH2400786,2024-05-24,West,Gujarat,Surat,Amazon,Neem Face Wash,Face Care,62,313,0,19406.0,8538.59,10867.41,Retail,Credit Card,Deepak
+IH2400787,2024-08-18,West,Gujarat,Ahmedabad,Flipkart,Ubtan Face Pack,Face Care,142,522,5,70417.8,32291.39,38126.41,Retail,Debit Card,Sneha
+IH2400788,2024-07-22,West,Gujarat,Surat,Amazon,Ayurvedic Body Oil,Body Care,177,712,5,119722.8,51694.82,68027.98,Retail,UPI,Ramesh
+IH2400789,2024-06-19,West,Gujarat,Surat,Retail Store,Herbal Aloe Gel,Skincare,178,351,15,53106.3,23543.28,29563.02,Retail,UPI,Kiran
+IH2400790,2024-09-15,East,Assam,Guwahati,Flipkart,Sandalwood Cream,Creams,58,408,20,18931.2,8379.34,10551.86,Retail,NEFT,Priya
+IH2400791,2024-05-13,West,Rajasthan,Jaipur,Retail Store,Sandalwood Cream,Creams,144,408,5,55814.4,24109.7,31704.7,Retail,NEFT,Anjali
+IH2400792,2024-03-13,North,Delhi,Delhi,Website,Herbal Aloe Gel,Skincare,57,351,10,18006.3,8109.23,9897.07,Retail,Debit Card,Sneha
+IH2400793,2024-07-03,East,Assam,Guwahati,Flipkart,Herbal Aloe Gel,Skincare,92,351,10,29062.8,12416.74,16646.06,Retail,Credit Card,Kiran
+IH2400794,2024-09-08,West,Rajasthan,Jaipur,Flipkart,Ayurvedic Body Oil,Body Care,137,712,0,97544.0,42352.43,55191.57,Retail,Credit Card,Priya
+IH2400795,2024-01-19,East,Assam,Guwahati,Distributor,Neem Face Wash,Face Care,248,313,5,73742.8,32195.91,41546.89,Wholesale,Cash,Ramesh
+IH2400796,2024-08-14,North,Haryana,Gurugram,Amazon,Sandalwood Cream,Creams,62,408,5,24031.2,10143.99,13887.21,Retail,Debit Card,Priya
+IH2400797,2024-03-27,North,Punjab,Ludhiana,Retail Store,Ubtan Face Pack,Face Care,26,522,10,12214.8,5658.58,6556.22,Retail,Cash,Ramesh
+IH2400798,2024-05-06,East,West Bengal,Kolkata,Website,Herbal Aloe Gel,Skincare,56,351,8,18083.52,7846.16,10237.36,Retail,UPI,Rahul
+IH2400799,2024-06-14,West,Maharashtra,Mumbai,Amazon,Kumkumadi Tailam,Skincare,147,902,10,119334.6,56145.03,63189.57,Retail,NEFT,Sneha
+IH2400800,2024-01-03,North,Delhi,Delhi,Flipkart,Ayurvedic Body Oil,Body Care,140,712,8,91705.6,42223.05,49482.55,Retail,RTGS,Rahul
+IH2400801,2024-10-18,West,Maharashtra,Pune,Distributor,Kumkumadi Tailam,Skincare,169,902,8,140242.96,60304.34,79938.62,Wholesale,UPI,Deepak
+IH2400802,2024-11-04,East,West Bengal,Kolkata,Website,Sandalwood Cream,Creams,86,408,20,28070.4,12802.42,15267.98,Retail,UPI,Ramesh
+IH2400803,2024-04-16,West,Gujarat,Surat,Website,Sandalwood Cream,Creams,64,408,5,24806.4,10904.82,13901.58,Retail,Cash,Sneha
+IH2400804,2024-06-07,West,Gujarat,Ahmedabad,Website,Ayurvedic Body Oil,Body Care,119,712,10,76255.2,34279.23,41975.97,Retail,Cash,Anjali
+IH2400805,2024-05-17,East,West Bengal,Kolkata,Distributor,Sandalwood Cream,Creams,339,408,5,131396.4,58569.97,72826.43,Wholesale,UPI,Ramesh
+IH2400806,2024-09-19,North,Haryana,Gurugram,Website,Ayurvedic Body Oil,Body Care,64,712,20,36454.4,16449.23,20005.17,Retail,RTGS,Deepak
+IH2400807,2024-02-12,North,Haryana,Gurugram,Website,Sandalwood Cream,Creams,147,408,8,55177.92,25453.81,29724.11,Retail,RTGS,Kiran
+IH2400808,2024-05-07,East,Assam,Guwahati,Website,Ubtan Face Pack,Face Care,44,522,20,18374.4,8463.56,9910.84,Retail,NEFT,Anjali
+IH2400809,2024-07-30,South,Tamil Nadu,Chennai,Distributor,Ayurvedic Body Oil,Body Care,154,712,8,100876.16,45782.7,55093.46,Wholesale,NEFT,Ramesh
+IH2400810,2024-02-28,East,Odisha,Bhubaneswar,Distributor,Neem Face Wash,Face Care,48,313,5,14272.8,6220.42,8052.38,Wholesale,Debit Card,Kiran
+IH2400811,2024-10-27,East,Bihar,Patna,Distributor,Ubtan Face Pack,Face Care,199,522,20,83102.4,39646.65,43455.75,Wholesale,Credit Card,Priya
+IH2400812,2024-04-04,South,Kerala,Kochi,Retail Store,Herbal Aloe Gel,Skincare,52,351,10,16426.8,6723.0,9703.8,Retail,Cash,Ramesh
+IH2400813,2024-01-07,West,Gujarat,Surat,Flipkart,Sandalwood Cream,Creams,179,408,15,62077.2,26775.34,35301.86,Retail,NEFT,Kiran
+IH2400814,2024-12-19,East,Assam,Guwahati,Website,Kumkumadi Tailam,Skincare,28,902,5,23993.2,11138.09,12855.11,Retail,RTGS,Priya
+IH2400815,2024-01-14,West,Gujarat,Surat,Website,Ayurvedic Body Oil,Body Care,86,712,10,55108.8,25111.57,29997.23,Retail,NEFT,Priya
+IH2400816,2024-02-14,North,Haryana,Gurugram,Amazon,Neem Face Wash,Face Care,30,313,5,8920.5,3897.38,5023.12,Retail,RTGS,Sneha
+IH2400817,2024-08-15,East,Bihar,Patna,Retail Store,Kumkumadi Tailam,Skincare,174,902,5,149100.6,65718.69,83381.91,Retail,Cash,Ramesh
+IH2400818,2024-06-19,South,Andhra Pradesh,Rajahmundry,Distributor,Ayurvedic Body Oil,Body Care,246,712,20,140121.6,65252.91,74868.69,Wholesale,RTGS,Deepak
+IH2400819,2024-11-01,North,Delhi,Delhi,Amazon,Sandalwood Cream,Creams,156,408,12,56010.24,24919.28,31090.96,Retail,RTGS,Rahul
+IH2400820,2024-09-06,West,Maharashtra,Mumbai,Website,Ubtan Face Pack,Face Care,172,522,8,82601.28,36338.08,46263.2,Retail,RTGS,Anjali
+IH2400821,2024-08-30,South,Tamil Nadu,Chennai,Retail Store,Ubtan Face Pack,Face Care,113,522,10,53087.4,24264.48,28822.92,Retail,Credit Card,Kiran
+IH2400822,2024-04-08,East,Assam,Guwahati,Website,Sandalwood Cream,Creams,81,408,12,29082.24,13032.88,16049.36,Retail,NEFT,Rahul
+IH2400823,2024-12-02,East,Odisha,Bhubaneswar,Distributor,Herbal Aloe Gel,Skincare,224,351,20,62899.2,27947.53,34951.67,Wholesale,RTGS,Sneha
+IH2400824,2024-07-03,East,Odisha,Bhubaneswar,Website,Ubtan Face Pack,Face Care,47,522,12,21589.92,9563.01,12026.91,Retail,Credit Card,Priya
+IH2400825,2024-11-06,East,West Bengal,Kolkata,Retail Store,Sandalwood Cream,Creams,151,408,8,56679.36,24214.28,32465.08,Retail,UPI,Ramesh
+IH2400826,2024-07-02,North,Uttar Pradesh,Lucknow,Website,Ayurvedic Body Oil,Body Care,153,712,0,108936.0,46882.24,62053.76,Retail,Cash,Ramesh
+IH2400827,2024-11-12,West,Maharashtra,Mumbai,Website,Ubtan Face Pack,Face Care,91,522,20,38001.6,17978.74,20022.86,Retail,UPI,Rahul
+IH2400828,2024-10-12,North,Punjab,Ludhiana,Retail Store,Ayurvedic Body Oil,Body Care,179,712,12,112154.24,51511.12,60643.12,Retail,Cash,Rahul
+IH2400829,2024-08-22,South,Andhra Pradesh,Rajahmundry,Flipkart,Ubtan Face Pack,Face Care,51,522,18,21830.04,9581.87,12248.17,Retail,UPI,Priya
+IH2400830,2024-11-18,South,Telangana,Hyderabad,Website,Herbal Aloe Gel,Skincare,99,351,15,29536.65,13033.47,16503.18,Retail,Cash,Sneha
+IH2400831,2024-02-20,West,Gujarat,Ahmedabad,Distributor,Herbal Aloe Gel,Skincare,87,351,18,25040.34,10701.78,14338.56,Wholesale,Cash,Rahul
+IH2400832,2024-01-04,West,Gujarat,Surat,Website,Herbal Aloe Gel,Skincare,68,351,5,22674.6,9625.7,13048.9,Retail,Cash,Kiran
+IH2400833,2024-11-18,West,Maharashtra,Pune,Amazon,Ubtan Face Pack,Face Care,83,522,5,41159.7,18798.7,22361.0,Retail,Cash,Anjali
+IH2400834,2024-09-21,North,Delhi,Delhi,Website,Sandalwood Cream,Creams,27,408,15,9363.6,4127.13,5236.47,Retail,UPI,Ramesh
+IH2400835,2024-06-22,North,Haryana,Gurugram,Amazon,Neem Face Wash,Face Care,125,313,15,33256.25,14191.35,19064.9,Retail,RTGS,Priya
+IH2400836,2024-10-21,South,Kerala,Kochi,Amazon,Herbal Aloe Gel,Skincare,166,351,18,47778.12,20999.76,26778.36,Retail,Debit Card,Kiran
+IH2400837,2024-01-05,North,Punjab,Ludhiana,Amazon,Ayurvedic Body Oil,Body Care,77,712,18,44955.68,20481.64,24474.04,Retail,NEFT,Sneha
+IH2400838,2024-08-14,North,Haryana,Gurugram,Retail Store,Neem Face Wash,Face Care,46,313,0,14398.0,5947.08,8450.92,Retail,RTGS,Sneha
+IH2400839,2024-03-05,North,Punjab,Ludhiana,Amazon,Kumkumadi Tailam,Skincare,104,902,10,84427.2,38968.82,45458.38,Retail,Credit Card,Ramesh
+IH2400840,2024-01-15,North,Punjab,Ludhiana,Distributor,Herbal Aloe Gel,Skincare,283,351,5,94366.35,38791.9,55574.45,Wholesale,Debit Card,Kiran
+IH2400841,2024-11-17,North,Delhi,Delhi,Distributor,Kumkumadi Tailam,Skincare,88,902,10,71438.4,32380.14,39058.26,Wholesale,UPI,Anjali
+IH2400842,2024-06-22,West,Rajasthan,Jaipur,Distributor,Ubtan Face Pack,Face Care,346,522,12,158938.56,75630.41,83308.15,Wholesale,Credit Card,Kiran
+IH2400843,2024-06-02,North,Punjab,Ludhiana,Amazon,Ayurvedic Body Oil,Body Care,88,712,5,59523.2,26829.51,32693.69,Retail,Credit Card,Rahul
+IH2400844,2024-07-03,East,West Bengal,Kolkata,Distributor,Neem Face Wash,Face Care,235,313,5,69877.25,28063.55,41813.7,Wholesale,Credit Card,Anjali
+IH2400845,2024-04-19,East,West Bengal,Kolkata,Flipkart,Herbal Aloe Gel,Skincare,128,351,12,39536.64,17032.96,22503.68,Retail,Cash,Rahul
+IH2400846,2024-05-15,East,Bihar,Patna,Flipkart,Sandalwood Cream,Creams,150,408,15,52020.0,22698.65,29321.35,Retail,Credit Card,Priya
+IH2400847,2024-09-15,West,Gujarat,Surat,Amazon,Ayurvedic Body Oil,Body Care,156,712,18,91079.04,39420.16,51658.88,Retail,Credit Card,Anjali
+IH2400848,2024-08-30,South,Telangana,Hyderabad,Amazon,Ubtan Face Pack,Face Care,55,522,12,25264.8,11515.61,13749.19,Retail,UPI,Kiran
+IH2400849,2024-10-19,North,Delhi,Delhi,Website,Ubtan Face Pack,Face Care,120,522,8,57628.8,26176.45,31452.35,Retail,Debit Card,Anjali
+IH2400850,2024-01-15,West,Maharashtra,Pune,Amazon,Ubtan Face Pack,Face Care,103,522,18,44088.12,19703.72,24384.4,Retail,RTGS,Anjali
+IH2400851,2024-01-02,South,Kerala,Kochi,Website,Herbal Aloe Gel,Skincare,36,351,10,11372.4,4925.86,6446.54,Retail,NEFT,Anjali
+IH2400852,2024-06-21,East,Bihar,Patna,Distributor,Ayurvedic Body Oil,Body Care,92,712,15,55678.4,25067.22,30611.18,Wholesale,Cash,Rahul
+IH2400853,2024-08-18,East,Odisha,Bhubaneswar,Amazon,Ayurvedic Body Oil,Body Care,129,712,8,84500.16,39547.0,44953.16,Retail,Debit Card,Deepak
+IH2400854,2024-01-24,East,Assam,Guwahati,Website,Ayurvedic Body Oil,Body Care,67,712,15,40548.4,18378.15,22170.25,Retail,RTGS,Kiran
+IH2400855,2024-10-14,South,Kerala,Kochi,Website,Kumkumadi Tailam,Skincare,163,902,10,132323.4,56883.1,75440.3,Retail,NEFT,Deepak
+IH2400856,2024-04-06,East,West Bengal,Kolkata,Flipkart,Kumkumadi Tailam,Skincare,161,902,5,137960.9,59096.08,78864.82,Retail,Credit Card,Priya
+IH2400857,2024-12-27,East,West Bengal,Kolkata,Flipkart,Ubtan Face Pack,Face Care,127,522,12,58338.72,26812.93,31525.79,Retail,UPI,Kiran
+IH2400858,2024-08-11,West,Gujarat,Surat,Retail Store,Kumkumadi Tailam,Skincare,106,902,8,87963.04,37964.51,49998.53,Retail,UPI,Deepak
+IH2400859,2024-03-27,North,Punjab,Ludhiana,Website,Neem Face Wash,Face Care,47,313,5,13975.45,6135.1,7840.35,Retail,RTGS,Priya
+IH2400860,2024-01-31,North,Punjab,Ludhiana,Distributor,Kumkumadi Tailam,Skincare,177,902,8,146881.68,64907.29,81974.39,Wholesale,Cash,Kiran
+IH2400861,2024-05-12,East,West Bengal,Kolkata,Website,Kumkumadi Tailam,Skincare,177,902,12,140495.52,63178.6,77316.92,Retail,NEFT,Anjali
+IH2400862,2024-02-28,North,Delhi,Delhi,Amazon,Herbal Aloe Gel,Skincare,129,351,0,45279.0,18552.75,26726.25,Retail,RTGS,Priya
+IH2400863,2024-01-10,North,Delhi,Delhi,Distributor,Neem Face Wash,Face Care,358,313,15,95245.9,39221.67,56024.23,Wholesale,Cash,Anjali
+IH2400864,2024-02-12,West,Maharashtra,Pune,Flipkart,Herbal Aloe Gel,Skincare,68,351,15,20287.8,8756.5,11531.3,Retail,Cash,Deepak
+IH2400865,2024-08-19,South,Andhra Pradesh,Rajahmundry,Retail Store,Sandalwood Cream,Creams,99,408,12,35544.96,15119.57,20425.39,Retail,UPI,Anjali
+IH2400866,2024-05-19,North,Haryana,Gurugram,Distributor,Herbal Aloe Gel,Skincare,133,351,12,41081.04,17683.09,23397.95,Wholesale,UPI,Priya
+IH2400867,2024-09-30,South,Karnataka,Bengaluru,Amazon,Kumkumadi Tailam,Skincare,56,902,18,41419.84,19058.44,22361.4,Retail,Debit Card,Anjali
+IH2400868,2024-04-17,North,Uttar Pradesh,Lucknow,Website,Ayurvedic Body Oil,Body Care,140,712,5,94696.0,43304.71,51391.29,Retail,Debit Card,Kiran
+IH2400869,2024-04-17,East,Assam,Guwahati,Retail Store,Kumkumadi Tailam,Skincare,59,902,12,46831.84,20024.93,26806.91,Retail,Cash,Ramesh
+IH2400870,2024-01-05,West,Gujarat,Surat,Retail Store,Ubtan Face Pack,Face Care,150,522,15,66555.0,30732.04,35822.96,Retail,RTGS,Sneha
+IH2400871,2024-02-09,South,Tamil Nadu,Chennai,Website,Ayurvedic Body Oil,Body Care,121,712,18,70644.64,31338.56,39306.08,Retail,Credit Card,Rahul
+IH2400872,2024-12-22,South,Andhra Pradesh,Rajahmundry,Amazon,Sandalwood Cream,Creams,74,408,10,27172.8,11623.08,15549.72,Retail,UPI,Rahul
+IH2400873,2024-05-23,North,Punjab,Ludhiana,Distributor,Kumkumadi Tailam,Skincare,345,902,8,286294.8,131638.76,154656.04,Wholesale,Credit Card,Anjali
+IH2400874,2024-07-04,South,Karnataka,Bengaluru,Retail Store,Sandalwood Cream,Creams,180,408,5,69768.0,29764.97,40003.03,Retail,RTGS,Anjali
+IH2400875,2024-02-26,North,Haryana,Gurugram,Flipkart,Neem Face Wash,Face Care,169,313,12,46549.36,19752.05,26797.31,Retail,Credit Card,Ramesh
+IH2400876,2024-10-28,West,Maharashtra,Mumbai,Website,Neem Face Wash,Face Care,170,313,18,43632.2,19023.73,24608.47,Retail,RTGS,Rahul
+IH2400877,2024-05-20,West,Maharashtra,Mumbai,Flipkart,Ayurvedic Body Oil,Body Care,89,712,15,53862.8,25166.83,28695.97,Retail,UPI,Anjali
+IH2400878,2024-11-24,South,Karnataka,Bengaluru,Distributor,Sandalwood Cream,Creams,233,408,5,90310.8,40452.7,49858.1,Wholesale,Cash,Anjali
+IH2400879,2024-07-04,South,Telangana,Hyderabad,Website,Kumkumadi Tailam,Skincare,132,902,10,107157.6,47334.82,59822.78,Retail,Cash,Priya
+IH2400880,2024-06-20,South,Kerala,Kochi,Retail Store,Kumkumadi Tailam,Skincare,82,902,20,59171.2,26424.2,32747.0,Retail,UPI,Priya
+IH2400881,2024-04-10,West,Gujarat,Ahmedabad,Website,Herbal Aloe Gel,Skincare,49,351,0,17199.0,7345.24,9853.76,Retail,UPI,Deepak
+IH2400882,2024-11-16,North,Uttar Pradesh,Lucknow,Website,Neem Face Wash,Face Care,86,313,20,21534.4,9345.19,12189.21,Retail,Debit Card,Deepak
+IH2400883,2024-05-01,South,Kerala,Kochi,Amazon,Ubtan Face Pack,Face Care,49,522,12,22508.64,10435.7,12072.94,Retail,UPI,Ramesh
+IH2400884,2024-01-18,East,Assam,Guwahati,Website,Ayurvedic Body Oil,Body Care,57,712,0,40584.0,18815.04,21768.96,Retail,UPI,Kiran
+IH2400885,2024-11-08,East,West Bengal,Kolkata,Flipkart,Kumkumadi Tailam,Skincare,168,902,0,151536.0,70577.41,80958.59,Retail,Cash,Ramesh
+IH2400886,2024-11-12,East,Odisha,Bhubaneswar,Distributor,Ubtan Face Pack,Face Care,344,522,0,179568.0,81642.44,97925.56,Wholesale,Cash,Deepak
+IH2400887,2024-11-13,South,Karnataka,Bengaluru,Retail Store,Ayurvedic Body Oil,Body Care,31,712,10,19864.8,8785.58,11079.22,Retail,Credit Card,Ramesh
+IH2400888,2024-02-22,South,Kerala,Kochi,Website,Ayurvedic Body Oil,Body Care,74,712,20,42150.4,18258.25,23892.15,Retail,NEFT,Kiran
+IH2400889,2024-06-30,East,Bihar,Patna,Flipkart,Ayurvedic Body Oil,Body Care,72,712,5,48700.8,22566.3,26134.5,Retail,UPI,Priya
+IH2400890,2024-06-08,East,Assam,Guwahati,Flipkart,Herbal Aloe Gel,Skincare,163,351,15,48631.05,20174.04,28457.01,Retail,Debit Card,Deepak
+IH2400891,2024-06-24,North,Uttar Pradesh,Lucknow,Amazon,Kumkumadi Tailam,Skincare,62,902,0,55924.0,25183.69,30740.31,Retail,NEFT,Rahul
+IH2400892,2024-01-28,East,Assam,Guwahati,Retail Store,Neem Face Wash,Face Care,76,313,15,20219.8,8357.76,11862.04,Retail,RTGS,Anjali
+IH2400893,2024-12-21,East,Assam,Guwahati,Flipkart,Ubtan Face Pack,Face Care,110,522,12,50529.6,23054.63,27474.97,Retail,Credit Card,Ramesh
+IH2400894,2024-08-20,South,Tamil Nadu,Chennai,Retail Store,Neem Face Wash,Face Care,82,313,15,21816.1,9132.1,12684.0,Retail,Credit Card,Priya
+IH2400895,2024-09-03,North,Haryana,Gurugram,Amazon,Neem Face Wash,Face Care,26,313,8,7486.96,3010.48,4476.48,Retail,UPI,Deepak
+IH2400896,2024-02-28,West,Gujarat,Ahmedabad,Website,Sandalwood Cream,Creams,174,408,20,56793.6,24639.11,32154.49,Retail,UPI,Priya
+IH2400897,2024-04-11,North,Punjab,Ludhiana,Retail Store,Neem Face Wash,Face Care,69,313,8,19869.24,8390.57,11478.67,Retail,Credit Card,Priya
+IH2400898,2024-01-12,West,Gujarat,Ahmedabad,Website,Kumkumadi Tailam,Skincare,60,902,8,49790.4,23049.65,26740.75,Retail,UPI,Kiran
+IH2400899,2024-04-17,North,Haryana,Gurugram,Amazon,Neem Face Wash,Face Care,120,313,12,33052.8,14494.6,18558.2,Retail,NEFT,Anjali
+IH2400900,2024-12-30,South,Andhra Pradesh,Rajahmundry,Retail Store,Neem Face Wash,Face Care,58,313,15,15430.9,6281.16,9149.74,Retail,Cash,Sneha
+IH2400901,2024-07-10,North,Haryana,Gurugram,Website,Ayurvedic Body Oil,Body Care,36,712,15,21787.2,9889.86,11897.34,Retail,NEFT,Kiran
+IH2400902,2024-03-17,North,Punjab,Ludhiana,Flipkart,Kumkumadi Tailam,Skincare,96,902,18,71005.44,33075.58,37929.86,Retail,NEFT,Anjali
+IH2400903,2024-04-17,South,Tamil Nadu,Chennai,Flipkart,Ayurvedic Body Oil,Body Care,67,712,10,42933.6,19805.65,23127.95,Retail,RTGS,Rahul
+IH2400904,2024-09-17,North,Haryana,Gurugram,Amazon,Ubtan Face Pack,Face Care,107,522,15,47475.9,21894.55,25581.35,Retail,Cash,Sneha
+IH2400905,2024-09-10,East,Assam,Guwahati,Amazon,Ubtan Face Pack,Face Care,174,522,12,79928.64,35690.63,44238.01,Retail,Credit Card,Anjali
+IH2400906,2024-04-30,East,Odisha,Bhubaneswar,Amazon,Herbal Aloe Gel,Skincare,121,351,10,38223.9,17152.08,21071.82,Retail,Debit Card,Kiran
+IH2400907,2024-10-08,South,Telangana,Hyderabad,Website,Kumkumadi Tailam,Skincare,157,902,8,130284.88,59120.45,71164.43,Retail,Cash,Deepak
+IH2400908,2024-11-14,North,Haryana,Gurugram,Amazon,Sandalwood Cream,Creams,129,408,8,48421.44,21300.2,27121.24,Retail,Debit Card,Anjali
+IH2400909,2024-01-13,West,Gujarat,Surat,Website,Neem Face Wash,Face Care,44,313,8,12670.24,5099.28,7570.96,Retail,NEFT,Deepak
+IH2400910,2024-10-06,South,Karnataka,Bengaluru,Website,Neem Face Wash,Face Care,43,313,8,12382.28,5224.49,7157.79,Retail,Debit Card,Priya
+IH2400911,2024-12-11,North,Uttar Pradesh,Lucknow,Distributor,Herbal Aloe Gel,Skincare,418,351,15,124710.3,52415.99,72294.31,Wholesale,RTGS,Deepak
+IH2400912,2024-03-11,North,Delhi,Delhi,Website,Herbal Aloe Gel,Skincare,113,351,15,33713.55,14357.38,19356.17,Retail,Cash,Rahul
+IH2400913,2024-10-23,South,Tamil Nadu,Chennai,Amazon,Ayurvedic Body Oil,Body Care,63,712,18,36781.92,16100.96,20680.96,Retail,RTGS,Sneha
+IH2400914,2024-04-17,East,Odisha,Bhubaneswar,Flipkart,Ubtan Face Pack,Face Care,166,522,15,73654.2,34634.82,39019.38,Retail,Cash,Kiran
+IH2400915,2024-02-13,North,Punjab,Ludhiana,Distributor,Sandalwood Cream,Creams,382,408,10,140270.4,61340.52,78929.88,Wholesale,NEFT,Ramesh
+IH2400916,2024-07-10,West,Rajasthan,Jaipur,Amazon,Neem Face Wash,Face Care,27,313,10,7605.9,3245.22,4360.68,Retail,Debit Card,Kiran
+IH2400917,2024-04-25,East,Bihar,Patna,Distributor,Ayurvedic Body Oil,Body Care,415,712,15,251158.0,113446.1,137711.9,Wholesale,Debit Card,Deepak
+IH2400918,2024-01-12,South,Telangana,Hyderabad,Retail Store,Neem Face Wash,Face Care,109,313,10,30705.3,13282.01,17423.29,Retail,NEFT,Deepak
+IH2400919,2024-07-19,East,Odisha,Bhubaneswar,Website,Sandalwood Cream,Creams,123,408,5,47674.8,20155.96,27518.84,Retail,NEFT,Anjali
+IH2400920,2024-11-23,North,Delhi,Delhi,Website,Neem Face Wash,Face Care,166,313,5,49360.1,21408.06,27952.04,Retail,NEFT,Anjali
+IH2400921,2024-01-14,West,Maharashtra,Pune,Retail Store,Kumkumadi Tailam,Skincare,123,902,8,102070.32,44705.45,57364.87,Retail,RTGS,Deepak
+IH2400922,2024-02-05,East,West Bengal,Kolkata,Amazon,Herbal Aloe Gel,Skincare,68,351,8,21958.56,9829.13,12129.43,Retail,Cash,Priya
+IH2400923,2024-02-26,West,Rajasthan,Jaipur,Amazon,Sandalwood Cream,Creams,42,408,8,15765.12,7216.61,8548.51,Retail,Credit Card,Priya
+IH2400924,2024-04-15,North,Haryana,Gurugram,Flipkart,Ayurvedic Body Oil,Body Care,65,712,12,40726.4,19131.71,21594.69,Retail,NEFT,Priya
+IH2400925,2024-09-14,East,Assam,Guwahati,Website,Neem Face Wash,Face Care,61,313,10,17183.7,7451.41,9732.29,Retail,NEFT,Rahul
+IH2400926,2024-05-06,North,Haryana,Gurugram,Amazon,Sandalwood Cream,Creams,35,408,15,12138.0,5227.45,6910.55,Retail,Cash,Kiran
+IH2400927,2024-12-24,North,Haryana,Gurugram,Distributor,Ubtan Face Pack,Face Care,114,522,10,53557.2,23846.91,29710.29,Wholesale,NEFT,Sneha
+IH2400928,2024-08-09,East,Bihar,Patna,Website,Ayurvedic Body Oil,Body Care,170,712,5,114988.0,52772.48,62215.52,Retail,UPI,Priya
+IH2400929,2024-03-21,North,Uttar Pradesh,Lucknow,Retail Store,Ayurvedic Body Oil,Body Care,80,712,20,45568.0,20323.67,25244.33,Retail,NEFT,Ramesh
+IH2400930,2024-07-07,South,Andhra Pradesh,Rajahmundry,Distributor,Ubtan Face Pack,Face Care,191,522,10,89731.8,39893.2,49838.6,Wholesale,Credit Card,Deepak
+IH2400931,2024-01-23,East,West Bengal,Kolkata,Flipkart,Kumkumadi Tailam,Skincare,143,902,8,118667.12,54713.62,63953.5,Retail,Credit Card,Anjali
+IH2400932,2024-01-20,South,Karnataka,Bengaluru,Distributor,Kumkumadi Tailam,Skincare,94,902,8,78004.96,35975.14,42029.82,Wholesale,Cash,Anjali
+IH2400933,2024-02-04,South,Kerala,Kochi,Website,Ayurvedic Body Oil,Body Care,137,712,5,92666.8,43036.24,49630.56,Retail,Credit Card,Priya
+IH2400934,2024-01-10,South,Telangana,Hyderabad,Website,Herbal Aloe Gel,Skincare,125,351,5,41681.25,18230.12,23451.13,Retail,UPI,Sneha
+IH2400935,2024-05-19,West,Gujarat,Surat,Website,Herbal Aloe Gel,Skincare,33,351,18,9498.06,4097.36,5400.7,Retail,Cash,Sneha
+IH2400936,2024-01-25,South,Tamil Nadu,Chennai,Amazon,Ayurvedic Body Oil,Body Care,38,712,12,23809.28,10230.61,13578.67,Retail,Cash,Rahul
+IH2400937,2024-04-13,West,Gujarat,Ahmedabad,Website,Neem Face Wash,Face Care,29,313,10,8169.3,3598.99,4570.31,Retail,Debit Card,Rahul
+IH2400938,2024-04-08,South,Telangana,Hyderabad,Distributor,Kumkumadi Tailam,Skincare,365,902,5,312768.5,136059.65,176708.85,Wholesale,Cash,Deepak
+IH2400939,2024-02-25,North,Uttar Pradesh,Lucknow,Flipkart,Ubtan Face Pack,Face Care,78,522,20,32572.8,14826.26,17746.54,Retail,Cash,Ramesh
+IH2400940,2024-04-28,West,Maharashtra,Mumbai,Amazon,Herbal Aloe Gel,Skincare,28,351,10,8845.2,3733.54,5111.66,Retail,Cash,Priya
+IH2400941,2024-08-22,West,Maharashtra,Mumbai,Distributor,Ayurvedic Body Oil,Body Care,357,712,12,223681.92,96066.3,127615.62,Wholesale,Credit Card,Anjali
+IH2400942,2024-06-03,East,West Bengal,Kolkata,Flipkart,Ayurvedic Body Oil,Body Care,170,712,5,114988.0,54119.86,60868.14,Retail,NEFT,Kiran
+IH2400943,2024-11-19,East,Odisha,Bhubaneswar,Website,Herbal Aloe Gel,Skincare,106,351,20,29764.8,13011.8,16753.0,Retail,UPI,Kiran
+IH2400944,2024-01-10,East,Bihar,Patna,Flipkart,Ubtan Face Pack,Face Care,84,522,10,39463.2,18524.54,20938.66,Retail,UPI,Priya
+IH2400945,2024-01-11,South,Karnataka,Bengaluru,Distributor,Neem Face Wash,Face Care,412,313,5,122508.2,49289.26,73218.94,Wholesale,Credit Card,Kiran
+IH2400946,2024-09-12,North,Punjab,Ludhiana,Amazon,Neem Face Wash,Face Care,34,313,5,10109.9,4341.83,5768.07,Retail,Cash,Sneha
+IH2400947,2024-06-17,West,Gujarat,Ahmedabad,Flipkart,Herbal Aloe Gel,Skincare,35,351,10,11056.5,4981.34,6075.16,Retail,RTGS,Rahul
+IH2400948,2024-05-27,South,Telangana,Hyderabad,Amazon,Ayurvedic Body Oil,Body Care,87,712,5,58846.8,25300.2,33546.6,Retail,RTGS,Priya
+IH2400949,2024-12-17,West,Rajasthan,Jaipur,Flipkart,Sandalwood Cream,Creams,71,408,10,26071.2,10904.69,15166.51,Retail,Cash,Ramesh
+IH2400950,2024-04-08,South,Telangana,Hyderabad,Website,Neem Face Wash,Face Care,69,313,12,19005.36,8246.64,10758.72,Retail,Credit Card,Priya
+IH2400951,2024-09-16,South,Tamil Nadu,Chennai,Amazon,Ayurvedic Body Oil,Body Care,67,712,15,40548.4,17781.35,22767.05,Retail,Credit Card,Deepak
+IH2400952,2024-05-07,North,Uttar Pradesh,Lucknow,Amazon,Ubtan Face Pack,Face Care,76,522,5,37688.4,17824.33,19864.07,Retail,UPI,Kiran
+IH2400953,2024-07-22,East,Odisha,Bhubaneswar,Amazon,Sandalwood Cream,Creams,154,408,12,55292.16,24166.6,31125.56,Retail,Credit Card,Rahul
+IH2400954,2024-09-03,South,Tamil Nadu,Chennai,Retail Store,Sandalwood Cream,Creams,101,408,12,36263.04,15401.75,20861.29,Retail,RTGS,Priya
+IH2400955,2024-05-11,East,Bihar,Patna,Amazon,Herbal Aloe Gel,Skincare,121,351,10,38223.9,16404.79,21819.11,Retail,Debit Card,Priya
+IH2400956,2024-08-28,West,Maharashtra,Pune,Website,Neem Face Wash,Face Care,153,313,15,40705.65,16881.4,23824.25,Retail,Cash,Anjali
+IH2400957,2024-07-21,North,Haryana,Gurugram,Amazon,Sandalwood Cream,Creams,175,408,0,71400.0,32625.51,38774.49,Retail,UPI,Anjali
+IH2400958,2024-10-16,West,Maharashtra,Pune,Retail Store,Sandalwood Cream,Creams,114,408,10,41860.8,18397.79,23463.01,Retail,RTGS,Kiran
+IH2400959,2024-12-22,South,Tamil Nadu,Chennai,Distributor,Sandalwood Cream,Creams,149,408,10,54712.8,25088.26,29624.54,Wholesale,Debit Card,Sneha
+IH2400960,2024-12-27,South,Telangana,Hyderabad,Flipkart,Herbal Aloe Gel,Skincare,62,351,5,20673.9,8980.59,11693.31,Retail,RTGS,Rahul
+IH2400961,2024-03-23,South,Andhra Pradesh,Rajahmundry,Flipkart,Kumkumadi Tailam,Skincare,123,902,8,102070.32,46327.39,55742.93,Retail,UPI,Deepak
+IH2400962,2024-04-06,East,Odisha,Bhubaneswar,Website,Sandalwood Cream,Creams,102,408,10,37454.4,16534.65,20919.75,Retail,Cash,Deepak
+IH2400963,2024-06-06,East,West Bengal,Kolkata,Flipkart,Kumkumadi Tailam,Skincare,113,902,18,83579.32,36741.97,46837.35,Retail,Credit Card,Sneha
+IH2400964,2024-07-22,North,Delhi,Delhi,Distributor,Neem Face Wash,Face Care,25,313,5,7433.75,3207.64,4226.11,Wholesale,Cash,Deepak
+IH2400965,2024-08-01,North,Haryana,Gurugram,Website,Neem Face Wash,Face Care,72,313,15,19155.6,7802.4,11353.2,Retail,Credit Card,Deepak
+IH2400966,2024-02-26,East,Odisha,Bhubaneswar,Website,Neem Face Wash,Face Care,71,313,18,18222.86,7417.78,10805.08,Retail,Cash,Anjali
+IH2400967,2024-11-16,South,Telangana,Hyderabad,Website,Kumkumadi Tailam,Skincare,121,902,5,103684.9,44625.13,59059.77,Retail,UPI,Deepak
+IH2400968,2024-04-30,East,Bihar,Patna,Distributor,Ayurvedic Body Oil,Body Care,29,712,0,20648.0,9525.56,11122.44,Wholesale,UPI,Sneha
+IH2400969,2024-10-25,South,Andhra Pradesh,Rajahmundry,Flipkart,Neem Face Wash,Face Care,26,313,8,7486.96,3150.84,4336.12,Retail,Debit Card,Anjali
+IH2400970,2024-08-30,North,Haryana,Gurugram,Amazon,Herbal Aloe Gel,Skincare,112,351,20,31449.6,13951.81,17497.79,Retail,Debit Card,Sneha
+IH2400971,2024-07-23,East,West Bengal,Kolkata,Retail Store,Herbal Aloe Gel,Skincare,50,351,0,17550.0,7826.13,9723.87,Retail,Cash,Sneha
+IH2400972,2024-03-12,South,Kerala,Kochi,Retail Store,Kumkumadi Tailam,Skincare,96,902,20,69273.6,31956.94,37316.66,Retail,Credit Card,Kiran
+IH2400973,2024-08-19,East,Bihar,Patna,Website,Ayurvedic Body Oil,Body Care,107,712,0,76184.0,33803.55,42380.45,Retail,UPI,Rahul
+IH2400974,2024-06-15,East,Odisha,Bhubaneswar,Amazon,Ubtan Face Pack,Face Care,45,522,8,21610.8,10377.46,11233.34,Retail,Cash,Sneha
+IH2400975,2024-12-24,South,Tamil Nadu,Chennai,Flipkart,Herbal Aloe Gel,Skincare,61,351,18,17557.02,7833.56,9723.46,Retail,RTGS,Deepak
+IH2400976,2024-01-17,West,Gujarat,Surat,Amazon,Kumkumadi Tailam,Skincare,165,902,20,119064.0,53400.93,65663.07,Retail,Cash,Ramesh
+IH2400977,2024-09-03,West,Maharashtra,Pune,Website,Neem Face Wash,Face Care,47,313,5,13975.45,6159.28,7816.17,Retail,UPI,Priya
+IH2400978,2024-06-16,East,Assam,Guwahati,Distributor,Neem Face Wash,Face Care,365,313,10,102820.5,44901.25,57919.25,Wholesale,UPI,Sneha
+IH2400979,2024-03-10,East,West Bengal,Kolkata,Amazon,Ayurvedic Body Oil,Body Care,82,712,20,46707.2,21578.03,25129.17,Retail,NEFT,Ramesh
+IH2400980,2024-11-25,North,Haryana,Gurugram,Distributor,Ayurvedic Body Oil,Body Care,396,712,8,259395.84,118386.86,141008.98,Wholesale,NEFT,Rahul
+IH2400981,2024-08-11,West,Maharashtra,Pune,Website,Herbal Aloe Gel,Skincare,47,351,5,15672.15,6631.36,9040.79,Retail,NEFT,Priya
+IH2400982,2024-02-29,North,Punjab,Ludhiana,Retail Store,Herbal Aloe Gel,Skincare,172,351,15,51316.2,21648.48,29667.72,Retail,NEFT,Deepak
+IH2400983,2024-04-07,East,Bihar,Patna,Distributor,Herbal Aloe Gel,Skincare,372,351,20,104457.6,43238.26,61219.34,Wholesale,RTGS,Deepak
+IH2400984,2024-10-29,West,Maharashtra,Mumbai,Website,Sandalwood Cream,Creams,142,408,8,53301.12,24193.94,29107.18,Retail,Debit Card,Rahul
+IH2400985,2024-04-22,East,Bihar,Patna,Flipkart,Neem Face Wash,Face Care,62,313,15,16495.1,7169.82,9325.28,Retail,RTGS,Ramesh
+IH2400986,2024-11-02,North,Uttar Pradesh,Lucknow,Retail Store,Ubtan Face Pack,Face Care,56,522,5,27770.4,13218.51,14551.89,Retail,NEFT,Anjali
+IH2400987,2024-11-19,West,Gujarat,Surat,Distributor,Herbal Aloe Gel,Skincare,217,351,0,76167.0,33767.8,42399.2,Wholesale,Credit Card,Rahul
+IH2400988,2024-04-17,West,Maharashtra,Mumbai,Retail Store,Neem Face Wash,Face Care,125,313,8,35995.0,15594.13,20400.87,Retail,Credit Card,Ramesh
+IH2400989,2024-10-07,East,Assam,Guwahati,Flipkart,Sandalwood Cream,Creams,114,408,15,39535.2,17205.99,22329.21,Retail,NEFT,Sneha
+IH2400990,2024-05-24,North,Punjab,Ludhiana,Retail Store,Ayurvedic Body Oil,Body Care,125,712,5,84550.0,37375.65,47174.35,Retail,NEFT,Rahul
+IH2400991,2024-01-28,North,Haryana,Gurugram,Website,Ayurvedic Body Oil,Body Care,60,712,10,38448.0,17271.22,21176.78,Retail,Credit Card,Priya
+IH2400992,2024-04-21,West,Maharashtra,Mumbai,Distributor,Herbal Aloe Gel,Skincare,319,351,5,106370.55,47045.19,59325.36,Wholesale,Credit Card,Anjali
+IH2400993,2024-08-06,West,Maharashtra,Mumbai,Amazon,Kumkumadi Tailam,Skincare,146,902,5,125107.4,53778.82,71328.58,Retail,NEFT,Sneha
+IH2400994,2024-06-22,East,Odisha,Bhubaneswar,Distributor,Ayurvedic Body Oil,Body Care,150,712,0,106800.0,46814.55,59985.45,Wholesale,Cash,Kiran
+IH2400995,2024-12-18,West,Gujarat,Surat,Retail Store,Ayurvedic Body Oil,Body Care,47,712,15,28444.4,13267.05,15177.35,Retail,RTGS,Anjali
+IH2400996,2024-05-20,East,Assam,Guwahati,Website,Kumkumadi Tailam,Skincare,46,902,5,39417.4,17988.66,21428.74,Retail,NEFT,Priya
+IH2400997,2024-01-12,East,Assam,Guwahati,Distributor,Ayurvedic Body Oil,Body Care,328,712,5,221859.2,99678.81,122180.39,Wholesale,RTGS,Sneha
+IH2400998,2024-08-10,North,Punjab,Ludhiana,Amazon,Kumkumadi Tailam,Skincare,162,902,5,138817.8,64422.43,74395.37,Retail,UPI,Anjali
+IH2400999,2024-10-11,East,West Bengal,Kolkata,Distributor,Ubtan Face Pack,Face Care,300,522,15,133110.0,63006.7,70103.3,Wholesale,UPI,Rahul
+IH2401000,2024-04-16,South,Telangana,Hyderabad,Flipkart,Ubtan Face Pack,Face Care,26,522,10,12214.8,5787.66,6427.14,Retail,UPI,Ramesh

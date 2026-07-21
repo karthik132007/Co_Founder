@@ -55,10 +55,21 @@ def get_supabase_client():
     return supabase_client
 
 
-def extract_text(content):
+def extract_text(content, file_extension: str | None = None, mime_type: str | None = None):
+    """Extract text from file bytes. Supports PDF and plain-text-like formats."""
     from io import BytesIO
-    doc = pymupdf.open(stream=BytesIO(content), filetype="pdf")
-    text = ""
-    for page in doc:
-        text += page.get_text()
-    return text
+
+    ext = (file_extension or "").lower()
+
+    if ext == "pdf" or mime_type == "application/pdf":
+        doc = pymupdf.open(stream=BytesIO(content), filetype="pdf")
+        text = ""
+        for page in doc:
+            text += page.get_text()
+        return text
+
+    # Plain-text formats: csv, txt, md, json, etc.
+    try:
+        return content.decode("utf-8", errors="replace")
+    except Exception as exc:
+        raise ValueError(f"Unsupported file type for text extraction (ext={ext}, mime={mime_type})") from exc

@@ -15,3 +15,14 @@ def run_python_code(code):
         "results":execution.results
     }
 
+
+def upload_file_to_sandbox(file_name: str, content: bytes, path: str = "/home/user/data"):
+    """Upload file bytes into the sandbox filesystem (in-sandbox only, never local disk).
+    Returns the full path of the file inside the sandbox, or None on failure."""
+    try:
+        sandbox.files.write(f"{path}/{file_name}", content)
+        return f"{path}/{file_name}"
+    except Exception as e:
+        print(f"Error uploading file to sandbox: {e}")
+        return None
+

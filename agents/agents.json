@@ -21,6 +21,14 @@
             "query": "Search query",
             "top_k": "Maximum results to return"
           }
+        },
+        {
+          "id": "data_analysis_request",
+          "name": "data_analysis_request",
+          "description": "Delegate data analysis, EDA, and file-based insights to the Data Analyst agent.",
+          "args": {
+            "task": "Analysis task description"
+          }
         }
       ],
       "enabled": true,
@@ -103,6 +111,41 @@
       "tools": [],
       "enabled": true,
       "metadata": { "kind": "review" }
+    },
+    {
+      "id": "data_analyst",
+      "name": "Data Analyst",
+      "role": "Data Analysis",
+      "description": "Performs EDA and data-driven analysis on company data files (csv, xlsx, etc.) by running Python in a secure code sandbox.",
+      "tools": [
+        {
+          "id": "run_code",
+          "name": "run code",
+          "description": "Run Python code to DO EDA in an isolated sandbox.",
+          "args": {
+            "code": "Python code to execute"
+          }
+        },
+        {
+          "id": "get_datafiles",
+          "name": "get data files",
+          "description": "Returns the list of files with descriptions which are suitable for data analysis tasks like .csv or .xlsx files.",
+          "args": {
+            "company_id": "Company ID whose files should be listed"
+          }
+        },
+        {
+          "id": "get_files",
+          "name": "get files",
+          "description": "Downloads one or more files by name and loads them into the code sandbox. Returns sandbox paths for use in 'run code'.",
+          "args": {
+            "company_id": "Company ID that owns the files",
+            "file_names": "List of file names to load into the sandbox"
+          }
+        }
+      ],
+      "enabled": true,
+      "metadata": { "kind": "core" }
     },
     {
       "id": "chat_memory_agent",

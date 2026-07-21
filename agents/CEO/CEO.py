@@ -15,6 +15,7 @@ from backend.db.get_from_sql import get_company_data
 from agents.marketing.cmo import talk_to_cmo
 from agents.researcher.researcher import do_research
 from agents.util_agents.writer.writer import write
+from agents.data_analyst.data_agent import ask_data_analyst
 from RAG_Engine.chat_memory import get_chat_memories_by_query
 
 
@@ -105,6 +106,13 @@ def _build_ceo_tools(company_id: int):
     def marketing_request(task: str):
         return talk_to_cmo(company_id, task)
 
+    @tool(
+        "data_analysis_request",
+        description="Delegate data analysis, EDA, and file-based insights to the Data Analyst agent.",
+    )
+    def data_analysis_request(task: str):
+        return ask_data_analyst(company_id, task)
+
     return [
         view_all_agents,
         # ask_mcq_for_user,
@@ -112,6 +120,7 @@ def _build_ceo_tools(company_id: int):
         research_request,
         writing_request,
         marketing_request,
+        data_analysis_request,
     ]
 
 def _get_ceo_agent(company_id: int):

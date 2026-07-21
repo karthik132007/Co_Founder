@@ -31,11 +31,22 @@ def upload_to_drive(user_id: int, file: UploadFile):
         file_extension = FilePath(original_file_name).suffix.lstrip(".") or None
         document_chunks = []
 
+        data_extensions = {"csv", "xlsx", "xls", "parquet"}
+
         if file_type.startswith("image/"):
             file_desc = get_image_description(file_bytes, file_type)
 
+        elif file_extension in data_extensions:
+            # Data files: description only (from a content sample), no chunking/RAG.
+            sample = file_bytes[:8000].decode("utf-8", errors="replace")
+            file_desc = get_file_description(sample)
+
         else:
-            extracted_content = extract_text(file_bytes)
+            extracted_content = extract_text(
+                file_bytes,
+                file_extension=file_extension,
+                mime_type=file_type,
+            )
             file_desc = get_file_description(extracted_content)
             document_chunks = chunk_document_text(
                 text=extracted_content,
@@ -79,6 +90,8 @@ def upload_to_drive(user_id: int, file: UploadFile):
     except HTTPException:
         raise
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to upload file: {str(e)}")
 
 

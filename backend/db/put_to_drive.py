@@ -56,3 +56,15 @@ def delete_from_cloud(company_id: int, file_name: str):
     except Exception as e:
         print(f"Error deleting from cloud: {e}")
         return False
+
+
+def download_from_cloud(company_id: int, file_name: str):
+    """Download a file from cloud storage. Returns bytes, or None on failure."""
+    try:
+        data = client.storage.from_("company_files").download(
+            path=f"{company_id}/{file_name}"
+        )
+        return data
+    except Exception as e:
+        print(f"Error downloading from cloud: {e}")
+        return None
