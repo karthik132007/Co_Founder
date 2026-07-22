@@ -1,4 +1,4 @@
-# Co_Founder — v0.7 (Prerelease)
+# Co_Founder — v0.7.1 (Prerelease)
 
 ## Contents
 
