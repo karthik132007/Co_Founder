@@ -16,7 +16,7 @@ import { useRouter } from "next/navigation";
 import { clearSession, getSession } from "@/lib/session";
 import {
   fetchDashboard, fetchFiles, uploadFile, deleteFile, formatFileSize, isImageMime,
-  fetchChatSessions,
+  fetchChatSessions, deleteChatSession,
   type DashboardData, type DriveFile, type ChatSession,
 } from "@/lib/api";
 import Chat from "@/components/Chat";
@@ -66,6 +66,7 @@ export default function DashboardPage() {
   const [deleting, setDeleting] = useState<number | null>(null);
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [loadingSessions, setLoadingSessions] = useState(false);
+  const [deletingSession, setDeletingSession] = useState<string | null>(null);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [activeSessionTitle, setActiveSessionTitle] = useState<string | null>(null);
   const [chatKey, setChatKey] = useState(0);
@@ -226,6 +227,31 @@ export default function DashboardPage() {
     [loadSessions],
   );
 
+  const handleDeleteSession = useCallback(
+    async (sessionId: string, e: React.MouseEvent) => {
+      e.stopPropagation(); // Don't navigate to the session
+      if (!userId || deletingSession) return;
+      if (!window.confirm("Delete this chat session and all its messages? This cannot be undone.")) return;
+
+      setDeletingSession(sessionId);
+      try {
+        await deleteChatSession(userId, sessionId);
+        // If the deleted session was active, reset to new chat
+        if (activeSessionId === sessionId) {
+          setActiveSessionId(null);
+          setActiveSessionTitle(null);
+          setChatKey((k) => k + 1);
+        }
+        await loadSessions();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to delete session");
+      } finally {
+        setDeletingSession(null);
+      }
+    },
+    [userId, deletingSession, activeSessionId, loadSessions],
+  );
+
   if (!session) {
     return (
       <main className="min-h-screen bg-[#fafafa] flex items-center justify-center">
@@ -383,6 +409,18 @@ export default function DashboardPage() {
                         {sessionDate}
                       </div>
                     </div>
+                    <button
+                      onClick={(e) => handleDeleteSession(s.session_id, e)}
+                      disabled={deletingSession === s.session_id}
+                      className="opacity-0 group-hover:opacity-100 shrink-0 p-1 rounded-md hover:bg-red-50 text-[#9ca3af] hover:text-red-500 transition-all disabled:opacity-50"
+                      title="Delete chat"
+                    >
+                      {deletingSession === s.session_id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-3.5 h-3.5" />
+                      )}
+                    </button>
                   </div>
                 </button>
               );

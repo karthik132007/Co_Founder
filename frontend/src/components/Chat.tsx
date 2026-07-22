@@ -13,6 +13,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { sendChatMessage, fetchSessionMessages } from "@/lib/api";
+import type { Clarification } from "@/lib/api";
 import type { SessionUser } from "@/lib/session";
 
 const ACCENT = "#4f46e5";
@@ -26,6 +27,7 @@ type Message = {
   role: "user" | "assistant";
   content: string;
   timestamp: number;
+  clarification?: Clarification;
 };
 
 type ChatProps = {
@@ -121,6 +123,113 @@ function MarkdownMessage({ content }: { content: string }) {
 }
 
 /* ─────────────────────────────────────────────
+   MCQ Clarification Card
+   ───────────────────────────────────────────── */
+
+function McqCard({
+  clarification,
+  onAnswer,
+  disabled,
+}: {
+  clarification: Clarification;
+  onAnswer: (answer: string) => void;
+  disabled: boolean;
+}) {
+  const [custom, setCustom] = useState("");
+  const [selected, setSelected] = useState<string[]>([]);
+  const answered = clarification.answered;
+  const locked = Boolean(answered) || disabled;
+  const multi = Boolean(clarification.multi_select) && !answered;
+
+  const toggleOption = (option: string) => {
+    setSelected((prev) =>
+      prev.includes(option) ? prev.filter((o) => o !== option) : [...prev, option],
+    );
+  };
+
+  return (
+    <div className="rounded-2xl border border-[#e5e7eb] bg-white p-4 shadow-sm">
+      <p className="text-sm font-semibold text-[#0a0a0a] leading-snug">
+        {clarification.question}
+      </p>
+      {multi && (
+        <p className="mt-1 text-xs font-medium text-[#4f46e5]">
+          You can select multiple options.
+        </p>
+      )}
+
+      <div className="mt-3 flex flex-col gap-2">
+        {clarification.options.map((option) => {
+          const isChosen = multi ? selected.includes(option) : answered === option;
+          return (
+            <button
+              key={option}
+              type="button"
+              disabled={locked}
+              onClick={() => (multi ? toggleOption(option) : onAnswer(option))}
+              className={`rounded-xl border px-3.5 py-2.5 text-left text-sm font-medium transition-colors ${
+                isChosen
+                  ? "border-[#4f46e5] bg-[#eef2ff] text-[#4f46e5]"
+                  : "border-[#e5e7eb] text-[#374151] hover:border-[#4f46e5]/50 hover:bg-[#eef2ff]/50 disabled:opacity-50 disabled:hover:border-[#e5e7eb] disabled:hover:bg-transparent"
+              }`}
+            >
+              {option}
+              {isChosen && <span className="ml-2 text-xs">✓</span>}
+            </button>
+          );
+        })}
+      </div>
+
+      {multi && !locked && (
+        <button
+          type="button"
+          disabled={selected.length === 0}
+          onClick={() => onAnswer(selected.join(", "))}
+          className="mt-3 w-full rounded-xl px-3.5 py-2 text-sm font-medium text-white disabled:opacity-40"
+          style={{ background: ACCENT }}
+        >
+          Confirm selection{selected.length > 1 ? ` (${selected.length})` : ""}
+        </button>
+      )}
+
+      {clarification.allow_custom && !answered && (
+        <form
+          className="mt-3 flex gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const trimmed = custom.trim();
+            if (trimmed) onAnswer(trimmed);
+          }}
+        >
+          <input
+            type="text"
+            value={custom}
+            onChange={(e) => setCustom(e.target.value)}
+            placeholder="Or type your own answer…"
+            disabled={locked}
+            className="flex-1 rounded-xl border border-[#e5e7eb] px-3.5 py-2 text-sm text-[#0a0a0a] placeholder:text-[#9ca3af] focus:border-[#4f46e5] focus:outline-none disabled:opacity-50"
+          />
+          <button
+            type="submit"
+            disabled={locked || !custom.trim()}
+            className="rounded-xl px-3.5 py-2 text-sm font-medium text-white disabled:opacity-40"
+            style={{ background: ACCENT }}
+          >
+            Send
+          </button>
+        </form>
+      )}
+
+      {answered && !clarification.options.includes(answered) && (
+        <p className="mt-3 text-xs text-[#6b7280]">
+          Custom answer: <span className="font-medium text-[#0a0a0a]">{answered}</span>
+        </p>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
    Chat Component
    ───────────────────────────────────────────── */
 
@@ -165,6 +274,9 @@ export default function Chat({
 
   useEffect(() => {
     if (!initialSessionId) return;
+    // Skip refetch if we're already viewing this session with local messages
+    // (e.g. right after creating it — DB lacks in-flight messages like MCQs).
+    if (initialSessionId === sessionId && messages.length > 0) return;
     let cancelled = false;
 
     // Defer synchronous state update out of the effect body
@@ -198,7 +310,55 @@ export default function Chat({
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialSessionId, user.id]);
+
+  const sendToBackend = useCallback(
+    async (text: string) => {
+      setSending(true);
+      setError("");
+
+      try {
+        const response = await sendChatMessage(
+          user.id,
+          text,
+          sessionId ?? undefined,
+        );
+
+        if (response.is_new_session || !sessionId) {
+          setSessionId(response.session_id);
+          const title = response.title ?? "Untitled Chat";
+          setChatTitle(title);
+          onSessionCreated(response.session_id, title);
+        }
+
+        if (response.type === "clarification_request" && response.clarification) {
+          const mcqMsg: Message = {
+            id: crypto.randomUUID(),
+            role: "assistant",
+            content: "",
+            timestamp: Date.now(),
+            clarification: response.clarification,
+          };
+          setMessages((prev) => [...prev, mcqMsg]);
+        } else {
+          const assistantMsg: Message = {
+            id: crypto.randomUUID(),
+            role: "assistant",
+            content: response.message ?? "",
+            timestamp: Date.now(),
+          };
+          setMessages((prev) => [...prev, assistantMsg]);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to get response");
+      } finally {
+        setSending(false);
+        inputRef.current?.focus();
+      }
+    },
+    [user.id, sessionId, onSessionCreated],
+  );
 
   const handleSend = useCallback(async () => {
     const trimmed = input.trim();
@@ -213,38 +373,34 @@ export default function Chat({
 
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
-    setSending(true);
-    setError("");
+    await sendToBackend(trimmed);
+  }, [input, sending, sendToBackend]);
 
-    try {
-      const response = await sendChatMessage(
-        user.id,
-        trimmed,
-        sessionId ?? undefined,
+  const handleMcqAnswer = useCallback(
+    async (messageId: string, question: string, answer: string) => {
+      if (sending) return;
+
+      // Mark this MCQ as answered (locks the buttons)
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === messageId && m.clarification
+            ? { ...m, clarification: { ...m.clarification, answered: answer } }
+            : m,
+        ),
       );
 
-      if (response.is_new_session || !sessionId) {
-        setSessionId(response.session_id);
-        const title = response.title ?? "Untitled Chat";
-        setChatTitle(title);
-        onSessionCreated(response.session_id, title);
-      }
-
-      const assistantMsg: Message = {
+      const userMsg: Message = {
         id: crypto.randomUUID(),
-        role: "assistant",
-        content: response.message,
+        role: "user",
+        content: answer,
         timestamp: Date.now(),
       };
+      setMessages((prev) => [...prev, userMsg]);
 
-      setMessages((prev) => [...prev, assistantMsg]);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to get response");
-    } finally {
-      setSending(false);
-      inputRef.current?.focus();
-    }
-  }, [input, sending, user.id, sessionId, onSessionCreated]);
+      await sendToBackend(`Answering your question "${question}": ${answer}`);
+    },
+    [sending, sendToBackend],
+  );
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -332,7 +488,19 @@ export default function Chat({
                       : "max-w-[85%] py-1.5"
                   }`}
                 >
-                  {msg.role === "assistant" ? (
+                  {msg.role === "assistant" && msg.clarification ? (
+                    <McqCard
+                      clarification={msg.clarification}
+                      disabled={sending}
+                      onAnswer={(answer) =>
+                        handleMcqAnswer(
+                          msg.id,
+                          msg.clarification!.question,
+                          answer,
+                        )
+                      }
+                    />
+                  ) : msg.role === "assistant" ? (
                     <MarkdownMessage content={msg.content} />
                   ) : (
                     <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">

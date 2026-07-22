@@ -3,6 +3,7 @@ from fastapi import HTTPException
 from main import chat, store_chat_memory, store_chat_title
 from backend.db.get_from_sql import get_company_id, get_chats_in_session, get_chat_sessions
 from backend.db.insert_to_sql import create_chat_session, add_message_to_session
+from backend.db.delete_from_sql import delete_chat_session
 from uuid import uuid4
 from typing import Optional
 
@@ -44,6 +45,25 @@ def chat_with_user(
 
     add_message_to_session(session_id, "user", message)
     reply = chat(company_id, message)
+
+    # CEO may return a clarification request (MCQ) instead of a text reply.
+    if isinstance(reply, dict) and reply.get("type") == "clarification_request":
+        response = {
+            "status": "success",
+            "type": "clarification_request",
+            "clarification": {
+                "question": reply.get("question"),
+                "options": reply.get("options", []),
+                "allow_custom": reply.get("allow_custom", True),
+                "multi_select": reply.get("multi_select", False),
+            },
+            "session_id": session_id,
+        }
+        if is_new_session or title:
+            response["title"] = title
+            response["is_new_session"] = True
+        return response
+
     add_message_to_session(session_id, "assistant", reply)
     background_tasks.add_task(store_chat_memory, company_id, message, reply)
 
@@ -105,3 +125,20 @@ def get_session_messages(
             for m in messages
         ],
     }
+
+
+@router.delete("/chat/sessions/{session_id}")
+def delete_session(
+    session_id: str,
+    user_id: int = Query(..., description="User ID"),
+):
+    """Delete a chat session and all its messages."""
+    company_id = get_company_id(user_id)
+    if not company_id:
+        raise HTTPException(status_code=404, detail="Company not found")
+
+    deleted = delete_chat_session(session_id, company_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    return {"status": "success", "message": "Chat session deleted"}

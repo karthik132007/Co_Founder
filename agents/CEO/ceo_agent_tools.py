@@ -14,29 +14,15 @@ def view_all_agents():
         agents = json.load(f)
     return agents
 
-@tool('ask_mcq_for_user', return_direct=True, description="Ask a multiple choice question to the user and get their answer.")
-def ask_mcq_for_user(questions_json):
-    """
-    Ask a multiple choice question to the user and get their answer.
-    format:
-    [
-    {
-    "question": "What is the question?",
-    "option1":"option1",
-    "option2":"option2",
-    "option3":"option3",
-    "none_of_above":"users custom answer",
-    }
-    ]
-    """
-    try:
-        questions = json.loads(questions_json)
-    except json.JSONDecodeError as exc:
-        return json.dumps({"error": f"Invalid questions payload: {exc}"})
-
+@tool('ask_mcq_for_user', return_direct=True, description="Ask the user a multiple choice question shown as clickable buttons in the chat. ALWAYS use this when the user must choose between clear options (budget, direction, priority, format, channel, etc.). Provide a question and 2-4 options. Set multi_select=True when the user may reasonably pick several options (channels, goals, priorities). Ask at most 1-2 high-impact questions. The user can also type a custom answer, so never add an 'other' option yourself.")
+def ask_mcq_for_user(question: str, options: list[str], multi_select: bool = False):
+    """Ask a multiple choice question to the user and get their answer."""
     return json.dumps(
         {
             "type": "clarification_request",
-            "questions": questions,
+            "question": question,
+            "options": options,
+            "allow_custom": True,
+            "multi_select": multi_select,
         }
     )

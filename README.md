@@ -1,4 +1,4 @@
-# Co_Founder — v0.6 (Prerelease)
+# Co_Founder — v0.7 (Prerelease)
 
 ## Contents
 
@@ -12,7 +12,7 @@
 
 ## Overview
 
-Many aspiring entrepreneurs have great business ideas but lack expertise in areas such as technology, marketing, finance, and business strategy. Hiring a full team is often expensive and inaccessible for early-stage founders. AI Co-Founder addresses this problem through a multi-agent AI system where a CEO orchestrator agent coordinates specialized agents for research, writing, marketing, and quality review. By working together through a shared knowledge base (RAG + chat memory), these agents help founders make decisions, automate tasks, and manage their businesses efficiently from a single platform.
+Many aspiring entrepreneurs have great business ideas but lack expertise in areas such as technology, marketing, finance, and business strategy. Hiring a full team is often expensive and inaccessible for early-stage founders. AI Co-Founder addresses this problem through a multi-agent AI system where a CEO orchestrator agent coordinates specialized agents for research, writing, marketing, data analysis, and quality review. By working together through a shared knowledge base (RAG + chat memory), these agents help founders make decisions, automate tasks, and manage their businesses efficiently from a single platform.
 
 ## Architecture
 
@@ -21,6 +21,7 @@ User → FastAPI Backend → main.py (Orchestrator) → CEO Agent
                                                       ├── Researcher Agent (Tavily web search)
                                                       ├── Writer Agent (content generation)
                                                       ├── CMO Marketing Agent (market trends, SEO)
+                                                      ├── Data Analyst Agent (EDA, Python sandbox)
                                                       ├── Judge Agent (quality review, score ≥8/10)
                                                       └── Utility Agents (chat memory, descriptions, titles)
                                                       └── RAG Engine (hybrid semantic + keyword search)
@@ -29,12 +30,20 @@ User → FastAPI Backend → main.py (Orchestrator) → CEO Agent
 ## What's Built
 
 ### Multi-Agent System
-- **CEO Agent** — plans, delegates to specialists, merges results; uses tools for research, writing, marketing, and knowledge retrieval
+- **CEO Agent** — plans, delegates to specialists, merges results; uses tools for research, writing, marketing, data analysis, and knowledge retrieval. Asks clarifying questions via interactive multiple-choice cards only when the answer materially changes the plan (max 1–2 questions, supports multi-select).
 - **Researcher Agent** — web research via Tavily with reflection loop (Judge scores drafts, revises if < 8/10)
 - **Writer Agent** — polished content from CEO-provided context with same reflection quality loop
 - **Judge Agent** — LLM-as-Judge scoring outputs (1–10) with critique and suggestions
 - **CMO Marketing Agent** — market trends (Google Trends/News/Shopping via SerpAPI), web search, content extraction
+- **Data Analyst Agent** — performs EDA and data-driven analysis on company files (CSV, Excel, JSON, Parquet) by running Python in a secure e2b code sandbox. Produces executive summaries with key findings, visualizations, and actionable business recommendations.
 - **Utility Agents** — chat memory extraction, document/image description, session title generation
+
+### Interactive Clarifications (MCQ)
+- CEO uses `ask_mcq_for_user` tool to present clickable multiple-choice questions in chat
+- **Smart limits** — asks at most 1–2 high-impact questions per decision point; infers reasonable defaults for everything else
+- **Multi-select** — when multiple options make sense (e.g. goals, channels), users can select several at once via checkboxes, then confirm at once
+- Custom answer input for responses outside the predefined options
+- Locks after selection; answer is sent back as a user message for the CEO to continue
 
 ### RAG Engine
 - Semantic chunking (LangChain SemanticChunker)
@@ -48,7 +57,7 @@ User → FastAPI Backend → main.py (Orchestrator) → CEO Agent
 - Company onboarding with tone selection
 - File upload pipeline: OCR/extract → describe → semantic chunk → embed → index → cloud storage
 - Dashboard stats and file management
-- Chat with session history and long-term memory
+- Chat with session history, long-term memory, session deletion, and clarification request responses
 - Supabase PostgreSQL + Storage integration
 
 ### Frontend (Next.js 16 + React 19 + Tailwind v4)
@@ -56,11 +65,17 @@ User → FastAPI Backend → main.py (Orchestrator) → CEO Agent
 - Authentication page (login/signup)
 - Onboarding wizard (4-step: name, description, industry, tone)
 - Dashboard with sidebar navigation (Overview, Drive, Chat, Settings)
-- Full chat interface with markdown rendering, session management, typing indicators
+- Sidebar chat history with session switching, new-chat creation, and session deletion (trash icon on hover with confirmation dialog)
+- Full chat interface with markdown rendering, session management, typing indicators, and interactive MCQ cards
 - Custom neumorphic design system with framer-motion animations
 
+### Code Sandbox (e2b)
+- Secure Python execution environment for the Data Analyst agent
+- File upload from cloud storage into sandbox for analysis
+- Automatic sandbox teardown after each task to prevent resource overuse
+
 ### Evaluation
-- Test scripts for Researcher, Writer, CMO, Chat Memory, and RAG end-to-end
+- Test scripts for Researcher, Writer, CMO, Chat Memory, Data Analyst, and RAG end-to-end
 - Generated test reports with real output examples
 
 ## Tech Stack
@@ -73,12 +88,13 @@ User → FastAPI Backend → main.py (Orchestrator) → CEO Agent
 | LLMs | OpenRouter (DeepSeek, GPT-OSS, Gemma, GLM, text-embedding-3-small) |
 | Search | Tavily (web), SerpAPI (Google Trends/News/Shopping) |
 | Vector DB | Supabase pgvector (semantic + keyword search) |
+| Code Sandbox | e2b (isolated Python execution for data analysis) |
 
 ## Setup
 
 1. Install Python deps: `pip install -r requirements.txt`
 2. Install frontend deps: `cd frontend && npm install`
-3. Copy `.env` and fill in your API keys (Tavily, OpenRouter, SerpAPI, Supabase)
+3. Copy `.env` and fill in your API keys (Tavily, OpenRouter, SerpAPI, Supabase, e2b)
 4. Start backend: `uvicorn backend.app:app --reload`
 5. Start frontend: `cd frontend && npm run dev`
 

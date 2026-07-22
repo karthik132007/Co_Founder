@@ -115,7 +115,7 @@ def _build_ceo_tools(company_id: int):
 
     return [
         view_all_agents,
-        # ask_mcq_for_user,
+        ask_mcq_for_user,
         knowledge_request,
         research_request,
         writing_request,
@@ -138,6 +138,12 @@ def _get_ceo_agent(company_id: int):
 
 
 def talk_to_ceo(company_id: int, message: str):
+    """Talk to the CEO agent.
+
+    Returns either a plain string reply, or a dict payload
+    {"type": "clarification_request", "question": ..., "options": [...]}
+    when the agent asks the user a multiple choice question.
+    """
     ceo_agent = _get_ceo_agent(company_id)
     chat_memories = _get_relevant_chat_memories(company_id, message)
     user_message = _build_user_message_with_memories(message, chat_memories)
@@ -151,4 +157,12 @@ def talk_to_ceo(company_id: int, message: str):
             ]
         }
     )
-    return _extract_content(result)
+    content = _extract_content(result)
+    if isinstance(content, str):
+        try:
+            parsed = json.loads(content)
+            if isinstance(parsed, dict) and parsed.get("type") == "clarification_request":
+                return parsed
+        except (json.JSONDecodeError, TypeError):
+            pass
+    return content
