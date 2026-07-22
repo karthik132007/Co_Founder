@@ -12,6 +12,7 @@ class Task(str, Enum):
     PLANNING = "planning"
     CLASSIFICATION = "classification"
     OCR = "ocr"
+    ImageGen = "image_genration"
 
 
 class Model(str, Enum):
@@ -21,6 +22,7 @@ class Model(str, Enum):
     GEMMA = "google/gemma-4-26b-a4b-it"
     GLM = "z-ai/glm-4.5-air"
     GPT_OSS = "openai/gpt-oss-120b"
+    SEEDREAM = "bytedance-seed/seedream-4.5"
 
 
 DEFAULT_MODEL = Model.DEEPSEEK
@@ -39,9 +41,10 @@ def get_best_llm(tasks: Iterable[Task]):
     - Pure planning -> GLM
     - Pure creative -> GPT-OSS
     """
-
+    
     task_set = set(tasks)
-
+    if Task.ImageGen in task_set:
+            return create_llm(Model.SEEDREAM.value)
     # Vision / OCR
     if Task.OCR in task_set:
         return create_llm(Model.GEMMA.value)

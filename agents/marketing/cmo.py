@@ -21,7 +21,7 @@ def _get_cmo_agent(company_id):
 def _extract_content(response):
     return response["messages"][-1].content
 
-def talk_to_cmo(company_id: int, message: str):
+def spawn_cmo(company_id: int, message: str):
     cmo_agent=_get_cmo_agent(company_id)
     result = cmo_agent.invoke(
         {

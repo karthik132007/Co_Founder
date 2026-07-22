@@ -12,10 +12,10 @@ from agents.CEO.ceo_agent_tools import ask_mcq_for_user, view_all_agents
 from agents.helpers.choose_llm import Task, get_best_llm
 from agents.CEO.ceo_prompts import get_ceo_system_prompt
 from backend.db.get_from_sql import get_company_data
-from agents.marketing.cmo import talk_to_cmo
-from agents.researcher.researcher import do_research
-from agents.util_agents.writer.writer import write
-from agents.data_analyst.data_agent import ask_data_analyst
+from agents.marketing.cmo import spawn_cmo
+from agents.researcher.researcher import spawn_researcher
+from agents.util_agents.writer.writer import spawn_writer
+from agents.data_analyst.data_agent import spawn_data_analyst
 from RAG_Engine.chat_memory import get_chat_memories_by_query
 
 
@@ -90,28 +90,28 @@ def _build_ceo_tools(company_id: int):
         description="Delegate fact-finding and verification to the Researcher agent.",
     )
     def research_request(task: str):
-        return do_research(task)
+        return spawn_researcher(task)
 
     @tool(
         "writing_request",
         description="Delegate drafting and polishing to the Writer agent.",
     )
     def writing_request(task: str):
-        return write(task)
+        return spawn_writer(task)
 
     @tool(
         "marketing_request",
         description="Delegate market strategy and growth work to the CMO agent.",
     )
     def marketing_request(task: str):
-        return talk_to_cmo(company_id, task)
+        return spawn_cmo(company_id, task)
 
     @tool(
         "data_analysis_request",
         description="Delegate data analysis, EDA, and file-based insights to the Data Analyst agent.",
     )
     def data_analysis_request(task: str):
-        return ask_data_analyst(company_id, task)
+        return spawn_data_analyst(company_id, task)
 
     return [
         view_all_agents,

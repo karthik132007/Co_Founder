@@ -11,7 +11,7 @@ data_analyst = create_agent(
     tools =tools
 )
 
-def ask_data_analyst(company_id: int, message: str):
+def spawn_data_analyst(company_id: int, message: str):
     user_message = (
         f"The company_id for this task is {company_id}. "
         f"Always pass this company_id to the 'get data files' and 'get files' tools.\n\n"

@@ -29,7 +29,7 @@ def _run_research_agent(prompt: str):
     )
     return _extract_content(response)
 
-def do_research(prompt_from_CEO:str,max_reflections:int = 2,pass_score:int = 8) -> str:
+def spawn_researcher(prompt_from_CEO:str,max_reflections:int = 1,pass_score:int = 7) :
     """
     Execute a research task assigned by the CEO agent.
     Returns the research findings as markdown.

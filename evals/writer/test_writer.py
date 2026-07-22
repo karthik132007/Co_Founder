@@ -1,5 +1,5 @@
 
-from util_agents.writer.writer import write
+from agents.util_agents.writer.writer import spawn_writer
 import time
 import datetime
 from pathlib import Path
@@ -8,7 +8,7 @@ from pathlib import Path
 def test_writer(prompt:str):
     try:
         toc = time.time()
-        result = write(prompt,max_reflections=2)
+        result = spawn_writer(prompt,max_reflections=2)
         tic = time.time()
 
         return {

@@ -12,13 +12,13 @@ if VENV_PYTHON.exists() and Path(sys.executable).resolve() != VENV_PYTHON.resolv
 
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from agents.researcher.researcher import do_research
+from agents.researcher.researcher import spawn_researcher
 
 
 def research(topic: str):
     try:
         tic = time.time()
-        result = do_research(topic)
+        result = spawn_researcher(topic)
         toc = time.time()
         return {
             "result": result,

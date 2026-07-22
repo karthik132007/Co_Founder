@@ -11,3 +11,7 @@ serpapi
 supabase
 pymupdf
 openrouter
+httpx
+tavily
+e2b-code-interpreter
+requests

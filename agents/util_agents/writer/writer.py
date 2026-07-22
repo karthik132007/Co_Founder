@@ -28,7 +28,7 @@ def _run_writer_agent(prompt:str):
         }
     )
     return _extract_content(response)
-def write(prompt_from_CEO: str,max_reflections:int =2,pass_score:int=8):
+def spawn_writer(prompt_from_CEO: str,max_reflections:int =2,pass_score:int=8):
 
     try:
         draft = _run_writer_agent(prompt_from_CEO)
