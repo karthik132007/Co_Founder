@@ -1,5 +1,7 @@
 # Co_Founder — v0.7.2 (Prerelease)
 
+> **📘 For complete system context and understanding, please refer to [`Agents_rules.md`](Agents_rules.md) before contributing or making changes.**
+
 ## Contents
 
 - [Overview](#overview)
