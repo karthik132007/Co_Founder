@@ -14,7 +14,7 @@
 
 ## Overview
 
-Many aspiring entrepreneurs have great business ideas but lack expertise in areas such as technology, marketing, finance, and business strategy. Hiring a full team is often expensive and inaccessible for early-stage founders. AI Co-Founder addresses this problem through a multi-agent AI system where a CEO orchestrator agent coordinates specialized agents for research, writing, marketing, data analysis, and quality review. By working together through a shared knowledge base (RAG + chat memory), these agents help founders make decisions, automate tasks, and manage their businesses efficiently from a single platform.
+Many aspiring entrepreneurs have great business ideas but lack expertise in areas such as technology, marketing, finance, and business strategy. Hiring a full team is often expensive and inaccessible for early-stage founders. Co-Founder.ai addresses this problem through a multi-agent AI system where a CEO orchestrator agent coordinates specialized agents for research, writing, marketing, data analysis, and quality review. By working together through a shared knowledge base (RAG + chat memory), these agents help founders make decisions, automate tasks, and manage their businesses efficiently from a single platform.
 
 ## Architecture
 
