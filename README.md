@@ -24,56 +24,7 @@ AI Co-Founder is a multi-agent AI platform that replaces a human founding team w
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      User (React Frontend)                   │
-│  Landing → Auth → Onboarding → Dashboard (Chat/Drive/Stats) │
-└─────────────────────┬───────────────────────────────────────┘
-                      │ HTTP (JSON)
-                      ▼
-┌─────────────────────────────────────────────────────────────┐
-│              FastAPI Backend (backend/app.py)                 │
-│  Routers: auth, company, files, chat                         │
-│  Middleware: CORS (localhost:3000), JSON parsing              │
-└─────────┬───────────────────────────────────────────────────┘
-          │ agent dispatch
-          ▼
-┌─────────────────────────────────────────────────────────────┐
-│              CEO Agent (LangChain create_agent)              │
-│  System prompt: CEO persona + tool descriptions              │
-│  Decision loop: plan → delegate → synthesize → respond       │
-│  Tools: research, write, marketing, data_analysis,           │
-│         ask_mcq, retrieve_knowledge, get_chat_memories,      │
-│         create_doc_description, see_drive_files              │
-└──────┬──────┬──────┬──────┬──────┬──────┬────────────────────┘
-       │      │      │      │      │      │
-       ▼      ▼      ▼      ▼      ▼      ▼
-   ┌────┐ ┌────┐ ┌────┐ ┌────┐ ┌────┐ ┌──────────┐
-   │Res.│ │Writ│ │CMO │ │Data│ │Jud.│ │Utility   │
-   │    │ │    │ │    │ │An. │ │ge  │ │Agents    │
-   │Tav │ │LLM │ │Serp│ │e2b │ │LLM │ │(mem,desc,│
-   │ily │ │    │ │API │ │sand│ │as- │ │title)    │
-   └────┘ └────┘ └────┘ └────┘ └────┘ └──────────┘
-       │      │      │      │
-       └──────┴──────┴──────┘
-                │
-                ▼
-     ┌──────────────────────┐
-     │   RAG Engine         │
-     │  Semantic Chunker     │
-     │  Embed (text-embed-3) │
-     │  Hybrid Search        │
-     │  0.7 sem + 0.3 kw    │
-     │  Merge + Rerank       │
-     └──────────┬───────────┘
-                │
-                ▼
-     ┌──────────────────────┐
-     │   Supabase           │
-     │  PostgreSQL + pgvec   │
-     │  Storage (S3-compat)  │
-     └──────────────────────┘
-```
+![System Architecture](sys_arch.png)
 
 ## Agent System
 
