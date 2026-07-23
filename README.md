@@ -1,4 +1,4 @@
-# Co_Founder — v0.7.1 (Prerelease)
+# Co_Founder — v0.7.2 (Prerelease)
 
 ## Contents
 
@@ -73,6 +73,12 @@ User → FastAPI Backend → main.py (Orchestrator) → CEO Agent
 - Secure Python execution environment for the Data Analyst agent
 - File upload from cloud storage into sandbox for analysis
 - Automatic sandbox teardown after each task to prevent resource overuse
+
+### Logging
+- Centralized `logger_config.py` with `RotatingFileHandler` (10MB, 3 backups) — writes DEBUG+ to `logs.log` in project root
+- Console handler shows INFO+ in real time; file handler captures DEBUG+ for post-mortem analysis
+- All agents, tools, RAG operations, API endpoints, file ops, and sandbox executions log key actions
+- Warnings and exceptions logged across the entire codebase
 
 ### Evaluation
 - Test scripts for Researcher, Writer, CMO, Chat Memory, Data Analyst, and RAG end-to-end

@@ -7,10 +7,13 @@ Prereqs:
 Run from repo root:
     python -m evals.data_analyst.test_data_analyst
 """
+import logging
 from datetime import datetime
 from pathlib import Path
 
 from agents.CEO.CEO import talk_to_ceo
+
+logger = logging.getLogger(__name__)
 
 COMPANY_ID = 1
 
@@ -32,9 +35,11 @@ REPORT_PATH = Path(__file__).resolve().parent / "data_analyst_test_report.md"
 
 
 def main():
+    logger.info("Starting data analyst eval for company_id=%d", COMPANY_ID)
     started = datetime.now()
     response = talk_to_ceo(company_id=COMPANY_ID, message=PROMPT)
     elapsed = (datetime.now() - started).total_seconds()
+    logger.info("Data analyst eval completed in %.1fs", elapsed)
 
     report = f"""# Data Analyst Test Report
 
@@ -51,6 +56,7 @@ def main():
 {response}
 """
     REPORT_PATH.write_text(report, encoding="utf-8")
+    logger.info("Report written to %s", REPORT_PATH)
     print(f"Report written to {REPORT_PATH}")
     print(response)
 

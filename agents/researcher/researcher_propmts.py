@@ -46,7 +46,7 @@ Your goal is to provide high-quality research that enables the CEO Agent to make
 """
     return prompt
 
-def get_researcher_reflection_prompt(prompt_from_CEO,draft,critique,suggestions,):
+def get_researcher_reflection_prompt(prompt_from_CEO,draft,critique,suggestions):
     reflection_prompt = f"""
     Original research task:
     {prompt_from_CEO}

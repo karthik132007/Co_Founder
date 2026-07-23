@@ -2,11 +2,14 @@
 The main CEO agent that interacts with the user and delegates work to specialist agents.
 """
 import json
+import logging
 import sys
 from pathlib import Path
 
 from langchain.agents import create_agent
 from langchain.tools import tool
+
+logger = logging.getLogger(__name__)
 
 from agents.CEO.ceo_agent_tools import ask_mcq_for_user, view_all_agents
 from agents.helpers.choose_llm import Task, get_best_llm
@@ -20,31 +23,36 @@ from RAG_Engine.chat_memory import get_chat_memories_by_query
 
 
 def _extract_content(response):
-    return response["messages"][-1].content
+    content = response["messages"][-1].content
+    return content
 
 
 def _get_relevant_chat_memories(company_id: int, query: str, top_k: int = 5):
+    logger.info("Fetching relevant chat memories for company_id=%d, top_k=%d", company_id, top_k)
     try:
-        return get_chat_memories_by_query(
+        memories = get_chat_memories_by_query(
             company_id=company_id,
             query=query,
             match_count=top_k,
         )
-    except Exception:
+        logger.info("Retrieved %d chat memories for company_id=%d", len(memories), company_id)
+        return memories
+    except Exception as e:
+        logger.warning("Failed to fetch chat memories for company_id=%d: %s", company_id, e)
         return []
 
 
 def _format_chat_memories(memories: list[dict]) -> str:
     if not memories:
         return "No relevant chat memories found."
-
     lines = []
     for index, memory in enumerate(memories, start=1):
         title = memory.get("title") or ""
         category = memory.get("category") or "uncategorized"
         importance = memory.get("importance") or "unknown"
         lines.append(f"{index}. [{importance} | {category}] {title}")
-    return "\n".join(lines)
+    result = "\n".join(lines)
+    return result
 
 
 def _build_user_message_with_memories(message: str, memories: list[dict]) -> str:
@@ -65,6 +73,7 @@ def _build_ceo_tools(company_id: int):
         description="Search company knowledge across files and memory via the RAG engine.",
     )
     def knowledge_request(query: str, top_k: int = 5):
+        logger.info("knowledge_request called: query='%s', top_k=%d, company_id=%d", query, top_k, company_id)
         repo_root = Path(__file__).resolve().parents[2]
         rag_dir = repo_root / "RAG_Engine"
         for path in (repo_root, rag_dir):
@@ -74,7 +83,9 @@ def _build_ceo_tools(company_id: int):
 
         from RAG_Engine.rag import kg
 
+
         results = kg.search(company_id=company_id, query=query, top_k=top_k)
+        logger.info("RAG search returned %d results for query: %s", len(results), query)
 
         return json.dumps(
             {
@@ -90,28 +101,40 @@ def _build_ceo_tools(company_id: int):
         description="Delegate fact-finding and verification to the Researcher agent.",
     )
     def research_request(task: str):
-        return spawn_researcher(task)
+        logger.info("research_request called: task='%s'", task)
+        result = spawn_researcher(task)
+        logger.info("research_request completed for task: '%s'", task)
+        return result
 
     @tool(
         "writing_request",
         description="Delegate drafting and polishing to the Writer agent.",
     )
     def writing_request(task: str):
-        return spawn_writer(task)
+        logger.info("writing_request called: task='%s'", task)
+        result = spawn_writer(task)
+        logger.info("writing_request completed for task: '%s'", task)
+        return result
 
     @tool(
         "marketing_request",
         description="Delegate market strategy and growth work to the CMO agent.",
     )
     def marketing_request(task: str):
-        return spawn_cmo(company_id, task)
+        logger.info("marketing_request called: task='%s', company_id=%d", task, company_id)
+        result = spawn_cmo(company_id, task)
+        logger.info("marketing_request completed for task: '%s'", task)
+        return result
 
     @tool(
         "data_analysis_request",
         description="Delegate data analysis, EDA, and file-based insights to the Data Analyst agent.",
     )
     def data_analysis_request(task: str):
-        return spawn_data_analyst(company_id, task)
+        logger.info("data_analysis_request called: task='%s', company_id=%d", task, company_id)
+        result = spawn_data_analyst(company_id, task)
+        logger.info("data_analysis_request completed for task: '%s'", task)
+        return result
 
     return [
         view_all_agents,
@@ -124,9 +147,12 @@ def _build_ceo_tools(company_id: int):
     ]
 
 def _get_ceo_agent(company_id: int):
+    logger.info("Creating CEO agent for company_id=%d", company_id)
     company_data = get_company_data(company_id)
     if not company_data:
+        logger.error("No company found for company_id=%d", company_id)
         raise ValueError(f"No company found for company_id={company_id}")
+
 
     ceo_agent = create_agent(
         name="CEO Agent",
@@ -134,6 +160,7 @@ def _get_ceo_agent(company_id: int):
         model=get_best_llm([Task.PLANNING, Task.WRITING]),
         tools=_build_ceo_tools(company_id),
     )
+    logger.info("CEO agent created successfully for company_id=%d", company_id)
     return ceo_agent
 
 
@@ -144,6 +171,7 @@ def talk_to_ceo(company_id: int, message: str):
     {"type": "clarification_request", "question": ..., "options": [...]}
     when the agent asks the user a multiple choice question.
     """
+    logger.info("talk_to_ceo called: company_id=%d, message='%s'", company_id, message[:100])
     ceo_agent = _get_ceo_agent(company_id)
     chat_memories = _get_relevant_chat_memories(company_id, message)
     user_message = _build_user_message_with_memories(message, chat_memories)
@@ -162,7 +190,9 @@ def talk_to_ceo(company_id: int, message: str):
         try:
             parsed = json.loads(content)
             if isinstance(parsed, dict) and parsed.get("type") == "clarification_request":
+                logger.info("CEO agent returned clarification_request: %s", parsed.get("question"))
                 return parsed
         except (json.JSONDecodeError, TypeError):
             pass
+    logger.info("talk_to_ceo completed for company_id=%d", company_id)
     return content

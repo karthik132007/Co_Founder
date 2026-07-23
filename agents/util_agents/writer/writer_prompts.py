@@ -65,7 +65,7 @@ When adapting tone:
 
 Your goal is to make information easier and more enjoyable to read while preserving accuracy, clarity, and meaning.
 """
-def get_writer_reflection_prompt(prompt_from_CEO,draft,critique,suggestions,):
+def get_writer_reflection_prompt(prompt_from_CEO,draft,critique,suggestions):
     reflection_prompt = f"""
     Original writing task:
     {prompt_from_CEO}

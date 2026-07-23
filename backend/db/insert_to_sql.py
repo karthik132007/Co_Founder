@@ -2,8 +2,12 @@
 Database write operations using Supabase REST API (HTTPS).
 Replaces SQLAlchemy direct PostgreSQL connections which require IPv6.
 """
+import logging
+
 from backend.utils import get_supabase_client
 from typing import Optional, Dict, Any
+
+logger = logging.getLogger(__name__)
 
 _client = get_supabase_client()
 
@@ -52,6 +56,7 @@ def create_user(email: str, password: str) -> Optional[_UserResult]:
     # Check for existing user first
     existing = _client.table("users").select("id").eq("email", email).execute()
     if existing.data:
+        logger.warning("User with email=%s already exists", email)
         return None
 
     response = _client.table("users").insert({
@@ -61,7 +66,9 @@ def create_user(email: str, password: str) -> Optional[_UserResult]:
 
     if response.data:
         row = response.data[0]
+        logger.info("User created — id=%s, email=%s", row["id"], row["email"])
         return _UserResult(id=row["id"], email=row["email"])
+    logger.error("Failed to create user with email=%s — no data returned", email)
     return None
 
 
@@ -81,6 +88,9 @@ def authenticate_user(email: str, password: str) -> Optional[_UserResult]:
         row = response.data[0]
         if row.get("password") == password:
             return _UserResult(id=row["id"], email=row["email"])
+        logger.warning("Authentication failed for email=%s — password mismatch", email)
+    else:
+        logger.warning("Authentication failed for email=%s — user not found", email)
     return None
 
 
@@ -104,7 +114,9 @@ def create_company(
     response = _client.table("companies").insert(payload).execute()
     if response.data:
         row = response.data[0]
+        logger.info("Company created — id=%s, name=%s", row["id"], row["company_name"])
         return _CompanyResult(id=row["id"], company_name=row["company_name"])
+    logger.error("Failed to create company — name=%s, user_id=%s", company_name, user_id)
     return None
 
 
@@ -140,6 +152,7 @@ def add_meta_to_file(
     response = _client.table("files").insert(payload).execute()
     if response.data:
         row = response.data[0]
+        logger.info("File metadata inserted — id=%s, file_name=%s", row["id"], row.get("file_name"))
         return _FileResult(
             id=row["id"],
             company_id=row.get("company_id"),
@@ -153,6 +166,7 @@ def add_meta_to_file(
             file_size=row.get("file_size"),
             status=row.get("status"),
         )
+    logger.error("Failed to insert file metadata — file_name=%s", file_name)
     raise RuntimeError("Failed to insert file metadata")
 
 
@@ -189,14 +203,17 @@ def add_document_chunks(
         rows.append(row)
 
     response = _client.table("document_chunks").insert(rows).execute()
-    return response.data if response.data else []
-
+    inserted = response.data if response.data else []
+    logger.info("%d document chunks inserted for file_id=%s", len(inserted), file_id)
+    return inserted
 
 def create_chat_session(session_id: str, company_id: int, title: Optional[str] = None) -> _ChatSessionResult:
     """Create a chat session row and return a lightweight result object."""
     if not session_id:
+        logger.error("session_id must be provided")
         raise ValueError("session_id must be provided.")
     if company_id is None:
+        logger.error("company_id must be provided")
         raise ValueError("company_id must be provided.")
 
     payload: Dict[str, Any] = {
@@ -209,19 +226,23 @@ def create_chat_session(session_id: str, company_id: int, title: Optional[str] =
     response = _client.table("chat_sessions").insert(payload).execute()
     if response.data:
         row = response.data[0]
+        logger.info("Chat session created — session_id=%s, company_id=%s", row["session_id"], row["company_id"])
         return _ChatSessionResult(
             session_id=row["session_id"],
             company_id=row["company_id"],
             title=row.get("title"),
         )
+    logger.error("Failed to insert chat session — session_id=%s", session_id)
     raise RuntimeError("Failed to insert chat session")
 
 
 def update_chat_session_title(session_id: str, title: str) -> Optional[_ChatSessionResult]:
     """Update a chat session title and return the updated lightweight session object."""
     if not session_id:
+        logger.error("session_id must be provided")
         raise ValueError("session_id must be provided.")
     if not title:
+        logger.error("title must be provided")
         raise ValueError("title must be provided.")
 
     response = (
@@ -232,21 +253,26 @@ def update_chat_session_title(session_id: str, title: str) -> Optional[_ChatSess
     )
     if response.data:
         row = response.data[0]
+        logger.info("Chat session title updated — session_id=%s, title=%s", session_id, title)
         return _ChatSessionResult(
             session_id=row["session_id"],
             company_id=row["company_id"],
             title=row.get("title"),
         )
+    logger.warning("Chat session %s not found for title update", session_id)
     return None
 
 
 def add_message_to_session(session_id: str, role: str, message: str) -> _ChatMessageResult:
     """Add a new message entry to the chat_messages table."""
     if not session_id:
+        logger.error("session_id must be provided")
         raise ValueError("session_id must be provided.")
     if role not in {"user", "assistant", "system"}:
+        logger.error("Invalid role: %s", role)
         raise ValueError("role must be one of: user, assistant, system")
     if not message:
+        logger.error("message must be provided for session_id=%s", session_id)
         raise ValueError("message must be provided.")
 
     payload: Dict[str, Any] = {
@@ -264,4 +290,5 @@ def add_message_to_session(session_id: str, role: str, message: str) -> _ChatMes
             role=row["role"],
             message=row["message"],
         )
+    logger.error("Failed to insert chat message for session_id=%s", session_id)
     raise RuntimeError("Failed to insert chat message")

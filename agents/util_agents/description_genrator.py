@@ -1,11 +1,19 @@
-from agents.helpers.choose_llm import get_best_llm, Task
-from agents.helpers.datetime_context import get_datetime_context
+import logging
+
 import dotenv
 
+from agents.helpers.choose_llm import get_best_llm, Task
+from agents.helpers.datetime_context import get_datetime_context
+
+logger = logging.getLogger(__name__)
+
 dotenv.load_dotenv()
+logger.info("Creating description generation model")
 model = get_best_llm([Task.CLASSIFICATION])
+logger.info("Description generation model created")
 
 def get_file_description(file_content: bytes):
+    logger.info("get_file_description called")
     prompt = f"""
 {get_datetime_context()}
 
@@ -40,4 +48,6 @@ Document:
 --------------------
 """
 
-    return model.invoke(prompt).content
+    result = model.invoke(prompt).content
+    logger.info("File description generated successfully")
+    return result

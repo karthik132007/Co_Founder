@@ -1,9 +1,13 @@
+import logging
+
 from pydantic import BaseModel
 from .db.database import Base
 from sqlalchemy import Column, BigInteger, Text, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from typing import Optional
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 
 class CompanyData(BaseModel):

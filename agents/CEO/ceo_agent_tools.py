@@ -1,7 +1,10 @@
 import json
+import logging
 from pathlib import Path
 
 from langchain.tools import tool
+
+logger = logging.getLogger(__name__)
 
 AGENTS_FILE = Path(__file__).resolve().parents[1] / "agents.json"
 
@@ -10,6 +13,7 @@ def view_all_agents():
     """
     View all available agents and their descriptions.
     """
+    logger.info("view_all_agents called")
     with AGENTS_FILE.open('r', encoding='utf-8') as f:
         agents = json.load(f)
     return agents
@@ -17,6 +21,7 @@ def view_all_agents():
 @tool('ask_mcq_for_user', return_direct=True, description="Ask the user a multiple choice question shown as clickable buttons in the chat. ALWAYS use this when the user must choose between clear options (budget, direction, priority, format, channel, etc.). Provide a question and 2-4 options. Set multi_select=True when the user may reasonably pick several options (channels, goals, priorities). Ask at most 1-2 high-impact questions. The user can also type a custom answer, so never add an 'other' option yourself.")
 def ask_mcq_for_user(question: str, options: list[str], multi_select: bool = False):
     """Ask a multiple choice question to the user and get their answer."""
+    logger.info("ask_mcq_for_user called: question='%s', options=%s, multi_select=%s", question, options, multi_select)
     return json.dumps(
         {
             "type": "clarification_request",

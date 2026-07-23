@@ -1,7 +1,11 @@
 """
 All prompts for the CEO agent are defined in this file.
 """
+import logging
+
 from agents.helpers.datetime_context import get_datetime_context
+
+logger = logging.getLogger(__name__)
 
 
 def get_ceo_system_prompt(company_metadata: dict) -> str:
@@ -10,9 +14,11 @@ def get_ceo_system_prompt(company_metadata: dict) -> str:
         desc = company_metadata.get("small_description")
         tone = company_metadata.get("tone")
         industry = company_metadata.get("industry")
-    except AttributeError:
+    except AttributeError as e:
+        logger.error("Invalid company metadata provided: %s", e)
         return "Error: Invalid company metadata provided."
 
+    logger.info("CEO system prompt built for company: %s (industry: %s)", company_name, industry)
     return f"""
 {get_datetime_context()}
 

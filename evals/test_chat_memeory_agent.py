@@ -1,5 +1,8 @@
+import logging
 
 from agents.util_agents.chat_memory_creator import create_chat_memory
+
+logger = logging.getLogger(__name__)
 
 conversation = [
     {
@@ -64,5 +67,7 @@ conversation = [
     }
 ]
 
+logger.info("Testing chat memory agent with %d conversation turns", len(conversation))
 response = create_chat_memory(conversation)
+logger.info("Chat memory agent response received: %s", response)
 print(response)

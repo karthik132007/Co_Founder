@@ -1,3 +1,4 @@
+import logging
 from concurrent.futures import ThreadPoolExecutor
 
 from RAG_Engine.embeddings import generate_embeddings
@@ -5,13 +6,15 @@ from RAG_Engine.retrive import semantic_search, keywords_search
 from RAG_Engine.utils import _merge_and_rerank
 from RAG_Engine.chat_memory import get_chat_memories_by_query
 
+logger = logging.getLogger(__name__)
+
 class KnowledgeEngine:
 
     def search(
             self,
             company_id: int,
             query: str,
-            top_k: int=3,
+            top_k: int = 3,
             semantic_weight: float = 0.7,
             keyword_weight: float = 0.3,
             use_description_boost: bool = True,
@@ -48,6 +51,9 @@ class KnowledgeEngine:
             keyword_search_results = keyword_future.result() or []
             memory_results = (memory_future.result() or []) if memory_future else []
 
+            logger.info("Search tasks completed: semantic=%d, keyword=%d, memories=%d",
+                        len(semantic_search_results), len(keyword_search_results), len(memory_results))
+
         if rerank:
             document_results = _merge_and_rerank(
                 keyword_search_results,
@@ -71,6 +77,8 @@ class KnowledgeEngine:
         if use_description_boost:
             pass
 
+        logger.info("Search complete: %d document results, %d chat memories",
+                    len(document_results), len(memory_results))
         return {
             "rag": document_results,
             "chat_memories": memory_results,

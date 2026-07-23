@@ -1,9 +1,14 @@
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.api.auth import router as auth_router
 from backend.api.user import router as user_router
 from backend.api.drive import router as drive_router
 from backend.api.chat import router as chat_router
+
+logger = logging.getLogger(__name__)
+
 app = FastAPI()
 app.include_router(auth_router)
 app.include_router(user_router)

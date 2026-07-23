@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path as FilePath
 from uuid import uuid4
 
@@ -13,18 +14,23 @@ from backend.db.put_to_drive import delete_from_cloud, upload_to_cloud
 from backend.utils import get_supabase_client
 from backend.utils import extract_text
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter()
 
 
 @router.post("/upload")
 def upload_to_drive(user_id: int, file: UploadFile):
+    logger.info("upload_to_drive called — user_id=%s, filename=%s, content_type=%s", user_id, file.filename, file.content_type)
     company_id = get_company_id(user_id)
     try:
         if not company_id:
+            logger.warning("No company found for user_id=%s", user_id)
             raise HTTPException(status_code=404, detail="No company found for this user.")
 
         file_bytes = file.file.read()
         if not file_bytes:
+            logger.warning("Uploaded file is empty for user_id=%s", user_id)
             raise HTTPException(status_code=400, detail="Uploaded file is empty")
         file_type = file.content_type or "application/octet-stream"
         original_file_name = file.filename or "uploaded_file"
@@ -37,7 +43,6 @@ def upload_to_drive(user_id: int, file: UploadFile):
             file_desc = get_image_description(file_bytes, file_type)
 
         elif file_extension in data_extensions:
-            # Data files: description only (from a content sample), no chunking/RAG.
             sample = file_bytes[:8000].decode("utf-8", errors="replace")
             file_desc = get_file_description(sample)
 
@@ -52,6 +57,7 @@ def upload_to_drive(user_id: int, file: UploadFile):
                 text=extracted_content,
                 file_path=original_file_name,
             )
+            logger.info("Document chunked into %d chunks", len(document_chunks))
 
         unique_name = f"{uuid4()}_{original_file_name}"
 
@@ -66,12 +72,13 @@ def upload_to_drive(user_id: int, file: UploadFile):
             company_id=company_id,
             file_name=unique_name,
             original_file_name=original_file_name,
-            storage_path=unique_name,  # Adjust this based on your cloud storage logic
+            storage_path=unique_name,
             mime_type=file_type,
             description=file_desc,
             file_extension=file_extension,
             file_size=len(file_bytes),
         )
+        logger.info("File metadata inserted — file_id=%s", file_record.id)
 
         if document_chunks:
             add_document_chunks(
@@ -81,7 +88,6 @@ def upload_to_drive(user_id: int, file: UploadFile):
                 original_file_name=original_file_name,
                 mime_type=file_type,
             )
-
         return {
             "message": "File uploaded successfully",
             "file_name": unique_name,
@@ -90,8 +96,7 @@ def upload_to_drive(user_id: int, file: UploadFile):
     except HTTPException:
         raise
     except Exception as e:
-        import traceback
-        traceback.print_exc()
+        logger.exception("Failed to upload file for user_id=%s: %s", user_id, e)
         raise HTTPException(status_code=500, detail=f"Failed to upload file: {str(e)}")
 
 
@@ -101,9 +106,11 @@ def delete_file(user_id: int = Query(..., description="User ID"), file_id: int =
 
     ⚠️ WARNING: This action cannot be undone. The file will be permanently deleted.
     """
+    logger.info("delete_file called — user_id=%s, file_id=%s", user_id, file_id)
     try:
         company_id = get_company_id(user_id)
         if not company_id:
+            logger.warning("No company found for user_id=%s", user_id)
             raise HTTPException(status_code=404, detail="No company found for this user.")
 
         supabase_client = get_supabase_client()
@@ -112,6 +119,7 @@ def delete_file(user_id: int = Query(..., description="User ID"), file_id: int =
         file_data = supabase_client.table("files").select("*").eq("id", file_id).eq("company_id", company_id).execute()
 
         if not file_data.data:
+            logger.warning("File %s not found or does not belong to company_id=%s", file_id, company_id)
             raise HTTPException(status_code=404, detail="File not found or does not belong to this user.")
 
         file_record = file_data.data[0]
@@ -122,6 +130,7 @@ def delete_file(user_id: int = Query(..., description="User ID"), file_id: int =
 
         # Delete from database
         delete_file_by_id(file_id)
+        logger.info("File %s deleted from database", file_id)
 
         return {
             "message": "File deleted successfully",
@@ -132,4 +141,5 @@ def delete_file(user_id: int = Query(..., description="User ID"), file_id: int =
     except HTTPException:
         raise
     except Exception as e:
+        logger.exception("Failed to delete file_id=%s: %s", file_id, e)
         raise HTTPException(status_code=500, detail=f"Failed to delete file: {str(e)}")

@@ -1,8 +1,13 @@
+import logging
+
 from langchain.agents import create_agent
 
 from agents.helpers.choose_llm import get_best_llm, Task
 from agents.helpers.datetime_context import get_datetime_context
 
+logger = logging.getLogger(__name__)
+
+logger.info("Creating chat memory agent")
 agent = create_agent(
     name="chat_memory_agent",
     model=get_best_llm(tasks=[Task.CLASSIFICATION]),
@@ -160,6 +165,7 @@ If nothing is worth remembering, return:
 
 
 def create_chat_memory(conversation: str):
+    logger.info("create_chat_memory called")
     prompt = f"""
 Extract all long-term memories from the following conversation.
 
@@ -178,4 +184,6 @@ Conversation:
         }
     )
 
-    return response["messages"][-1].content
+    result = response["messages"][-1].content
+    logger.info("Chat memory created successfully")
+    return result
