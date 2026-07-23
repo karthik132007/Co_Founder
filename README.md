@@ -314,7 +314,6 @@ Each agent prompt is defined as a module-level constant (e.g., `RESEARCHER_SYSTE
 6. Start backend: `uvicorn backend.app:app --reload` (default: `http://localhost:8000`)
 7. Start frontend: `cd frontend && npm run dev` (default: `http://localhost:3000`)
 
-> **⚠️ Security Note**: Passwords are stored as plaintext. The `.env` file contains live API keys. Do not deploy publicly without addressing these issues.
 
 ## Status
 
