@@ -43,9 +43,9 @@ const steps = [
 
 const agents = [
   { icon: Brain, name: "CEO Agent", desc: "Coordinates all agents, creates strategies, and ensures every decision aligns with your business goals." },
-  { icon: Code, name: "Web Developer", desc: "Builds websites, landing pages, and web applications tailored to your startup's needs." },
+  { icon: Code, name: "Web Developer", desc: "Builds websites, landing pages, and web applications tailored to your startup's needs.", soon: true },
   { icon: BarChart3, name: "Marketing Expert", desc: "Designs campaigns, content strategies, and growth plans to reach your target audience." },
-  { icon: Wallet, name: "Finance Advisor", desc: "Handles budgeting, financial projections, pricing strategy, and funding preparation." },
+  { icon: Wallet, name: "Finance Advisor", desc: "Handles budgeting, financial projections, pricing strategy, and funding preparation.", soon: true },
   { icon: LineChart, name: "Business Analyst", desc: "Evaluates business models, market opportunities, and competitive positioning." },
   { icon: Search, name: "Research Agent", desc: "Uncovers market insights, competitor data, industry trends, and actionable intelligence." },
 ];
@@ -217,9 +217,9 @@ function Navbar() {
 
 function HeroVisual() {
   const chips = [
-    { icon: Code, label: "Developer", pos: "top-[6%] right-[2%]", delay: 0 },
+    { icon: Code, label: "Developer (soon)", pos: "top-[6%] right-[2%]", delay: 0 },
     { icon: BarChart3, label: "Marketing", pos: "bottom-[16%] right-[0%]", delay: 1.2 },
-    { icon: Wallet, label: "Finance", pos: "bottom-[16%] left-[0%]", delay: 2.4 },
+    { icon: Wallet, label: "Finance (soon)", pos: "bottom-[16%] left-[0%]", delay: 2.4 },
     { icon: Search, label: "Research", pos: "top-[6%] left-[2%]", delay: 3.6 },
   ];
 
@@ -469,7 +469,7 @@ function DashboardMockup() {
           {[
             { agent: "CEO Agent", action: "Generated Q3 strategy report", time: "2m" },
             { agent: "Marketing", action: "Launched email campaign · 1.2K sent", time: "12m" },
-            { agent: "Developer", action: "Deployed landing page v2.1", time: "38m" },
+            { agent: "Developer (soon)", action: "Deployed landing page v2.1", time: "38m" },
           ].map((item) => (
             <div key={item.action} className="flex items-center gap-3 px-4 py-3">
               <div className="w-7 h-7 rounded-lg bg-[#eef2ff] flex items-center justify-center text-[11px] font-semibold shrink-0" style={{ color: ACCENT }}>
@@ -617,7 +617,14 @@ function Agents() {
               className="card card-hover p-6 group flex flex-col"
             >
               <IconTile icon={agent.icon} size="lg" />
-              <h3 className="mt-5 text-[15px] font-semibold text-[#0a0a0a]">{agent.name}</h3>
+              <h3 className="mt-5 text-[15px] font-semibold text-[#0a0a0a]">
+                {agent.name}
+                {"soon" in agent && agent.soon && (
+                  <span className="ml-2 inline-block rounded-full bg-[#eef2ff] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide" style={{ color: ACCENT }}>
+                    Coming soon
+                  </span>
+                )}
+              </h3>
               <p className="mt-2 text-sm text-[#6b7280] leading-relaxed flex-1">{agent.desc}</p>
               <div className="mt-4 flex items-center gap-1.5 text-[13px] font-medium opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: ACCENT }}>
                 Learn more <ArrowUpRight className="w-3.5 h-3.5" />

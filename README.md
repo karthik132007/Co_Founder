@@ -269,6 +269,8 @@ Each agent prompt is defined as a module-level constant (e.g., `RESEARCHER_SYSTE
 ## Status
 
 Functional end-to-end prerelease (v0.7.2). The core chat loop, multi-agent system, RAG pipeline, file management, and onboarding flow are operational. Known gaps:
+- **Web Developer agent — coming soon** (not yet active; shown as a preview in the UI)
+- **Finance Advisor agent — coming soon** (not yet active; shown as a preview in the UI)
 - Settings page is a placeholder
 - Graphic Designer agent module exists but is not wired to the CEO's tool registry
 - Image generation tool references a commented-out API key
