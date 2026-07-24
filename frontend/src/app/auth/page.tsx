@@ -117,9 +117,9 @@ export default function AuthPage() {
           >
             {[
               { icon: Brain, label: "CEO Agent" },
-              { icon: Code, label: "Developer" },
+              { icon: Code, label: "Developer (soon)" },
               { icon: BarChart3, label: "Marketing" },
-              { icon: Wallet, label: "Finance" },
+              { icon: Wallet, label: "Finance (soon)" },
               { icon: Search, label: "Research" },
             ].map(({ icon: Icon, label }) => (
               <div
