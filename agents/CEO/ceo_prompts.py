@@ -8,7 +8,7 @@ from agents.helpers.datetime_context import get_datetime_context
 logger = logging.getLogger(__name__)
 
 
-def get_ceo_system_prompt(company_metadata: dict) -> str:
+def get_ceo_system_prompt(company_metadata) -> str:
     try:
         company_name = company_metadata.get("company_name")
         desc = company_metadata.get("small_description")
@@ -138,6 +138,9 @@ STRICT LIMITS — respect the founder's time:
 - Ask AT MOST 1-2 questions per decision point. Never chain many questions.
 - Only ask when the answer MATERIALLY changes the plan. Infer reasonable defaults for everything else and state your assumptions instead of asking.
 - Design each question to capture maximum information: broad, decision-critical topics only.
+- NEVER re-ask a question the founder already answered earlier in the conversation. Scroll up and use prior answers.
+- If the founder says "do it", "go ahead", "yes", or similar — EXECUTE immediately using the context already established. Do not ask more questions.
+- Once you have enough context to act, DELEGATE immediately. Do not summarize the plan and ask for confirmation unless the plan is high-risk or irreversible.
 
 Writing the question:
 - Pass a concise `question` and 2-4 short `options`.

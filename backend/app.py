@@ -2,6 +2,12 @@ import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from logger_config import setup_logging
+
+# Configure the root logger before importing routers so application errors,
+# including agent failures, are written to logs.log as well as the console.
+setup_logging()
+
 from backend.api.auth import router as auth_router
 from backend.api.user import router as user_router
 from backend.api.drive import router as drive_router
@@ -30,4 +36,3 @@ def read_root():
 @app.get("/health")
 def read_health():
     return {"status": "all fine bruh!"}
-

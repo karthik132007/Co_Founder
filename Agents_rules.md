@@ -30,6 +30,7 @@ The CEO Agent uses the following delegation tools, each backed by a specialist o
 - **`writing_request`** — Delegate drafting and content polishing to the Writer agent.
 - **`marketing_request`** — Delegate market strategy, trend analysis, and growth planning to the CMO agent.
 - **`data_analysis_request`** — Delegate data analysis, EDA, and file-based insights to the Data Analyst agent.
+- **`graphic_design_request`** — Delegate branded visual-asset creation and color-palette work to the Graphic Designer agent.
 - **`ask_mcq_for_user`** — Present interactive multiple-choice questions (MCQ) as clickable buttons in the chat. Supports multi-select and custom-answer input. Used when the CEO needs the user to choose between clear options (budget, direction, priority, format, channel, etc.). Limited to 1–2 high-impact questions per decision point.
 
 The CEO may also receive relevant chat memories retrieved automatically as private context alongside the user message. These memories should inform the response without being explicitly mentioned to the user.

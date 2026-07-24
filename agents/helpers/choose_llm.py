@@ -48,8 +48,11 @@ def get_best_llm(tasks: Iterable[Task]):
     task_set = set(tasks)
     
     if Task.ImageGen in task_set:
-            logger.info("Selected model %s for ImageGen task", Model.SEEDREAM.value)
-            return create_llm(Model.SEEDREAM.value)
+            # Image bytes are produced by create_graphic's dedicated OpenRouter
+            # request. The designer agent itself must support tool calling to
+            # invoke that function and the palette tools.
+            logger.info("Selected model %s for ImageGen tool orchestration", Model.DEEPSEEK.value)
+            return create_llm(Model.DEEPSEEK.value)
     # Vision / OCR
     if Task.OCR in task_set:
         logger.info("Selected model %s for OCR task", Model.GEMMA.value)

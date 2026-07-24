@@ -19,6 +19,7 @@ from agents.marketing.cmo import spawn_cmo
 from agents.researcher.researcher import spawn_researcher
 from agents.util_agents.writer.writer import spawn_writer
 from agents.data_analyst.data_agent import spawn_data_analyst
+from agents.graphic_design.graphic_designer import spawn_graphic_designer
 from RAG_Engine.chat_memory import get_chat_memories_by_query
 
 
@@ -136,6 +137,17 @@ def _build_ceo_tools(company_id: int):
         logger.info("data_analysis_request completed for task: '%s'", task)
         return result
 
+    @tool(
+        "graphic_design_request",
+        return_direct=True,
+        description="Delegate branded visual assets and color-palette work to the Graphic Designer agent.",
+    )
+    def graphic_design_request(task: str):
+        logger.info("graphic_design_request called: task='%s', company_id=%d", task, company_id)
+        result = spawn_graphic_designer(company_id, task)
+        logger.info("graphic_design_request completed for task: '%s'", task)
+        return result
+
     return [
         view_all_agents,
         ask_mcq_for_user,
@@ -144,6 +156,7 @@ def _build_ceo_tools(company_id: int):
         writing_request,
         marketing_request,
         data_analysis_request,
+        graphic_design_request,
     ]
 
 def _get_ceo_agent(company_id: int):
@@ -164,35 +177,76 @@ def _get_ceo_agent(company_id: int):
     return ceo_agent
 
 
-def talk_to_ceo(company_id: int, message: str):
+def talk_to_ceo(company_id: int, message: str, history: list[dict] | None = None):
     """Talk to the CEO agent.
 
     Returns either a plain string reply, or a dict payload
     {"type": "clarification_request", "question": ..., "options": [...]}
     when the agent asks the user a multiple choice question.
     """
-    logger.info("talk_to_ceo called: company_id=%d, message='%s'", company_id, message[:100])
+    logger.info("talk_to_ceo called: company_id=%d, message='%s', history_len=%d", company_id, message[:100], len(history or []))
     ceo_agent = _get_ceo_agent(company_id)
     chat_memories = _get_relevant_chat_memories(company_id, message)
     user_message = _build_user_message_with_memories(message, chat_memories)
+
+    # Build the message list: prior conversation turns + current message.
+    # Cap at the last 20 turns to keep context manageable.
+    messages = []
+    if history:
+        recent = history[-20:]
+        for turn in recent:
+            role = turn.get("role")
+            content = turn.get("content")
+            if role in ("user", "assistant") and content:
+                messages.append({"role": role, "content": content})
+    messages.append({"role": "user", "content": user_message})
+
     result = ceo_agent.invoke(
         {
-            "messages": [
-                {
-                    "role": "user",
-                    "content": user_message,
-                }
-            ]
+            "messages": messages
         }
     )
+    # Check tool outputs for image_generated payload (from graphic_design_request)
+    image_payload = _find_image_generated_payload(result)
+    if image_payload:
+        # Resolve the image token back to the real data URL (kept out of LLM context).
+        token = image_payload.pop("image_token", None)
+        if token:
+            from agents.graphic_design.graphic_desiger_tools import get_generated_image
+            image_data_url = get_generated_image(token)
+            if image_data_url:
+                image_payload["image_data_url"] = image_data_url
+                image_payload["message"] = "Here is the generated graphic."
+                logger.info("CEO agent returned image_generated")
+                return image_payload
+            logger.warning("Image token %s not found in cache", token)
+        elif "image_data_url" in image_payload:
+            logger.info("CEO agent returned image_generated")
+            return image_payload
     content = _extract_content(result)
     if isinstance(content, str):
         try:
             parsed = json.loads(content)
-            if isinstance(parsed, dict) and parsed.get("type") == "clarification_request":
-                logger.info("CEO agent returned clarification_request: %s", parsed.get("question"))
+            if isinstance(parsed, dict) and parsed.get("type") in {"clarification_request", "image_generated"}:
+                logger.info("CEO agent returned %s", parsed.get("type"))
                 return parsed
         except (json.JSONDecodeError, TypeError):
             pass
     logger.info("talk_to_ceo completed for company_id=%d", company_id)
     return content
+
+
+def _find_image_generated_payload(response) -> dict | None:
+    """Scan tool messages for an image_generated JSON payload from graphic_design_request."""
+    for message in reversed(response.get("messages", [])):
+        if getattr(message, "name", None) != "graphic_design_request":
+            continue
+        content = getattr(message, "content", None)
+        if isinstance(content, str):
+            try:
+                parsed = json.loads(content)
+                if isinstance(parsed, dict) and parsed.get("type") == "image_generated":
+                    return parsed
+            except (json.JSONDecodeError, TypeError):
+                continue
+    return None

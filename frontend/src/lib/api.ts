@@ -141,8 +141,9 @@ export type Clarification = {
 export type ChatResponse = {
   status: string;
   message?: string;
-  type?: "clarification_request";
+  type?: "clarification_request" | "image_generated";
   clarification?: Clarification;
+  image_data_url?: string;
   session_id: string;
   title?: string;
   is_new_session?: boolean;

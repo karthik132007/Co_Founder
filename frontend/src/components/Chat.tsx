@@ -12,7 +12,7 @@ import {
   AlertCircle,
   MessageSquare,
 } from "lucide-react";
-import { sendChatMessage, fetchSessionMessages } from "@/lib/api";
+import { fetchSessionMessages, sendChatMessage } from "@/lib/api";
 import type { Clarification } from "@/lib/api";
 import type { SessionUser } from "@/lib/session";
 
@@ -28,6 +28,7 @@ type Message = {
   content: string;
   timestamp: number;
   clarification?: Clarification;
+  imageDataUrl?: string;
 };
 
 type ChatProps = {
@@ -119,6 +120,18 @@ function MarkdownMessage({ content }: { content: string }) {
         {content}
       </ReactMarkdown>
     </div>
+  );
+}
+
+function GeneratedImage({ imageDataUrl }: { imageDataUrl: string }) {
+  return (
+    // The image is a data URL returned by our backend, not an external URL.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={imageDataUrl}
+      alt="Generated graphic"
+      className="mt-3 max-h-[420px] w-auto max-w-full rounded-xl border border-[#e5e7eb] bg-white object-contain"
+    />
   );
 }
 
@@ -341,6 +354,15 @@ export default function Chat({
             clarification: response.clarification,
           };
           setMessages((prev) => [...prev, mcqMsg]);
+        } else if (response.type === "image_generated" && response.image_data_url) {
+          const imageMsg: Message = {
+            id: crypto.randomUUID(),
+            role: "assistant",
+            content: response.message ?? "Here is the generated graphic preview.",
+            timestamp: Date.now(),
+            imageDataUrl: response.image_data_url,
+          };
+          setMessages((prev) => [...prev, imageMsg]);
         } else {
           const assistantMsg: Message = {
             id: crypto.randomUUID(),
@@ -500,6 +522,11 @@ export default function Chat({
                         )
                       }
                     />
+                  ) : msg.role === "assistant" && msg.imageDataUrl ? (
+                    <div className="space-y-3">
+                      <MarkdownMessage content={msg.content} />
+                      <GeneratedImage imageDataUrl={msg.imageDataUrl} />
+                    </div>
                   ) : msg.role === "assistant" ? (
                     <MarkdownMessage content={msg.content} />
                   ) : (

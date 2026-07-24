@@ -29,6 +29,14 @@
           "args": {
             "task": "Analysis task description"
           }
+        },
+        {
+          "id": "graphic_design_request",
+          "name": "graphic_design_request",
+          "description": "Delegate branded visual assets and color-palette work to the Graphic Designer agent.",
+          "args": {
+            "task": "Graphic-design task description"
+          }
         }
       ],
       "enabled": true,
@@ -141,6 +149,42 @@
           "args": {
             "company_id": "Company ID that owns the files",
             "file_names": "List of file names to load into the sandbox"
+          }
+        }
+      ],
+      "enabled": true,
+      "metadata": { "kind": "core" }
+    },
+    {
+      "id": "graphic_designer",
+      "name": "Graphic Designer",
+      "role": "Visual Identity and Asset Creation",
+      "description": "Creates on-brand graphics and manages the company's active color palette.",
+      "tools": [
+        {
+          "id": "get_color_palette",
+          "name": "get_color_palette",
+          "description": "Fetch the current active company color palette.",
+          "args": {
+            "company_id": "Company ID whose palette should be fetched"
+          }
+        },
+        {
+          "id": "update_color_palette",
+          "name": "update_color_palette",
+          "description": "Create or update the active company color palette.",
+          "args": {
+            "company_id": "Company ID whose palette should be updated",
+            "new_colors": "List of hexadecimal color values"
+          }
+        },
+        {
+          "id": "create_graphic",
+          "name": "create_graphic",
+          "description": "Generate an on-brand PNG graphic from a detailed prompt.",
+          "args": {
+            "company_id": "Company ID that owns the generated graphic",
+            "prompt": "Detailed image-generation prompt"
           }
         }
       ],

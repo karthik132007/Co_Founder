@@ -24,7 +24,7 @@ AI Co-Founder is a multi-agent AI platform that replaces a human founding team w
 
 ## Architecture
 
-![System Architecture](sys_arch.png)
+![System Architecture](docs/sys_arch.png)
 
 ## Agent System
 
@@ -270,7 +270,6 @@ Each agent prompt is defined as a module-level constant (e.g., `RESEARCHER_SYSTE
 
 Functional end-to-end prerelease (v0.7.2). The core chat loop, multi-agent system, RAG pipeline, file management, and onboarding flow are operational. Known gaps:
 - Settings page is a placeholder
-- Graphic Designer agent module exists but is not wired to the CEO's tool registry
 - Image generation tool references a commented-out API key
 - No automated test suite — only ad-hoc eval scripts
 - Passwords stored in plaintext

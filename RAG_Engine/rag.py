@@ -1,5 +1,4 @@
 import logging
-from concurrent.futures import ThreadPoolExecutor
 
 from RAG_Engine.embeddings import generate_embeddings
 from RAG_Engine.retrive import semantic_search, keywords_search
@@ -24,35 +23,34 @@ class KnowledgeEngine:
         query = query.lower()
         query_embedding = generate_embeddings(query)
 
-        with ThreadPoolExecutor(max_workers=3 if include_chat_memory else 2) as executor:
-            semantic_future = executor.submit(
-                semantic_search,
-                company_id=company_id,
-                embedding=query_embedding,
-                match_count=top_k,
-            )
-            keyword_future = executor.submit(
-                keywords_search,
+        # The application uses one synchronous Supabase client. Running these
+        # requests in parallel shares that HTTP/2 connection across threads and
+        # can corrupt the protocol state (httpx LocalProtocolError).
+        semantic_search_results = semantic_search(
+            company_id=company_id,
+            embedding=query_embedding,
+            match_count=top_k,
+        ) or []
+        keyword_search_results = keywords_search(
+            company_id=company_id,
+            query=query,
+            match_count=top_k,
+        ) or []
+        memory_results = []
+        if include_chat_memory:
+            memory_results = get_chat_memories_by_query(
                 company_id=company_id,
                 query=query,
                 match_count=top_k,
-            )
-            memory_future = None
-            if include_chat_memory:
-                memory_future = executor.submit(
-                    get_chat_memories_by_query,
-                    company_id=company_id,
-                    query=query,
-                    match_count=top_k,
-                    query_embedding=query_embedding,
-                )
+                query_embedding=query_embedding,
+            ) or []
 
-            semantic_search_results = semantic_future.result() or []
-            keyword_search_results = keyword_future.result() or []
-            memory_results = (memory_future.result() or []) if memory_future else []
-
-            logger.info("Search tasks completed: semantic=%d, keyword=%d, memories=%d",
-                        len(semantic_search_results), len(keyword_search_results), len(memory_results))
+        logger.info(
+            "Search tasks completed: semantic=%d, keyword=%d, memories=%d",
+            len(semantic_search_results),
+            len(keyword_search_results),
+            len(memory_results),
+        )
 
         if rerank:
             document_results = _merge_and_rerank(

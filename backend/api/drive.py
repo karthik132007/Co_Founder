@@ -126,7 +126,12 @@ def delete_file(user_id: int = Query(..., description="User ID"), file_id: int =
         file_name = file_record.get("file_name")
 
         # Delete from cloud storage
-        delete_from_cloud(company_id, file_name)
+        delete_from_cloud(
+            company_id,
+            file_name,
+            bucket_name=file_record.get("bucket_name", "company_files"),
+            storage_path=file_record.get("storage_path"),
+        )
 
         # Delete from database
         delete_file_by_id(file_id)
