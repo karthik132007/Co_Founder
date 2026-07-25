@@ -14,6 +14,19 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+# Hard limit: after this many MCQs in a session, we force the CEO to execute.
+_MAX_MCQ_PER_SESSION = 2
+
+
+def _count_mcqs_in_history(history: list[dict]) -> int:
+    """Count how many MCQ questions the CEO has asked in this session.
+    MCQs are stored as assistant messages containing 'Options:'."""
+    count = 0
+    for msg in history:
+        if msg.get("role") == "assistant" and "Options:" in (msg.get("message") or ""):
+            count += 1
+    return count
+
 
 @router.post("/chat")
 def chat_with_user(
@@ -57,7 +70,26 @@ def chat_with_user(
 
     add_message_to_session(session_id, "user", message)
 
-    reply = chat(company_id, message, history)
+    # ── MCQ abuse guard ──
+    # If the CEO has already asked too many questions in this session,
+    # inject a hard system directive into the message to force execution.
+    mcq_count = _count_mcqs_in_history(history)
+    ceo_message = message
+    if mcq_count >= _MAX_MCQ_PER_SESSION:
+        logger.warning(
+            "MCQ limit reached (%d/%d) for session_id=%s — injecting execution directive",
+            mcq_count, _MAX_MCQ_PER_SESSION, session_id,
+        )
+        ceo_message = (
+            f"[SYSTEM DIRECTIVE — READ THIS FIRST]\n"
+            f"You have already asked {mcq_count} clarification questions in this session. "
+            f"The hard limit is {_MAX_MCQ_PER_SESSION}. "
+            f"You MUST execute the task NOW with the information you have. "
+            f"Do NOT call ask_mcq_for_user again. Delegate immediately.\n\n"
+            f"User message: {message}"
+        )
+
+    reply = chat(company_id, ceo_message, history)
 
     # CEO may return a clarification request (MCQ) instead of a text reply.
     if isinstance(reply, dict) and reply.get("type") == "clarification_request":

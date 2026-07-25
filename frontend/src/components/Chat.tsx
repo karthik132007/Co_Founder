@@ -11,6 +11,8 @@ import {
   User,
   AlertCircle,
   MessageSquare,
+  Copy,
+  Check,
 } from "lucide-react";
 import { fetchSessionMessages, sendChatMessage } from "@/lib/api";
 import type { Clarification } from "@/lib/api";
@@ -93,11 +95,21 @@ const markdownComponents: Components = {
       {children}
     </code>
   ),
-  pre: ({ children }) => (
-    <pre className="mb-3 overflow-x-auto rounded-xl bg-[#0a0a0a] px-4 py-3 text-[13px] leading-relaxed text-white last:mb-0">
-      {children}
-    </pre>
-  ),
+  pre: ({ children }) => {
+    // Extract text content for the copy button
+    const extractText = (node: React.ReactNode): string => {
+      if (typeof node === "string") return node;
+      if (typeof node === "number") return String(node);
+      if (Array.isArray(node)) return node.map(extractText).join("");
+      if (node && typeof node === "object" && "props" in node) {
+        return extractText((node as { props: { children?: React.ReactNode } }).props.children);
+      }
+      return "";
+    };
+    const codeText = extractText(children);
+
+    return <CodeBlock code={codeText}>{children}</CodeBlock>;
+  },
   table: ({ children }) => (
     <table className="mb-3 min-w-full border-collapse text-left text-[13px] last:mb-0">
       {children}
@@ -132,6 +144,109 @@ function GeneratedImage({ imageDataUrl }: { imageDataUrl: string }) {
       alt="Generated graphic"
       className="mt-3 max-h-[420px] w-auto max-w-full rounded-xl border border-[#e5e7eb] bg-white object-contain"
     />
+  );
+}
+
+/* ─────────────────────────────────────────────
+   Assistant Message with Copy Button
+   ───────────────────────────────────────────── */
+
+function AssistantMessage({ content }: { content: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = content;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }, [content]);
+
+  return (
+    <div className="group relative">
+      <button
+        type="button"
+        onClick={handleCopy}
+        className="absolute -right-1 -top-1 z-10 rounded-lg p-1.5 text-[#9ca3af] opacity-0 transition-all hover:bg-[#f3f4f6] hover:text-[#4f46e5] group-hover:opacity-100"
+        aria-label={copied ? "Copied" : "Copy message"}
+      >
+        {copied ? (
+          <Check className="h-3.5 w-3.5 text-green-500" />
+        ) : (
+          <Copy className="h-3.5 w-3.5" />
+        )}
+      </button>
+      <div className="overflow-x-auto text-sm leading-relaxed break-words text-[#374151]">
+        <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+          {content}
+        </ReactMarkdown>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   Code Block with Copy Button
+   ───────────────────────────────────────────── */
+
+function CodeBlock({
+  code,
+  children,
+}: {
+  code: string;
+  children: React.ReactNode;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback for older browsers
+      const ta = document.createElement("textarea");
+      ta.value = code;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }, [code]);
+
+  return (
+    <div className="group relative my-3">
+      <button
+        type="button"
+        onClick={handleCopy}
+        className="absolute right-2 top-2 z-10 rounded-lg bg-white/10 p-1.5 text-white/60 opacity-0 transition-all hover:bg-white/20 hover:text-white group-hover:opacity-100"
+        aria-label={copied ? "Copied" : "Copy code"}
+      >
+        {copied ? (
+          <Check className="h-3.5 w-3.5" />
+        ) : (
+          <Copy className="h-3.5 w-3.5" />
+        )}
+      </button>
+      <pre className="overflow-x-auto rounded-xl bg-[#0a0a0a] px-4 py-3 pr-10 text-[13px] leading-relaxed text-white">
+        {children}
+      </pre>
+    </div>
   );
 }
 
@@ -419,7 +534,9 @@ export default function Chat({
       };
       setMessages((prev) => [...prev, userMsg]);
 
-      await sendToBackend(`Answering your question "${question}": ${answer}`);
+      // Send only the answer — the conversation history already contains the question.
+      // A verbose wrapper like "Answering your question..." pollutes the LLM context.
+      await sendToBackend(answer);
     },
     [sending, sendToBackend],
   );
@@ -528,7 +645,7 @@ export default function Chat({
                       <GeneratedImage imageDataUrl={msg.imageDataUrl} />
                     </div>
                   ) : msg.role === "assistant" ? (
-                    <MarkdownMessage content={msg.content} />
+                    <AssistantMessage content={msg.content} />
                   ) : (
                     <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
                       {msg.content}

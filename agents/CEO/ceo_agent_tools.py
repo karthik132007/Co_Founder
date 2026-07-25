@@ -18,7 +18,7 @@ def view_all_agents():
         agents = json.load(f)
     return agents
 
-@tool('ask_mcq_for_user', return_direct=True, description="Ask the user a multiple choice question shown as clickable buttons in the chat. ALWAYS use this when the user must choose between clear options (budget, direction, priority, format, channel, etc.). Provide a question and 2-4 options. Set multi_select=True when the user may reasonably pick several options (channels, goals, priorities). Ask at most 1-2 high-impact questions. The user can also type a custom answer, so never add an 'other' option yourself.")
+@tool('ask_mcq_for_user', return_direct=True, description="Ask the user a multiple choice question shown as clickable buttons. HARD LIMIT: call this at most 2 times total per task — then you MUST act. Use only for critical decisions (budget, direction, priority, format, channel). Batch related questions into ONE call with multi_select=True. NEVER re-ask something the user already answered. The user can always type a custom answer, so never add an 'other' option.")
 def ask_mcq_for_user(question: str, options: list[str], multi_select: bool = False):
     """Ask a multiple choice question to the user and get their answer."""
     logger.info("ask_mcq_for_user called: question='%s', options=%s, multi_select=%s", question, options, multi_select)

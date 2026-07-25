@@ -58,12 +58,12 @@ def _format_chat_memories(memories: list[dict]) -> str:
 
 def _build_user_message_with_memories(message: str, memories: list[dict]) -> str:
     return f"""
-Private context from relevant previous conversations:
+Hey CEO, here are retrieved relevant memories from past conversations with the founder:
 {_format_chat_memories(memories)}
 
-Use this context only when it is relevant to the founder's current message. Do not mention that memories were retrieved.
+Use these memories as context when relevant to the founder's current message below. Do NOT mention that memories were retrieved — just use them naturally.
 
-Current founder message:
+Founder's message:
 {message}
 """.strip()
 
@@ -71,7 +71,7 @@ Current founder message:
 def _build_ceo_tools(company_id: int):
     @tool(
         "knowledge_request",
-        description="Search company knowledge across files and memory via the RAG engine.",
+        description="Search the company's document knowledge base (files, chunks). Does NOT search chat memories — those are injected automatically.",
     )
     def knowledge_request(query: str, top_k: int = 5):
         logger.info("knowledge_request called: query='%s', top_k=%d, company_id=%d", query, top_k, company_id)
@@ -84,8 +84,9 @@ def _build_ceo_tools(company_id: int):
 
         from RAG_Engine.rag import kg
 
-
-        results = kg.search(company_id=company_id, query=query, top_k=top_k)
+        # Chat memories are already injected into the user prompt by talk_to_ceo.
+        # Only search documents here to avoid duplicate/conflicting memory results.
+        results = kg.search(company_id=company_id, query=query, top_k=top_k, include_chat_memory=False)
         logger.info("RAG search returned %d results for query: %s", len(results), query)
 
         return json.dumps(
@@ -196,9 +197,10 @@ def talk_to_ceo(company_id: int, message: str, history: list[dict] | None = None
         recent = history[-20:]
         for turn in recent:
             role = turn.get("role")
-            content = turn.get("content")
-            if role in ("user", "assistant") and content:
-                messages.append({"role": role, "content": content})
+            # DB stores the text in "message"; some callers may use "content".
+            content = turn.get("content") or turn.get("message") or ""
+            if role in ("user", "assistant") and content.strip():
+                messages.append({"role": role, "content": content.strip()})
     messages.append({"role": "user", "content": user_message})
 
     result = ceo_agent.invoke(
