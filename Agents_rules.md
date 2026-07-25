@@ -25,15 +25,15 @@ Sub-agents should return task results, not final user responses, unless the CEO 
 The CEO Agent uses the following delegation tools, each backed by a specialist or system:
 
 - **`view_all_agents`** — List all available agents and their descriptions so the CEO can decide which to delegate to.
-- **`knowledge_request`** — Search company knowledge via the RAG engine. Queries both document chunks and chat memories. Returns structured results with source type, score, and content.
+- **`knowledge_request`** — Search company **documents only** (files, chunks) via the RAG engine. Does NOT search chat memories (those are injected separately into the user prompt). Returns structured results with source type, score, and content.
 - **`research_request`** — Delegate fact-finding and web research to the Researcher agent.
 - **`writing_request`** — Delegate drafting and content polishing to the Writer agent.
 - **`marketing_request`** — Delegate market strategy, trend analysis, and growth planning to the CMO agent.
 - **`data_analysis_request`** — Delegate data analysis, EDA, and file-based insights to the Data Analyst agent.
 - **`graphic_design_request`** — Delegate branded visual-asset creation and color-palette work to the Graphic Designer agent.
-- **`ask_mcq_for_user`** — Present interactive multiple-choice questions (MCQ) as clickable buttons in the chat. Supports multi-select and custom-answer input. Used when the CEO needs the user to choose between clear options (budget, direction, priority, format, channel, etc.). Limited to 1–2 high-impact questions per decision point.
+- **`ask_mcq_for_user`** — Present interactive multiple-choice questions (MCQ) as clickable buttons in the chat. Supports multi-select and custom-answer input. **HARD LIMIT: at most 2 calls total per task.** After 2 MCQs, the backend injects a `[SYSTEM DIRECTIVE]` that forces immediate execution. Batch related questions into ONE `multi_select=True` call when possible.
 
-The CEO may also receive relevant chat memories retrieved automatically as private context alongside the user message. These memories should inform the response without being explicitly mentioned to the user.
+**Chat memory retrieval** happens automatically before the CEO receives the user message. Relevant past conversation memories are fetched via `match_chat_memories` RPC and injected into the user prompt as context. The CEO should use these memories naturally without mentioning them to the user.
 
 ## 4. Researcher Agent Rules
 
@@ -78,14 +78,27 @@ The CEO may also receive relevant chat memories retrieved automatically as priva
 - If required information is missing, the Writer should explicitly mention the gap or ask for the missing input through the CEO.
 - The Writer should adapt structure and wording to the requested audience and format, such as presentation content, business copy, summaries, or user-facing explanations.
 
-## 9. Judge Agent Rules
+## 9. Graphic Designer Agent Rules
+
+- The Graphic Designer reports to the CEO Agent and owns the company's visual identity.
+- The Graphic Designer has three tools:
+  - `get_color_palette(company_id)` — Fetch the active brand color palette (hex array). Must be called FIRST before any graphic generation.
+  - `update_color_palette(company_id, new_colors)` — Create or update the active palette with new hex values.
+  - `create_graphic(company_id, prompt)` — Generate a PNG image via OpenRouter `google/gemini-2.5-flash-image`. Returns an image token (not raw bytes) to keep the ~1MB base64 payload out of the LLM context.
+- The designer must always respect the company's color palette in every visual asset.
+- The designer should adapt output to the requested format (Instagram post, email header, ad banner, etc.) and match the brand's positioning and audience.
+- The designer should not fabricate brand assets or use colors that conflict with the established palette.
+- **Image token flow:** The generated image is cached in `_generated_images` dict keyed by token. `talk_to_ceo()` resolves the token to a data URL when building the response. The token is a one-shot read — it's consumed (popped) on retrieval.
+- **No judge loop** — the Graphic Designer executes directly. Quality control is the CEO's responsibility during synthesis.
+
+## 10. Judge Agent Rules
 
 - The Judge critiques agent output against the original task.
 - The Judge should provide a score, critique, and concrete improvement suggestions.
 - The Judge does not replace the CEO and should not communicate with the user directly.
 - Judge feedback is used to improve agent outputs before the CEO composes the final response.
 
-## 10. Utility Agents
+## 11. Utility Agents
 
 The system includes utility agents that support the core workflow:
 
@@ -96,28 +109,28 @@ The system includes utility agents that support the core workflow:
 
 These agents are utility (not core) agents. They do not interact with the user directly and are invoked by the backend pipeline or the CEO layer as needed.
 
-## 11. Knowledge Engine & RAG
+## 12. Knowledge Engine & RAG
 
-The Knowledge Engine (`RAG_Engine/rag.py`) provides hybrid search across company documents and chat memories:
+The Knowledge Engine (`RAG_Engine/rag.py`) provides hybrid search across company **documents only**:
 
 - **Semantic search** — Uses embeddings (text-embedding-3-small via OpenRouter) with Supabase pgvector RPC (`semantic_search`).
 - **Keyword search** — Full-text keyword search via Supabase RPC (`keyword_search`) as a fallback for exact term matching.
 - **Hybrid fusion** — Results are merged with weighted scoring: semantic (0.7) + keyword (0.3), then reranked by score.
-- **Chat memory retrieval** — Concurrently searches `chat_memories` table via `match_chat_memories` RPC or client-side cosine similarity fallback.
 - **Document chunking** — Uses LangChain `SemanticChunker` (percentile breakpoint threshold) to split documents into semantically coherent chunks before embedding.
 
-The CEO accesses this system through the `knowledge_request` tool. Results include both `rag` (document chunks) and `chat_memories` entries with source type labels.
+**Chat memories are NOT searched via `knowledge_request`.** They are retrieved separately by `_get_relevant_chat_memories()` in `talk_to_ceo()` and injected directly into the user prompt before the CEO agent receives it. This prevents duplicate memory lookups and keeps the knowledge tool focused on document retrieval.
 
-## 12. Chat Memory System
+## 13. Chat Memory System
 
 The chat memory system captures and persists long-term knowledge from conversations:
 
 - **Extraction** — After each CEO response, the Chat Memory Agent analyzes the conversation pair (user message + CEO reply) and extracts structured memories with title, category, importance, and source fields.
-- **Storage** — Memories are stored in the `chat_memories` Supabase table with embeddings for semantic retrieval.
-- **Retrieval** — Before the CEO processes a new message, relevant memories are fetched by semantic similarity to the current query and injected as private context.
+- **Storage** — Memories are stored in the `chat_memories` Supabase table with embeddings for semantic retrieval via the `match_chat_memories` RPC function (`schemas/match_chat_memories.sql`).
+- **Retrieval** — Before the CEO processes a new message, `talk_to_ceo()` calls `_get_relevant_chat_memories()` to fetch semantically similar memories. These are injected into the user prompt with "Hey CEO, here are retrieved relevant memories from past conversations..."
 - **Usage** — The CEO uses memories to remember past decisions, business goals, user preferences, and key facts without needing to ask again. Memories should inform responses without being explicitly mentioned.
+- **RPC fallback** — If the `match_chat_memories` RPC is unavailable, the system falls back to loading all memories for the company and computing cosine similarity locally.
 
-## 13. File Upload Pipeline
+## 14. File Upload Pipeline
 
 When a user uploads a file, the backend processes it as follows:
 
@@ -125,40 +138,55 @@ When a user uploads a file, the backend processes it as follows:
 - **Documents** (PDF, text) → Text extracted via PyMuPDF, sent to Document Description Agent for a summary description, then semantically chunked and embedded.
 - **All files** → Uploaded to Supabase Storage (`company_files` bucket), metadata stored in `files` table. Chunks stored in `document_chunks` table with embeddings.
 
-## 14. Tool And Model Boundaries
+## 15. Tool And Model Boundaries
 
 - Agents should use only the tools assigned to them in `agents.json`.
 - Tool use must match the agent role. For example, the Researcher can search the web, while the Writer should work only from provided context.
 - Model selection is handled by `choose_llm.py` based on task type, not hard-coded in agent prompts. The routing strategy is:
   - OCR / vision → Gemma (`google/gemma-4-26b-a4b-it`)
   - Classification → MIMO (`xiaomi/mimo-v2.5`)
-  - Image generation → Seedream (`bytedance-seed/seedream-4.5`)
+  - Image generation orchestration → DeepSeek (`deepseek/deepseek-v4-flash`); actual image bytes via OpenRouter `google/gemini-2.5-flash-image`
   - Research-heavy workflows → DeepSeek (`deepseek/deepseek-v4-flash`)
-  - Data analysis / coding → DeepSeek (`deepseek/deepseek-v4-flash`) or Qwen (`qwen/qwen3-coder-next`)
+  - Data analysis / coding → DeepSeek (`deepseek/deepseek-v4-flash`)
   - Writing → DeepSeek (`deepseek/deepseek-v4-flash`)
-  - Pure planning → GLM (`z-ai/glm-4.5-air`)
+  - Pure planning → DeepSeek (`deepseek/deepseek-v4-flash`) or GLM (`z-ai/glm-4.5-air`)
   - Pure creative → GPT-OSS (`openai/gpt-oss-120b`)
 - Tool failures should be returned as clear errors so the CEO can decide whether to retry, degrade gracefully, or ask the user for clarification.
+- **History field-name bug (fixed v0.8.0):** DB stores text in the `message` column; `talk_to_ceo()` reads `turn.get("content") or turn.get("message")` to handle both naming conventions. Always verify DB column names match what the code reads.
 
-## 15. Final Response Ownership
+## 16. Final Response Ownership
 
 - The CEO Agent is responsible for merging delegated results into one coherent final response.
 - The CEO should remove internal details that are not useful to the user, such as raw tool scores, internal critique, reflection prompts, or unnecessary source dumps.
 - The CEO should preserve important caveats, risks, missing information, and assumptions from sub-agent outputs.
 - The final response should match the company tone and the user's requested format.
 
-## 16. Privacy And Context Minimization
+### Output Formatting for Deliverables
+
+When the CEO's response contains content the founder will copy and use directly (emails, Instagram captions, ad copy, SMS, landing pages, blog posts, etc.), the CEO MUST wrap that content in fenced code blocks:
+
+```text
+[Ready-to-use deliverable content]
+```
+
+- Use ` ```text ` (not bare ` ``` `) so the frontend applies dedicated styling and a copy button.
+- Put one blank line before and after each code block.
+- Never put commentary inside code blocks — only the deliverable.
+- Multiple deliverables should each go in their own block, separated by blank lines.
+- Short inline items (a single headline, a tagline) do not need code blocks.
+
+## 17. Privacy And Context Minimization
 
 - Share the least amount of user and company context needed for a sub-agent to complete its task.
 - Do not expose user memory, private business details, or unrelated conversation history to sub-agents.
 - Do not store or reuse user-specific details unless the CEO-level memory rules explicitly allow it.
 
-## 17. Failure Handling
+## 18. Failure Handling
 
 - Sub-agents should return clear failure messages that include the cause when available.
 - The CEO should decide the next step after a sub-agent failure: retry, use another agent, answer with limitations, or ask the user for more information.
 - Agents should prefer explicit uncertainty over confident but unsupported claims.
 
-## 18. Agent Registry
+## 19. Agent Registry
 
 The `agents/agents.json` file is the central registry of all agents. Each entry includes id, name, role, description, tools (with args), enabled flag, and metadata kind (core / review / utility). The CEO reads this registry via `view_all_agents` to know which specialists are available.

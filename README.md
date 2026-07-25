@@ -1,6 +1,8 @@
-# Co_Founder — v0.7.2 (Prerelease)
+# Co_Founder — v0.8.0 (Prerelease)
 
 > **📘 For complete system context and understanding, please refer to [`Agents_rules.md`](Agents_rules.md) before contributing or making changes.**
+>
+> **📋 Changes since v0.7.2:** [See changelog below](#changelog-v072--v080)
 
 ## Contents
 
@@ -49,20 +51,23 @@ Each sub-agent follows a common pattern:
 
 | Agent | File | Tools / Backend | Judge Loop |
 |---|---|---|---|
-| Researcher | `backend/agents/researcher.py` | Tavily web search API | ✅ < 8/10 revises |
-| Writer | `backend/agents/writer.py` | Direct LLM generation | ✅ < 8/10 revises |
-| CMO Marketing | `backend/agents/cmo.py` | SerpAPI (Trends, News, Shopping) + web search | ✅ < 8/10 revises |
-| Data Analyst | `backend/agents/data_analyst.py` | e2b code sandbox (Python, Pandas, Matplotlib) | ❌ (direct execution) |
-| Judge | `backend/agents/judge.py` | LLM-as-Judge prompt | N/A (evaluator) |
-| Chat Memory | `backend/agents/chat_memory_agent.py` | Structured memory extraction from conversations | ❌ |
-| Doc Description | `backend/agents/description_agent.py` | LLM + OCR for document/image summarization | ❌ |
+| Researcher | `agents/researcher/researcher.py` | Tavily web search API | ✅ < 7/10 revises |
+| Writer | `agents/util_agents/writer/writer.py` | Direct LLM generation | ✅ < 8/10 revises |
+| CMO Marketing | `agents/marketing/cmo.py` | SerpAPI (Trends, News, Shopping) + web search | ✅ < 8/10 revises |
+| Data Analyst | `agents/data_analyst/data_agent.py` | e2b code sandbox (Python, Pandas, Matplotlib) | ❌ (direct execution) |
+| Graphic Designer | `agents/graphic_design/graphic_designer.py` | OpenRouter `google/gemini-2.5-flash-image`, color palette tools | ❌ (direct generation) |
+| Judge | `agents/judge/llm_as_judge.py` | LLM-as-Judge prompt (GPT-OSS-120B) | N/A (evaluator) |
+| Chat Memory | `agents/util_agents/chat_memory_creator.py` | Structured memory extraction from conversations | ❌ |
+| Doc Description | `agents/util_agents/description_genrator.py` | LLM + OCR for document/image summarization | ❌ |
+| Title Creator | `agents/util_agents/title_creator.py` | LLM chat session title generation | ❌ |
 
 ### Interactive MCQ Clarifications
 The CEO uses the `ask_mcq_for_user` tool to present **multiple-choice question cards** in the chat UI. Implementation details:
-- `backend/tools/mcq_tools.py` defines the tool with a structured `MCQRequest` schema: question text, options list (label + description), min/max selections
-- The CEO agent is instructed to ask **at most 1–2 questions per turn** and only when the answer would materially change the plan
+- `agents/CEO/ceo_agent_tools.py` defines the tool with a structured JSON payload: question text, options list, multi_select flag, allow_custom flag
+- The CEO agent is instructed to ask **at most 2 questions total per task** — exceeding this triggers a programmatic `[SYSTEM DIRECTIVE]` guard in `backend/api/chat.py` that forces execution
 - Frontend renders MCQ cards via `Chat.tsx` — displays as interactive cards with checkboxes, a custom answer input, and a confirm button
-- On confirmation, the selection is sent back as a user message, which re-enters the CEO's decision loop
+- On confirmation, the raw answer (not a verbose wrapper) is sent to the backend, keeping LLM context clean
+- **Critical fix (v0.8.0):** DB columns use `message` not `content`. `talk_to_ceo` now reads `turn.get("content") or turn.get("message")` — without this, ALL conversation history was silently dropped and the CEO had zero context.
 
 ## RAG Engine
 
@@ -82,40 +87,59 @@ User uploads file → POST /api/files/upload
 ### Retrieval Pipeline
 ```
 User asks question in chat:
-  → CEO calls retrieve_knowledge tool
-  → Embed query with same text-embedding-3-small
-  → Parallel RPC calls:
-      • match_documents(query_embedding, match_threshold=0.7, match_count=5)
-      • search_documents_keyword(query, match_count=5)
-      • match_memories(query_embedding, match_threshold=0.7, match_count=5)
+  → Chat memories are retrieved FIRST and injected into the user prompt
+  → CEO calls knowledge_request tool (documents only, no chat memories)
+  → Embed query with text-embedding-3-small
+  → Sequential RPC calls (shared httpx client):
+      • semantic_search(query_embedding, p_company_id, match_count)
+      • keyword_search(query_text, p_company_id, match_count)
   → Fusion: semantic (weight 0.7) + keyword (weight 0.3)
   → Merge, deduplicate, rerank by combined score
-  → Return top-k results to CEO context
+  → Return top-k document results to CEO context
 ```
 
+**Chat memory is retrieved separately** — not inside `knowledge_request` — to avoid duplication and reduce RPC overhead. The `match_chat_memories` RPC function (`schemas/match_chat_memories.sql`) performs vector similarity search over `chat_memories` using pgvector's `<=>` cosine distance operator. A local cosine-similarity fallback handles cases where the RPC is unavailable.
+
 ### Database Schema (`schemas/`)
-- `01_tables.sql`: `users`, `companies`, `chat_sessions`, `chat_messages`, `documents`, `chat_memories`, `color_palettes`
-- `02_functions.sql`: `match_documents`, `search_documents_keyword`, `match_memories` – PostgreSQL RPC functions with pgvector HNSW indexes
-- `03_triggers.sql`: Automatic `updated_at` timestamp management
+- `users.sql`, `companies.sql`, `chat_sessions.sql`, `chat_messages.sql`, `chat_memeories.sql`, `color_palettes.sql`, `files.sql`, `document_chunks.sql` — table definitions with HNSW indexes on embedding columns
+- `semantic_search.sql`, `keyword_search.sql`, `search_chat_memory.sql` — PostgreSQL RPC functions for pgvector similarity and keyword search
+- `match_chat_memories.sql` — pgvector RPC for chat memory similarity (added v0.8.0)
 
 ## Backend
 
 ### Structure
 ```
-backend/
-├── app.py              # FastAPI app, CORS, router registration
-├── utils.py            # DB helpers (Supabase REST), auth helpers
-├── logger_config.py    # RotatingFileHandler (10MB × 3), dual handlers
-├── routers/
-│   ├── auth.py         # POST /signup, /login (plaintext comparison)
-│   ├── company.py      # POST /onboard-company, GET /company
-│   ├── files.py        # POST /upload, GET /list-files, DELETE /delete-file
-│   └── chat.py         # POST /chat, /chat/new, /chat/list, /chat/{id}/messages, DELETE /chat/{id}
-├── agents/             # Agent implementations (see above)
-├── tools/              # Tool definitions (mcq, retrieval, file ops)
-├── RAG_Engine/         # rag.py, embed.py, chunking logic
-├── evals/              # Test scripts per agent
-└── schemas/            # Raw SQL migration files
+├── main.py                  # Chat entry point: chat(), store_chat_memory(), store_chat_title()
+├── logger_config.py         # RotatingFileHandler (10MB × 3), dual handlers
+├── backend/
+│   ├── app.py               # FastAPI app, CORS, router registration
+│   ├── models.py            # SQLAlchemy models
+│   ├── utils.py             # Supabase client init, helpers
+│   ├── api/
+│   │   ├── auth.py          # Auth routes
+│   │   ├── chat.py          # POST /chat, session CRUD, MCQ guard
+│   │   ├── user.py          # User routes
+│   │   └── drive.py         # File upload/download routes
+│   └── db/
+│       ├── database.py      # SQLAlchemy engine
+│       ├── get_from_sql.py  # Supabase read queries
+│       ├── insert_to_sql.py # Supabase write queries
+│       ├── delete_from_sql.py
+│       └── put_to_drive.py  # Supabase Storage uploads
+├── agents/                  # Agent implementations
+│   ├── agents.json          # Central agent registry
+│   ├── CEO/                 # CEO orchestrator (CEO.py, ceo_prompts.py, ceo_agent_tools.py)
+│   ├── researcher/          # Web research agent
+│   ├── marketing/           # CMO marketing agent
+│   ├── data_analyst/        # Data analysis + e2b sandbox
+│   ├── graphic_design/      # Image generation agent
+│   ├── judge/               # LLM-as-Judge evaluator
+│   ├── util_agents/         # Chat memory, title, description, writer agents
+│   └── helpers/             # LLM selection, datetime, utilities
+├── RAG_Engine/              # rag.py, chat_memory.py, retrive.py, embeddings.py, chunking.py
+├── e2b_sandbox/             # Secure Python code execution sandbox
+├── evals/                   # Per-agent test scripts
+└── schemas/                 # Raw SQL migration files
 ```
 
 ### API Endpoints
@@ -174,6 +198,8 @@ frontend/
 - Typing indicator (bouncing dots animation) during agent processing
 - Session management: create new, switch via sidebar, delete with confirmation dialog
 - Auto-scroll to bottom on new messages
+- **Copy button** — every assistant message has a hover-visible copy button (top-right). Code blocks (```text) have a dedicated copy button inside the dark block
+- **Deliverable formatting** — CEO wraps emails, captions, ads in ```text blocks; frontend renders with dark background, spacing, and copy affordance
 
 ### Design System (`globals.css`)
 - Tailwind v4 `@theme` custom tokens for colors, fonts, spacing
@@ -268,14 +294,31 @@ Each agent prompt is defined as a module-level constant (e.g., `RESEARCHER_SYSTE
 
 ## Status
 
-Functional end-to-end prerelease (v0.7.2). The core chat loop, multi-agent system, RAG pipeline, file management, and onboarding flow are operational. Known gaps:
+Functional end-to-end prerelease (v0.8.0). The core chat loop, multi-agent system, RAG pipeline, file management, and onboarding flow are operational. Known gaps:
 - **Web Developer agent — coming soon** (not yet active; shown as a preview in the UI)
 - **Finance Advisor agent — coming soon** (not yet active; shown as a preview in the UI)
 - Settings page is a placeholder
-- Image generation tool references a commented-out API key
+- Image generation uses OpenRouter `google/gemini-2.5-flash-image`; slow (~30s) and blocks the CEO pipeline
 - No automated test suite — only ad-hoc eval scripts
 - Passwords stored in plaintext
 - CORS hardcoded to localhost
+- Supabase free tier REST API adds 3-7s latency per RPC call (embedding serialization overhead)
+
+## Changelog (v0.7.2 → v0.8.0)
+
+### Bug Fixes
+- **CRITICAL: Conversation history was never passed to the CEO.** DB column is `message`, but `talk_to_ceo()` read `turn.get("content")` — always `None`, all history silently dropped. Fixed to `turn.get("content") or turn.get("message")`. This was the root cause of endless question-chaining.
+- **`match_chat_memories` RPC function was missing on Supabase.** Created `schemas/match_chat_memories.sql` and deployed via SQLAlchemy. Previously every chat memory fetch fell back to local cosine similarity with a 3-4s RPC timeout penalty.
+- **MCQ answer wrapper polluted LLM context.** Frontend was sending `Answering your question "...": answer` — changed to send just the raw answer.
+
+### New Features
+- **Copy button on every assistant message** — appears on hover, copies full message text. Code blocks have dedicated copy buttons.
+- **CEO output formatting rules** — deliverables (emails, captions, ads) are wrapped in ` ```text ``` ` blocks for easy extraction.
+
+### Hardening
+- **MCQ abuse guard** (`backend/api/chat.py`): after 2 MCQs per session, a `[SYSTEM DIRECTIVE]` is injected into the user message forcing immediate execution.
+- **CEO prompt tightened**: MCQ limit changed from "1-2 per decision point" to "2 TOTAL per task". Tool description updated with "HARD LIMIT" language.
+- **Chat memory decoupled from knowledge tool**: `knowledge_request` now searches documents only (`include_chat_memory=False`). Memories are injected once at the entry point via `_build_user_message_with_memories()`.
 
 ## Contributing
 
