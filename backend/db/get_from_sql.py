@@ -44,6 +44,19 @@ def get_user_files(company_id: int) -> List[Dict[str, Any]]:
     files = response.data if response.data else []
     return files
 
+
+def get_file_by_id(file_id: int) -> Optional[Dict[str, Any]]:
+    """Return a single file record by its ID."""
+    response = (
+        supabase_client.table("files")
+        .select("*")
+        .eq("id", file_id)
+        .execute()
+    )
+    if response.data:
+        return response.data[0]
+    return None
+
 def get_file_count(company_id: int) -> int:
     """Return the number of files for a company."""
     response = (

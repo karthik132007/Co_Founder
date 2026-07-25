@@ -84,17 +84,21 @@ const markdownComponents: Components = {
   strong: ({ children }) => (
     <strong className="font-semibold text-[#0a0a0a]">{children}</strong>
   ),
-  code: ({ children, className, ...props }) => (
-    <code
-      className={
-        className ??
-        "rounded-md bg-[#f3f4f6] px-1.5 py-0.5 text-[0.85em] font-medium text-[#374151]"
-      }
-      {...props}
-    >
-      {children}
-    </code>
-  ),
+  code: ({ children, className, ...props }) => {
+    const isInline = !className?.includes("language-");
+    return (
+      <code
+        className={
+          isInline
+            ? "rounded-md bg-[#f3f4f6] border border-[#e5e7eb] px-1.5 py-0.5 text-[0.85em] font-medium text-[#ef4444]"
+            : className
+        }
+        {...props}
+      >
+        {children}
+      </code>
+    );
+  },
   pre: ({ children }) => {
     // Extract text content for the copy button
     const extractText = (node: React.ReactNode): string => {
@@ -234,16 +238,16 @@ function CodeBlock({
       <button
         type="button"
         onClick={handleCopy}
-        className="absolute right-2 top-2 z-10 rounded-lg bg-white/10 p-1.5 text-white/60 opacity-0 transition-all hover:bg-white/20 hover:text-white group-hover:opacity-100"
+        className="absolute right-3 top-3 z-10 rounded-lg bg-white/5 border border-white/10 p-1.5 text-white/60 opacity-0 transition-all hover:bg-white/15 hover:text-white hover:scale-105 group-hover:opacity-100"
         aria-label={copied ? "Copied" : "Copy code"}
       >
         {copied ? (
-          <Check className="h-3.5 w-3.5" />
+          <Check className="h-3.5 w-3.5 text-green-400" />
         ) : (
           <Copy className="h-3.5 w-3.5" />
         )}
       </button>
-      <pre className="overflow-x-auto rounded-xl bg-[#0a0a0a] px-4 py-3 pr-10 text-[13px] leading-relaxed text-white">
+      <pre className="overflow-x-auto rounded-xl bg-[#09090b] border border-[#27272a] shadow-[0_8px_30px_rgb(0,0,0,0.12)] px-4 py-3.5 pr-12 text-[13px] leading-relaxed text-[#e4e4e7] font-mono">
         {children}
       </pre>
     </div>
@@ -295,10 +299,10 @@ function McqCard({
               type="button"
               disabled={locked}
               onClick={() => (multi ? toggleOption(option) : onAnswer(option))}
-              className={`rounded-xl border px-3.5 py-2.5 text-left text-sm font-medium transition-colors ${
+              className={`rounded-xl border px-3.5 py-2.5 text-left text-sm font-medium transition-all duration-200 ${
                 isChosen
-                  ? "border-[#4f46e5] bg-[#eef2ff] text-[#4f46e5]"
-                  : "border-[#e5e7eb] text-[#374151] hover:border-[#4f46e5]/50 hover:bg-[#eef2ff]/50 disabled:opacity-50 disabled:hover:border-[#e5e7eb] disabled:hover:bg-transparent"
+                  ? "border-[#4f46e5] bg-[#eef2ff] text-[#4f46e5] shadow-sm ring-1 ring-[#4f46e5]/20"
+                  : "border-[#e5e7eb] text-[#374151] hover:border-[#4f46e5]/40 hover:bg-[#fafafa] hover:shadow-sm hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:border-[#e5e7eb] disabled:hover:bg-transparent disabled:hover:translate-y-0 disabled:hover:shadow-none"
               }`}
             >
               {option}
@@ -584,21 +588,49 @@ export default function Chat({
       <div className="flex-1 overflow-y-auto px-1 pb-4">
         {/* Empty state */}
         {isEmpty && (
-          <div className="h-full flex flex-col items-center justify-center text-center py-16">
-            <div
-              className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
-              style={{ background: ACCENT }}
-            >
-              <Sparkles className="w-5 h-5 text-white" />
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, ease: "easeOut" }} className="h-full flex flex-col items-center justify-center text-center py-10 px-4">
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-[#4f46e5]/20"
+              style={{ background: `linear-gradient(135deg, ${ACCENT}, #818cf8)` }}>
+              <Sparkles className="w-6 h-6 text-white" />
             </div>
-            <h3 className="text-base font-semibold text-[#0a0a0a]">
-              Ask your AI team anything
+            <h3 className="text-xl font-bold text-[#0a0a0a] tracking-tight">
+              Your AI co-founder is ready
             </h3>
-            <p className="mt-1.5 text-sm text-[#6b7280] max-w-sm">
-              Strategy, marketing plans, financial projections, code — your CEO
-              agent delegates to specialists and delivers real output.
+            <p className="mt-2 text-[15px] text-[#6b7280] max-w-md leading-relaxed">
+              I delegate to a team of specialist agents — research, writing, design,
+              data analysis, and marketing. Tell me what you need shipped.
             </p>
-          </div>
+
+            {/* Quick-start suggestions */}
+            <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-md">
+              {[
+                { label: "Write a marketing email", desc: "Campaigns, launches, newsletters" },
+                { label: "Create an Instagram post", desc: "Captions, visuals, brand copy" },
+                { label: "Analyze my sales data", desc: "EDA, charts, executive summary" },
+                { label: "Research my competitors", desc: "Market landscape, positioning" },
+              ].map((chip, idx) => (
+                <motion.button
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.1 + 0.2 }}
+                  key={chip.label}
+                  type="button"
+                  onClick={() => {
+                    setInput(chip.label);
+                    inputRef.current?.focus();
+                  }}
+                  className="group flex flex-col items-start gap-1 rounded-xl border border-[#e5e7eb] bg-white px-4 py-3.5 text-left transition-all duration-300 hover:border-[#4f46e5]/40 hover:shadow-[0_8px_24px_-8px_rgba(79,70,229,0.15)] hover:-translate-y-0.5"
+                >
+                  <span className="text-[13px] font-semibold text-[#374151] group-hover:text-[#4f46e5] transition-colors">
+                    {chip.label}
+                  </span>
+                  <span className="text-[11px] text-[#9ca3af] leading-tight">
+                    {chip.desc}
+                  </span>
+                </motion.button>
+              ))}
+            </div>
+          </motion.div>
         )}
 
         <div className="space-y-6">
@@ -623,7 +655,7 @@ export default function Chat({
                 <div
                   className={`min-w-0 ${
                     msg.role === "user"
-                      ? "max-w-[75%] bg-[#0a0a0a] text-white rounded-2xl rounded-tr-md px-4.5 py-3 px-5"
+                      ? "max-w-[75%] bg-[#0a0a0a] text-white rounded-[20px] rounded-tr-[4px] px-5 py-3 shadow-md shadow-black/5"
                       : "max-w-[85%] py-1.5"
                   }`}
                 >
@@ -723,8 +755,8 @@ export default function Chat({
       </div>
 
       {/* Input */}
-      <div className="shrink-0 pt-3">
-        <div className="card rounded-2xl px-4 py-2.5 flex items-center gap-3 focus-within:border-[#4f46e5] focus-within:ring-2 focus-within:ring-[#4f46e5]/10 transition-all">
+      <div className="shrink-0 pt-4 pb-2 relative z-10 before:absolute before:inset-0 before:bg-gradient-to-t before:from-[#fafafa] before:via-[#fafafa]/90 before:to-transparent before:-z-10 before:pointer-events-none">
+        <div className="bg-white border border-[#e5e7eb] rounded-2xl px-4 py-2.5 flex items-center gap-3 focus-within:border-[#4f46e5] focus-within:ring-4 focus-within:ring-[#4f46e5]/10 transition-all shadow-[0_2px_12px_-4px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)]">
           <input
             ref={inputRef}
             type="text"
@@ -733,16 +765,17 @@ export default function Chat({
             onKeyDown={handleKeyDown}
             placeholder="Message your CEO agent…"
             disabled={sending}
-            className="flex-1 bg-transparent text-sm text-[#0a0a0a] placeholder-[#9ca3af] outline-none py-1.5 disabled:opacity-50"
+            className="flex-1 bg-transparent text-[15px] text-[#0a0a0a] placeholder-[#9ca3af] outline-none py-1.5 disabled:opacity-50"
             autoFocus
           />
           <button
             onClick={handleSend}
             disabled={!input.trim() || sending}
-            className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all disabled:cursor-not-allowed"
+            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-60"
             style={{
               background: input.trim() && !sending ? ACCENT : "#f3f4f6",
               color: input.trim() && !sending ? "#fff" : "#9ca3af",
+              boxShadow: input.trim() && !sending ? "0 4px 12px -4px rgba(79, 70, 229, 0.4)" : "none",
             }}
           >
             {sending ? (

@@ -61,6 +61,36 @@ export type FilesListResponse = {
   total: number;
 };
 
+export type ProfileData = {
+  user: { id: number; email: string };
+  company: {
+    id: number;
+    company_name: string;
+    small_description: string;
+    industry: string;
+    tone: string;
+  };
+};
+
+export async function fetchProfile(userId: number): Promise<ProfileData> {
+  const res = await fetch(`${API_BASE_URL}/user/profile?user_id=${userId}`);
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to load profile"));
+  return res.json() as Promise<ProfileData>;
+}
+
+export async function updateProfile(
+  userId: number,
+  fields: Partial<ProfileData["company"]>,
+): Promise<{ status: string; company: ProfileData["company"] }> {
+  const res = await fetch(`${API_BASE_URL}/user/profile?user_id=${userId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(fields),
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to update profile"));
+  return res.json();
+}
+
 export async function fetchDashboard(userId: number): Promise<DashboardData> {
   const res = await fetch(`${API_BASE_URL}/user/dashboard?user_id=${userId}`);
   if (!res.ok) {
@@ -109,6 +139,11 @@ export function formatFileSize(bytes: number | null): string {
 
 export function isImageMime(mime: string): boolean {
   return mime.startsWith("image/");
+}
+
+/** Build a download URL for a file. Set view=true to open inline (images/PDFs in browser). */
+export function getFileDownloadUrl(fileId: number, userId: number, view = false): string {
+  return `${API_BASE_URL}/user/files/${fileId}/download?user_id=${userId}&view=${view}`;
 }
 
 export async function deleteFile(

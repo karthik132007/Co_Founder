@@ -236,6 +236,36 @@ def create_chat_session(session_id: str, company_id: int, title: Optional[str] =
     raise RuntimeError("Failed to insert chat session")
 
 
+def update_company(
+    company_id: int,
+    company_name: str | None = None,
+    small_description: str | None = None,
+    industry: str | None = None,
+    tone: str | None = None,
+) -> dict:
+    """Update company fields. Only provided (non-None) fields are updated."""
+    payload: Dict[str, Any] = {}
+    if company_name is not None:
+        payload["company_name"] = company_name
+    if small_description is not None:
+        payload["small_description"] = small_description
+    if industry is not None:
+        payload["industry"] = industry
+    if tone is not None:
+        payload["tone"] = tone
+
+    if not payload:
+        logger.warning("update_company called with no fields for company_id=%s", company_id)
+        return {}
+
+    response = _client.table("companies").update(payload).eq("id", company_id).execute()
+    if response.data:
+        logger.info("Company updated — company_id=%s, fields=%s", company_id, list(payload.keys()))
+        return response.data[0]
+    logger.error("Failed to update company — company_id=%s", company_id)
+    raise RuntimeError("Failed to update company")
+
+
 def update_chat_session_title(session_id: str, title: str) -> Optional[_ChatSessionResult]:
     """Update a chat session title and return the updated lightweight session object."""
     if not session_id:
