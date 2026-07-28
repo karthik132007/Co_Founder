@@ -1,0 +1,357 @@
+@import "tailwindcss";
+
+/*
+ * Co-Founder AI — Landing experience
+ * Premium, cinematic. Supports light (default) and dark themes via
+ * [data-theme] on the [data-landing] root. Scoped so app routes keep
+ * their own theme.
+ */
+
+@theme {
+  --color-accent: #4f46e5;
+  --color-accent-2: #7c3aed;
+  --color-accent-glow: rgba(79, 70, 229, 0.35);
+
+  --font-display: "Geist", "Inter", system-ui, sans-serif;
+  --font-mono: "Geist Mono", "JetBrains Mono", ui-monospace, monospace;
+}
+
+/* ── Light theme (default) ── */
+[data-landing][data-theme="light"] {
+  --color-bg: #fafafa;
+  --color-bg-soft: #ffffff;
+  --color-surface: rgba(10, 10, 10, 0.025);
+  --color-surface-strong: rgba(10, 10, 10, 0.05);
+  --color-border: rgba(10, 10, 10, 0.08);
+  --color-border-strong: rgba(10, 10, 10, 0.14);
+  --color-text: #0a0a0a;
+  --color-text-muted: #52525b;
+  --color-text-dim: #9ca3af;
+  --color-accent: #4f46e5;
+  --color-accent-2: #7c3aed;
+  --color-accent-glow: rgba(79, 70, 229, 0.28);
+  --color-scene-bg: #f4f4f5;
+  --color-scene-fog: #fafafa;
+  --color-cursor-blend: normal;
+}
+
+/* ── Dark theme ── */
+[data-landing][data-theme="dark"] {
+  --color-bg: #05060a;
+  --color-bg-soft: #0a0c12;
+  --color-surface: rgba(255, 255, 255, 0.03);
+  --color-surface-strong: rgba(255, 255, 255, 0.06);
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.14);
+  --color-text: #f4f5f7;
+  --color-text-muted: #8a8f9c;
+  --color-text-dim: #5a5f6c;
+  --color-accent: #7c8cff;
+  --color-accent-2: #b388ff;
+  --color-accent-glow: rgba(124, 140, 255, 0.5);
+  --color-scene-bg: #05060a;
+  --color-scene-fog: #05060a;
+  --color-cursor-blend: difference;
+}
+
+[data-landing] {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-display);
+  overflow-x: hidden;
+  transition: background 0.6s ease, color 0.6s ease;
+}
+
+[data-landing] ::selection {
+  background: rgba(79, 70, 229, 0.2);
+  color: inherit;
+}
+
+/* Hide default cursor on capable pointers; custom cursor takes over */
+@media (hover: hover) and (pointer: fine) {
+  [data-landing] * {
+    cursor: none;
+  }
+}
+
+/* ─────────────────────────────────────────────
+   Typography
+   ───────────────────────────────────────────── */
+
+.landing-display {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+}
+
+.landing-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+/* SplitText line mask */
+.line-mask {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+}
+.line-inner {
+  display: inline-block;
+  will-change: transform;
+}
+
+/* ─────────────────────────────────────────────
+   Surfaces & glass
+   ───────────────────────────────────────────── */
+
+.glass {
+  background: var(--color-surface);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border: 1px solid var(--color-border);
+}
+
+.glass-strong {
+  background: var(--color-surface-strong);
+  backdrop-filter: blur(28px) saturate(1.6);
+  -webkit-backdrop-filter: blur(28px) saturate(1.6);
+  border: 1px solid var(--color-border-strong);
+}
+
+.hairline {
+  border-color: var(--color-border);
+}
+
+/* Subtle radial vignette behind hero */
+.vignette {
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(124, 140, 255, 0.08), transparent 60%),
+    radial-gradient(80% 60% at 50% 120%, rgba(179, 136, 255, 0.06), transparent 60%);
+}
+[data-landing][data-theme="light"] .vignette {
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(79, 70, 229, 0.06), transparent 60%),
+    radial-gradient(80% 60% at 50% 120%, rgba(124, 58, 237, 0.05), transparent 60%);
+}
+
+/* Ambient grid backdrop — very subtle, theme-aware */
+.bg-grid {
+  background-image:
+    linear-gradient(to right, var(--color-border) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-border) 1px, transparent 1px);
+  background-size: 64px 64px;
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, #000 30%, transparent 75%);
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, #000 30%, transparent 75%);
+}
+
+/* Ambient glow orb */
+.glow-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+/* Film grain / noise overlay */
+.noise {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.04;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+[data-landing][data-theme="light"] .noise {
+  opacity: 0.025;
+  mix-blend-mode: multiply;
+}
+
+/* ─────────────────────────────────────────────
+   Buttons
+   ───────────────────────────────────────────── */
+
+.btn-magnetic {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.95rem 1.6rem;
+  border-radius: 999px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  will-change: transform;
+  transition: color 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+}
+
+.btn-magnetic .btn-bg {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--color-text);
+  z-index: -1;
+  transition: opacity 0.3s ease;
+}
+
+.btn-magnetic.is-ghost {
+  color: var(--color-text);
+  border: 1px solid var(--color-border-strong);
+}
+.btn-magnetic.is-ghost .btn-bg {
+  background: transparent;
+}
+
+/* Solid: accent fill, white text in both themes */
+.btn-magnetic.is-solid {
+  color: #ffffff;
+}
+.btn-magnetic.is-solid .btn-bg {
+  background: var(--color-accent);
+}
+
+.btn-magnetic .btn-glow {
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: radial-gradient(60% 100% at 50% 100%, var(--color-accent-glow), transparent 70%);
+  opacity: 0;
+  filter: blur(8px);
+  z-index: -2;
+  transition: opacity 0.4s ease;
+}
+.btn-magnetic:hover .btn-glow {
+  opacity: 1;
+}
+
+/* Animated underline link */
+.link-underline {
+  position: relative;
+  display: inline-block;
+}
+.link-underline::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 100%;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.5s cubic-bezier(0.65, 0, 0.35, 1);
+}
+.link-underline:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+/* ─────────────────────────────────────────────
+   Cursor
+   ───────────────────────────────────────────── */
+
+.cursor-dot,
+.cursor-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 100;
+  border-radius: 50%;
+  mix-blend-mode: var(--color-cursor-blend);
+}
+.cursor-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--color-text);
+}
+.cursor-ring {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--color-border-strong);
+  transition: width 0.25s ease, height 0.25s ease, opacity 0.25s ease;
+}
+
+/* ─────────────────────────────────────────────
+   Workflow / architecture nodes
+   ───────────────────────────────────────────── */
+
+.node-chip {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-radius: 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: border-color 0.4s ease, background 0.4s ease, transform 0.4s ease;
+}
+.node-chip:hover {
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-strong);
+}
+
+.node-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  box-shadow: 0 0 12px var(--color-accent-glow);
+}
+
+/* ─────────────────────────────────────────────
+   Terminal (demo)
+   ───────────────────────────────────────────── */
+
+.terminal {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: #c9d0e0;
+}
+.terminal .prompt { color: var(--color-text-dim); }
+.terminal .cmd { color: #fff; }
+.terminal .out { color: #8a8f9c; }
+.terminal .accent { color: var(--color-accent); }
+.terminal .ok { color: #6ee7b7; }
+
+.caret {
+  display: inline-block;
+  width: 8px;
+  height: 1.1em;
+  background: var(--color-accent);
+  vertical-align: text-bottom;
+  margin-left: 2px;
+  animation: blink 1s steps(2) infinite;
+}
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+/* ─────────────────────────────────────────────
+   Misc
+   ───────────────────────────────────────────── */
+
+.divider-line {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-border-strong), transparent);
+}
+
+.glow-text {
+  text-shadow: 0 0 40px var(--color-accent-glow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-landing] * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
