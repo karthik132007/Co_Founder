@@ -20,6 +20,13 @@
 - [Status](#status)
 - [Contributing](#contributing)
 
+## License
+
+Copyright (C) 2026 Karthikeya Kumar
+
+This project is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0).
+
+See the LICENSE file for details.
 ## Overview
 
 AI Co-Founder is a multi-agent AI platform that replaces a human founding team with a CEO orchestrator agent and specialized sub-agents. Founders describe their business idea through a conversational chat interface, and the agents collaboratively handle strategy, market research, content writing, data analysis, and knowledge management via a shared RAG + chat memory backbone.
