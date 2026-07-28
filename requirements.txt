@@ -14,4 +14,5 @@ openrouter
 httpx
 tavily
 e2b-code-interpreter
+redis
 requests

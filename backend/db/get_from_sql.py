@@ -1,3 +1,4 @@
+import json
 import logging
 
 from backend.models import CompanyData
@@ -9,18 +10,77 @@ logger = logging.getLogger(__name__)
 
 supabase_client = get_supabase_client()
 
+# ── Redis cache for company data ──────────────────────────────────────────
+# Cached for 1 hour to avoid hitting Supabase on every CEO agent build.
+_COMPANY_CACHE_TTL = 3600  # seconds
+
+
+def _get_redis():
+    """Lazy import to avoid crashing when Redis is unavailable."""
+    try:
+        from backend.db.redis_client import get_redis_client
+        return get_redis_client()
+    except Exception:
+        return None
+
 def get_company_data(company_id: int) -> Optional[CompanyData]:
+    cache_key = f"company:{company_id}"
+
+    # 1. Try Redis cache
+    redis_client = _get_redis()
+    if redis_client:
+        try:
+            cached = redis_client.get(cache_key)
+            if cached:
+                logger.info("Redis HIT for company_id=%d", company_id)
+                return json.loads(cached)
+        except Exception:
+            logger.info("Redis MISS for company_id=%d, falling back to DB", company_id)
+
+    # 2. Fallback: Supabase
     response = supabase_client.table("companies").select("*").eq("id", company_id).execute()
     if response.data:
-        return response.data[0]
+        data = response.data[0]
+        # 3. Populate Redis cache
+        if redis_client:
+            try:
+                redis_client.setex(cache_key, _COMPANY_CACHE_TTL, json.dumps(data, default=str))
+                logger.info("Redis SET for company_id=%d", company_id)
+            except Exception:
+                logger.info("Redis write failed for company_id=%d", company_id)
+        return data
+
     logger.warning("No company data found for company_id=%s", company_id)
     return None
 
+_USER_COMPANY_TTL = 86400  # 24 hours — user→company mapping rarely changes
+
+
 def get_company_id(user_id: int) -> Optional[int]:
+    cache_key = f"user:{user_id}"
+    redis_client = _get_redis()
+
+    if redis_client:
+        try:
+            cached = redis_client.get(cache_key)
+            if cached:
+                logger.info("Redis HIT Company id for user_id=%d", user_id)
+                return json.loads(cached)
+        except Exception:
+            logger.info("Redis MISS for user_id=%d, getting company id from DB", user_id)
+
     response = supabase_client.table("companies").select("id").eq("user_id", user_id).execute()
     if response.data:
         cid = response.data[0]["id"]
+
+        if redis_client:
+            try:
+                redis_client.setex(cache_key, _USER_COMPANY_TTL, cid)
+                logger.info("Redis SET company_id for user_id=%d", user_id)
+            except Exception:
+                logger.info("Redis cache write failed for user_id=%d", user_id)
         return cid
+
     logger.warning("No company found for user_id=%s", user_id)
     return None
 
@@ -85,8 +145,20 @@ def get_dashboard_stats(company_id: int) -> Dict[str, Any]:
     }
     return stats
 
+_SESSION_MSGS_TTL = 30
+
 def get_chats_in_session(session_id: str) -> List[Dict[str, Any]]:
-    """Return all chat messages for a session, ordered from oldest to newest."""
+    cache_key = f"session_msgs:{session_id}"
+    redis_client = _get_redis()
+    if redis_client:
+        try:
+            cached = redis_client.get(cache_key)
+            if cached:
+                logger.info("Redis HIT for session_msgs %s", session_id[:8])
+                return json.loads(cached)
+        except Exception:
+            pass
+
     response = (
         supabase_client.table("chat_messages")
         .select("*")
@@ -95,11 +167,30 @@ def get_chats_in_session(session_id: str) -> List[Dict[str, Any]]:
         .execute()
     )
     messages = response.data if response.data else []
+
+    if redis_client and messages:
+        try:
+            redis_client.setex(cache_key, _SESSION_MSGS_TTL, json.dumps(messages, default=str))
+        except Exception:
+            pass
     return messages
 
+_SESSIONS_CACHE_TTL = 120
 
 def get_chat_sessions(company_id: int) -> List[Dict[str, Any]]:
     """Return all chat sessions for a company, ordered by newest first."""
+    cache_key = f"chat_sessions:{company_id}"
+
+    redis_client = _get_redis()
+    if redis_client:
+        try:
+            cached = redis_client.get(cache_key)
+            if cached:
+                logger.info("Redis HIT for chat_sessions company_id=%d", company_id)
+                return json.loads(cached)
+        except Exception:
+            logger.info("Redis MISS for chat_sessions company_id=%d", company_id)
+
     response = (
         supabase_client.table("chat_sessions")
         .select("*")
@@ -108,4 +199,12 @@ def get_chat_sessions(company_id: int) -> List[Dict[str, Any]]:
         .execute()
     )
     sessions = response.data if response.data else []
+
+    if redis_client:
+        try:
+            redis_client.setex(cache_key, _SESSIONS_CACHE_TTL, json.dumps(sessions, default=str))
+            logger.info("Redis SET for chat_sessions company_id=%d (%d sessions)", company_id, len(sessions))
+        except Exception:
+            logger.info("Redis write failed for chat_sessions company_id=%d", company_id)
+
     return sessions

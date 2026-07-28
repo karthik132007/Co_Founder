@@ -1,8 +1,8 @@
-# Co_Founder — v0.8.0 (Prerelease)
+# Co_Founder — v0.8.1 (Prerelease)
 
 > **📘 For complete system context and understanding, please refer to [`Agents_rules.md`](Agents_rules.md) before contributing or making changes.**
 >
-> **📋 Changes since v0.7.2:** [See changelog below](#changelog-v072--v080)
+> **📋 Changes since v0.8.0:** [See changelog below](#changelog-v080--v081---redis-caching--agent-routing)
 
 ## Contents
 
@@ -319,6 +319,45 @@ Functional end-to-end prerelease (v0.8.0). The core chat loop, multi-agent syste
 - **MCQ abuse guard** (`backend/api/chat.py`): after 2 MCQs per session, a `[SYSTEM DIRECTIVE]` is injected into the user message forcing immediate execution.
 - **CEO prompt tightened**: MCQ limit changed from "1-2 per decision point" to "2 TOTAL per task". Tool description updated with "HARD LIMIT" language.
 - **Chat memory decoupled from knowledge tool**: `knowledge_request` now searches documents only (`include_chat_memory=False`). Memories are injected once at the entry point via `_build_user_message_with_memories()`.
+
+## Changelog (v0.8.0 → v0.8.1) — Redis Caching & Agent Routing
+
+### Redis Caching Layer
+Added Redis (`redis-py`) as a distributed cache layer across the stack. All caches use **best-effort fallback** — if Redis is unavailable, the system degrades gracefully to the original Supabase/API calls.
+
+| Cache | Key Pattern | TTL | Location |
+|-------|------------|-----|----------|
+| Company data | `company:{id}` | 1h | `backend/db/get_from_sql.py` |
+| User→Company mapping | `user:{id}` | 24h | `backend/db/get_from_sql.py` |
+| Chat sessions list | `chat_sessions:{id}` | 2min | `backend/db/get_from_sql.py` |
+| Session messages | `session_msgs:{id}` | 30s | `backend/db/get_from_sql.py` |
+| Embeddings | `embedding:{sha256}` | 1h | `RAG_Engine/embeddings.py` |
+
+**New files:**
+- `backend/db/redis_client.py` — Redis singleton with lazy connection
+
+### Performance Impact (Measured from logs)
+
+| Metric | Before Redis | After Redis | Improvement |
+|--------|-------------|-------------|-------------|
+| Dashboard page (typical) | ~3-4s | ~1s | **~70% faster** |
+| Dashboard page (worst Supabase) | ~15s | ~2s | **~87% faster** |
+| Session messages (repeat view) | 1-8s | ~0ms | **~100% faster** |
+| CEO agent rebuild (2nd+ request) | ~2s | 0ms (in-memory) | **100%** |
+| `get_company_id(user)` | ~0.5-1s DB | ~0ms Redis | **100%** |
+| `get_chat_sessions(company)` | ~1s | ~0ms Redis (cached) | **100%** |
+| Embedding generation (repeat query) | ~500ms API | ~0ms Redis | **100%** |
+| Startup (all agents) | 3-6s/worker | 3-6s/worker | *(lazy-load pending)* |
+
+### Bug Fixes
+- **Agent routing fix**: "What is my best selling product" was misrouted to Researcher (web search) instead of Data Analyst (CSV analysis). Added explicit **AGENT ROUTING GUIDE** section to CEO system prompt with per-agent "USE FOR" examples, anti-patterns, and routing rules.
+- **Redis `NameError` crash**: `get_company_id()` referenced a module-level `redis_client` variable that was removed. Fixed to call `_get_redis()` locally per function.
+- **Cache log visibility**: All Redis cache hit/miss/set logs were at `logger.debug()` level but root logger is `INFO`. Changed 17 log statements to `logger.info()` — now visible in `logs.log`.
+- **Data Analyst self-sufficiency**: Added instruction that the Data Analyst finds and loads files on its own — CEO no longer calls `knowledge_request` to search for files before delegating.
+
+### Agent Prompt Improvements
+- **`ceo_prompts.py`**: New AGENT ROUTING GUIDE section (~60 lines) with per-agent "USE FOR" lists, explicit anti-patterns, 6 priority-ordered routing rules, and 3 concrete examples
+- **`CEO.py` tool descriptions**: `research_request` now says "Search the WEB" and "Does NOT have access to company files"; `data_analysis_request` now says "Use for: best/top/worst selling products" and "This agent reads YOUR files"
 
 ## Contributing
 

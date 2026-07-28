@@ -100,7 +100,7 @@ def _build_ceo_tools(company_id: int):
 
     @tool(
         "research_request",
-        description="Delegate fact-finding and verification to the Researcher agent.",
+        description="Search the WEB for external/public information. Use for: market research, competitor analysis, industry trends, regulations, benchmarks. Does NOT have access to company files — use data_analysis_request for any question about uploaded CSV/Excel/sales data.",
     )
     def research_request(task: str):
         logger.info("research_request called: task='%s'", task)
@@ -130,7 +130,7 @@ def _build_ceo_tools(company_id: int):
 
     @tool(
         "data_analysis_request",
-        description="Delegate data analysis, EDA, and file-based insights to the Data Analyst agent.",
+        description="Analyze company data files (CSV, Excel, etc.). Use for: best/top/worst selling products, sales trends, revenue analysis, profit margins, any question about company-uploaded spreadsheets. This agent reads YOUR files and runs Python — use it for ANY question about your own company data.",
     )
     def data_analysis_request(task: str):
         logger.info("data_analysis_request called: task='%s', company_id=%d", task, company_id)
@@ -160,8 +160,35 @@ def _build_ceo_tools(company_id: int):
         graphic_design_request,
     ]
 
+# ── In-memory agent cache ─────────────────────────────────────────────────
+# LangChain agents can't be pickled (closure tools, live connections), so we
+# keep them in a process-local dict.  company_data is cached in Redis separately.
+_ceo_agent_cache: dict[int, object] = {}
+
+
+def invalidate_ceo_agent_cache(company_id: int | None = None) -> int:
+    """Remove cached CEO agent(s).  Pass a company_id to evict one; pass None to
+    evict all.  Returns the number of entries removed."""
+    if company_id is None:
+        count = len(_ceo_agent_cache)
+        _ceo_agent_cache.clear()
+        logger.info("Cleared entire CEO agent cache (%d entries)", count)
+        return count
+    if company_id in _ceo_agent_cache:
+        del _ceo_agent_cache[company_id]
+        logger.info("Evicted CEO agent cache for company_id=%d", company_id)
+        return 1
+    return 0
+
+
 def _get_ceo_agent(company_id: int):
-    logger.info("Creating CEO agent for company_id=%d", company_id)
+    # Serve from in-memory cache when available
+    cached = _ceo_agent_cache.get(company_id)
+    if cached is not None:
+        logger.info("Using cached CEO agent for company_id=%d", company_id)
+        return cached
+
+    logger.info("Building new CEO agent for company_id=%d", company_id)
     company_data = get_company_data(company_id)
     if not company_data:
         logger.error("No company found for company_id=%d", company_id)
@@ -174,7 +201,8 @@ def _get_ceo_agent(company_id: int):
         model=get_best_llm([Task.PLANNING, Task.WRITING]),
         tools=_build_ceo_tools(company_id),
     )
-    logger.info("CEO agent created successfully for company_id=%d", company_id)
+    _ceo_agent_cache[company_id] = ceo_agent
+    logger.info("CEO agent built + cached for company_id=%d", company_id)
     return ceo_agent
 
 
