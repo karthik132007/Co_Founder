@@ -210,6 +210,7 @@ export async function sendChatMessage(
   userId: number,
   message: string,
   sessionId?: string,
+  effort: "flash" | "mid" | "max" = "flash",
 ): Promise<ChatResponse> {
   const formData = new FormData();
   formData.append("user_id", String(userId));
@@ -217,6 +218,7 @@ export async function sendChatMessage(
   if (sessionId) {
     formData.append("session_id", sessionId);
   }
+  formData.append("effort", effort);
 
   const res = await fetch(`${API_BASE_URL}/chat`, {
     method: "POST",

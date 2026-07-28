@@ -103,8 +103,8 @@ def _build_ceo_tools(company_id: int):
         description="Search the WEB for external/public information. Use for: market research, competitor analysis, industry trends, regulations, benchmarks. Does NOT have access to company files — use data_analysis_request for any question about uploaded CSV/Excel/sales data.",
     )
     def research_request(task: str):
-        logger.info("research_request called: task='%s'", task)
-        result = spawn_researcher(task)
+        logger.info("research_request called: task='%s', effort=%s", task, _current_effort)
+        result = spawn_researcher(task, effort=_current_effort)
         logger.info("research_request completed for task: '%s'", task)
         return result
 
@@ -113,8 +113,8 @@ def _build_ceo_tools(company_id: int):
         description="Delegate drafting and polishing to the Writer agent.",
     )
     def writing_request(task: str):
-        logger.info("writing_request called: task='%s'", task)
-        result = spawn_writer(task)
+        logger.info("writing_request called: task='%s', effort=%s", task, _current_effort)
+        result = spawn_writer(task, effort=_current_effort)
         logger.info("writing_request completed for task: '%s'", task)
         return result
 
@@ -123,8 +123,8 @@ def _build_ceo_tools(company_id: int):
         description="Delegate market strategy and growth work to the CMO agent.",
     )
     def marketing_request(task: str):
-        logger.info("marketing_request called: task='%s', company_id=%d", task, company_id)
-        result = spawn_cmo(company_id, task)
+        logger.info("marketing_request called: task='%s', company_id=%d, effort=%s", task, company_id, _current_effort)
+        result = spawn_cmo(company_id, task, effort=_current_effort)
         logger.info("marketing_request completed for task: '%s'", task)
         return result
 
@@ -133,8 +133,8 @@ def _build_ceo_tools(company_id: int):
         description="Analyze company data files (CSV, Excel, etc.). Use for: best/top/worst selling products, sales trends, revenue analysis, profit margins, any question about company-uploaded spreadsheets. This agent reads YOUR files and runs Python — use it for ANY question about your own company data.",
     )
     def data_analysis_request(task: str):
-        logger.info("data_analysis_request called: task='%s', company_id=%d", task, company_id)
-        result = spawn_data_analyst(company_id, task)
+        logger.info("data_analysis_request called: task='%s', company_id=%d, effort=%s", task, company_id, _current_effort)
+        result = spawn_data_analyst(company_id, task, effort=_current_effort)
         logger.info("data_analysis_request completed for task: '%s'", task)
         return result
 
@@ -144,8 +144,8 @@ def _build_ceo_tools(company_id: int):
         description="Delegate branded visual assets and color-palette work to the Graphic Designer agent.",
     )
     def graphic_design_request(task: str):
-        logger.info("graphic_design_request called: task='%s', company_id=%d", task, company_id)
-        result = spawn_graphic_designer(company_id, task)
+        logger.info("graphic_design_request called: task='%s', company_id=%d, effort=%s", task, company_id, _current_effort)
+        result = spawn_graphic_designer(company_id, task, effort=_current_effort)
         logger.info("graphic_design_request completed for task: '%s'", task)
         return result
 
@@ -163,7 +163,11 @@ def _build_ceo_tools(company_id: int):
 # ── In-memory agent cache ─────────────────────────────────────────────────
 # LangChain agents can't be pickled (closure tools, live connections), so we
 # keep them in a process-local dict.  company_data is cached in Redis separately.
-_ceo_agent_cache: dict[int, object] = {}
+_ceo_agent_cache: dict[tuple, object] = {}  # keyed by (company_id, effort)
+
+# Module-level effort setting, set by talk_to_ceo before agent invocation.
+# Tool closures read this instead of capturing effort so the agent stays cacheable.
+_current_effort: str = "flash"
 
 
 def invalidate_ceo_agent_cache(company_id: int | None = None) -> int:
@@ -174,21 +178,24 @@ def invalidate_ceo_agent_cache(company_id: int | None = None) -> int:
         _ceo_agent_cache.clear()
         logger.info("Cleared entire CEO agent cache (%d entries)", count)
         return count
-    if company_id in _ceo_agent_cache:
-        del _ceo_agent_cache[company_id]
-        logger.info("Evicted CEO agent cache for company_id=%d", company_id)
-        return 1
-    return 0
+    removed = 0
+    for key in list(_ceo_agent_cache.keys()):
+        if key[0] == company_id:
+            del _ceo_agent_cache[key]
+            removed += 1
+    if removed:
+        logger.info("Evicted %d CEO agent cache entries for company_id=%d", removed, company_id)
+    return removed
 
 
-def _get_ceo_agent(company_id: int):
-    # Serve from in-memory cache when available
-    cached = _ceo_agent_cache.get(company_id)
+def _get_ceo_agent(company_id: int, effort: str = "flash"):
+    cache_key = (company_id, effort)
+    cached = _ceo_agent_cache.get(cache_key)
     if cached is not None:
-        logger.info("Using cached CEO agent for company_id=%d", company_id)
+        logger.info("Using cached CEO agent for company_id=%d, effort=%s", company_id, effort)
         return cached
 
-    logger.info("Building new CEO agent for company_id=%d", company_id)
+    logger.info("Building new CEO agent for company_id=%d, effort=%s", company_id, effort)
     company_data = get_company_data(company_id)
     if not company_data:
         logger.error("No company found for company_id=%d", company_id)
@@ -198,24 +205,31 @@ def _get_ceo_agent(company_id: int):
     ceo_agent = create_agent(
         name="CEO Agent",
         system_prompt=get_ceo_system_prompt(company_data),
-        model=get_best_llm([Task.PLANNING, Task.WRITING]),
+        model=get_best_llm([Task.PLANNING, Task.RESEARCH, Task.WRITING], effort=effort),
         tools=_build_ceo_tools(company_id),
     )
-    _ceo_agent_cache[company_id] = ceo_agent
-    logger.info("CEO agent built + cached for company_id=%d", company_id)
+    _ceo_agent_cache[cache_key] = ceo_agent
+    logger.info("CEO agent built + cached for company_id=%d, effort=%s", company_id, effort)
     return ceo_agent
 
 
-def talk_to_ceo(company_id: int, message: str, history: list[dict] | None = None):
+def talk_to_ceo(company_id: int, message: str, history: list[dict] | None = None, effort: str = "flash"):
     """Talk to the CEO agent.
 
     Returns either a plain string reply, or a dict payload
     {"type": "clarification_request", "question": ..., "options": [...]}
     when the agent asks the user a multiple choice question.
+
+    effort: "flash" (fastest, skips chat memories + reflections),
+            "mid" (balanced),
+            "max" (full quality).
     """
-    logger.info("talk_to_ceo called: company_id=%d, message='%s', history_len=%d", company_id, message[:100], len(history or []))
-    ceo_agent = _get_ceo_agent(company_id)
-    chat_memories = _get_relevant_chat_memories(company_id, message)
+    logger.info("talk_to_ceo called: company_id=%d, message='%s', history_len=%d, effort=%s", company_id, message[:100], len(history or []), effort)
+    ceo_agent = _get_ceo_agent(company_id, effort=effort)
+    if effort == "flash":
+        chat_memories = []
+    else:
+        chat_memories = _get_relevant_chat_memories(company_id, message)
     user_message = _build_user_message_with_memories(message, chat_memories)
 
     # Build the message list: prior conversation turns + current message.
@@ -230,6 +244,10 @@ def talk_to_ceo(company_id: int, message: str, history: list[dict] | None = None
             if role in ("user", "assistant") and content.strip():
                 messages.append({"role": role, "content": content.strip()})
     messages.append({"role": "user", "content": user_message})
+
+    # Set module-level effort so tool closures can read it (avoids breaking agent cache)
+    global _current_effort
+    _current_effort = effort
 
     result = ceo_agent.invoke(
         {

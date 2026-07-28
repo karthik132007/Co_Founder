@@ -34,8 +34,15 @@ def chat_with_user(
     user_id: int = Form(...),
     message: str = Form(...),
     session_id: Optional[str] = Form(None),
+    effort: str = Form("flash"),
 ):
-    logger.info("chat_with_user called — user_id=%s, message_length=%d, session_id=%s", user_id, len(message), session_id)
+    """
+    effort: "flash" (fastest, default), "mid", or "max" (highest quality).
+    Controls agent reflection depth, model selection, and post-processing.
+    """
+    if effort not in ("flash", "mid", "max"):
+        effort = "flash"
+    logger.info("chat_with_user called — user_id=%s, message_length=%d, session_id=%s, effort=%s", user_id, len(message), session_id, effort)
 
     company_id = get_company_id(user_id)
     if not company_id:
@@ -51,7 +58,8 @@ def chat_with_user(
         title = "New Chat"
         logger.info("Creating new chat session — session_id=%s, company_id=%s", session_id, company_id)
         create_chat_session(session_id, company_id, title=title)
-        background_tasks.add_task(store_chat_title, session_id, message)
+        if effort != "flash":
+            background_tasks.add_task(store_chat_title, session_id, message)
         is_new_session = True
     else:
         # Fetch existing messages once — used both to verify the session
@@ -62,7 +70,8 @@ def chat_with_user(
             session_id = str(uuid4())
             title = "New Chat"
             create_chat_session(session_id, company_id, title=title)
-            background_tasks.add_task(store_chat_title, session_id, message)
+            if effort != "flash":
+                background_tasks.add_task(store_chat_title, session_id, message)
             is_new_session = True
             history = []
         else:
@@ -89,7 +98,7 @@ def chat_with_user(
             f"User message: {message}"
         )
 
-    reply = chat(company_id, ceo_message, history)
+    reply = chat(company_id, ceo_message, history, effort=effort)
 
     # CEO may return a clarification request (MCQ) instead of a text reply.
     if isinstance(reply, dict) and reply.get("type") == "clarification_request":
@@ -132,7 +141,8 @@ def chat_with_user(
 
         add_message_to_session(session_id, "assistant", generated_message)
         background_tasks.add_task(save_generated_graphic, company_id, image_bytes)
-        background_tasks.add_task(store_chat_memory, company_id, message, generated_message)
+        if effort != "flash":
+            background_tasks.add_task(store_chat_memory, company_id, message, generated_message)
         response = {
             "status": "success",
             "type": "image_generated",
@@ -146,7 +156,8 @@ def chat_with_user(
         return response
 
     add_message_to_session(session_id, "assistant", reply)
-    background_tasks.add_task(store_chat_memory, company_id, message, reply)
+    if effort != "flash":
+        background_tasks.add_task(store_chat_memory, company_id, message, reply)
 
     response = {
         "status": "success",

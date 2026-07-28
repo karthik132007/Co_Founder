@@ -40,8 +40,17 @@ def _run_writer_agent(prompt:str):
     logger.info("Writer agent completed successfully")
     return result
 
-def spawn_writer(prompt_from_CEO: str,max_reflections:int =2,pass_score:int=8):
-    logger.info("spawn_writer called: max_reflections=%d, pass_score=%d", max_reflections, pass_score)
+def spawn_writer(prompt_from_CEO: str, max_reflections:int =2, pass_score:int=8, effort: str = "flash"):
+    """
+    effort: "flash" → 0 reflections, "mid" → 1 reflection, "max" → 2 reflections
+    """
+    if effort == "flash":
+        max_reflections = 0
+    elif effort == "mid":
+        max_reflections = 1
+    else:  # max
+        max_reflections = 2
+    logger.info("spawn_writer called: max_reflections=%d, pass_score=%d, effort=%s", max_reflections, pass_score, effort)
 
     try:
         draft = _run_writer_agent(prompt_from_CEO)

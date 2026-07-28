@@ -18,8 +18,8 @@ data_analyst = create_agent(
 )
 logger.info("Data analyst agent created")
 
-def spawn_data_analyst(company_id: int, message: str):
-    logger.info("spawn_data_analyst called: company_id=%d, message='%s'", company_id, message[:100])
+def spawn_data_analyst(company_id: int, message: str, effort: str = "flash"):
+    logger.info("spawn_data_analyst called: company_id=%d, message='%s', effort=%s", company_id, message[:100], effort)
     user_message = (
         f"The company_id for this task is {company_id}. "
         f"Always pass this company_id to the 'get data files' and 'get files' tools.\n\n"

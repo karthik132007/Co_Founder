@@ -40,12 +40,20 @@ def _run_research_agent(prompt: str):
     logger.info("Research agent completed successfully")
     return result
 
-def spawn_researcher(prompt_from_CEO:str,max_reflections:int = 1,pass_score:int = 7) :
+def spawn_researcher(prompt_from_CEO:str, max_reflections:int = 1, pass_score:int = 7, effort: str = "flash") :
     """
     Execute a research task assigned by the CEO agent.
     Returns the research findings as markdown.
+    
+    effort: "flash" → 0 reflections, "mid" → 1 reflection, "max" → 2 reflections
     """
-    logger.info("spawn_researcher called: max_reflections=%d, pass_score=%d", max_reflections, pass_score)
+    if effort == "flash":
+        max_reflections = 0
+    elif effort == "mid":
+        max_reflections = 1
+    else:  # max
+        max_reflections = 2
+    logger.info("spawn_researcher called: max_reflections=%d, pass_score=%d, effort=%s", max_reflections, pass_score, effort)
     try:
         draft = _run_research_agent(prompt_from_CEO)
         for i in range(max_reflections):

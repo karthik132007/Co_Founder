@@ -13,15 +13,15 @@ dotenv.load_dotenv()
 from agents.marketing.cmo_tools import *
 tools=[search_current_market_trends, search_web, extract_content_from_webpage, get_current_date]
 
-def _get_cmo_agent(company_id):
-    logger.info("Creating CMO agent for company_id=%d", company_id)
+def _get_cmo_agent(company_id, effort: str = "flash"):
+    logger.info("Creating CMO agent for company_id=%d, effort=%s", company_id, effort)
     company_data = get_company_data(company_id)
     if not company_data:
         logger.error("No company data found for company_id=%d", company_id)
     cmo_agent=create_agent(
         name="CMO",
         system_prompt=get_cmo_system_prompt(company_data),
-        model=get_best_llm([Task.RESEARCH,Task.CREATIVE,Task.PLANNING]),
+        model=get_best_llm([Task.RESEARCH,Task.CREATIVE,Task.PLANNING], effort=effort),
         tools=tools,
     )
     logger.info("CMO agent created for company_id=%d", company_id)
@@ -31,9 +31,9 @@ def _extract_content(response):
     content = response["messages"][-1].content
     return content
 
-def spawn_cmo(company_id: int, message: str):
-    logger.info("spawn_cmo called: company_id=%d, message='%.100s'", company_id, message)
-    cmo_agent=_get_cmo_agent(company_id)
+def spawn_cmo(company_id: int, message: str, effort: str = "flash"):
+    logger.info("spawn_cmo called: company_id=%d, message='%.100s', effort=%s", company_id, message, effort)
+    cmo_agent=_get_cmo_agent(company_id, effort=effort)
     result = cmo_agent.invoke(
         {
             "messages": [

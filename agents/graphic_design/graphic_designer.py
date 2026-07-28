@@ -25,9 +25,9 @@ graphic_designer_agent= create_agent(
 logger.info("Graphic designer agent created")
 
 
-def spawn_graphic_designer(company_id: int, prompt: str):
+def spawn_graphic_designer(company_id: int, prompt: str, effort: str = "flash"):
     """Delegate a brand-graphics task to the Graphic Designer agent."""
-    logger.info("spawn_graphic_designer called: company_id=%d, prompt='%.100s'", company_id, prompt)
+    logger.info("spawn_graphic_designer called: company_id=%d, prompt='%.100s', effort=%s", company_id, prompt, effort)
     user_message = (
             f"The company_id for this task is {company_id}. "
             f"Pass this company_id to every tool that accepts it, including the color-palette and create_graphic tools.\n\n"

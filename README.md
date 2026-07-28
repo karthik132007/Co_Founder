@@ -1,8 +1,7 @@
-# Co_Founder — v0.8.1 (Prerelease)
+# Co_Founder — v0.9.0 (Prerelease)
 
 > **📘 For complete system context and understanding, please refer to [`Agents_rules.md`](Agents_rules.md) before contributing or making changes.**
->
-> **📋 Changes since v0.7.2:** [See changelog below](#changelog-v072--v081)
+
 
 ## Contents
 
@@ -35,7 +34,7 @@ AI Co-Founder is a multi-agent AI platform that replaces a human founding team w
 The CEO (`backend/agents/ceo_agent.py`) is a LangChain agent built with `create_agent()` — a custom wrapper around LangChain's agent framework. It is initialized with:
 - **System prompt**: A detailed persona describing the CEO's role, decision-making style, and constraint rules
 - **Tool registry**: 10+ tools that the CEO dynamically selects via LLM reasoning
-- **LLM backend**: OpenRouter with model selection via `get_best_llm(system_prompt)` — picks DeepSeek, GPT-OSS, Gemma, or GLM based on context
+- **LLM backend**: OpenRouter with effort-based model selection via `get_best_llm(tasks, effort)` — picks DeepSeek, GLM, GPT-OSS, Gemma, or MIMO based on task type and effort level (flash/mid/max)
 
 **Decision loop**:
 1. User message received via `POST /api/chat`
@@ -47,14 +46,14 @@ The CEO (`backend/agents/ceo_agent.py`) is a LangChain agent built with `create_
 ### Sub-Agent Architecture
 Each sub-agent follows a common pattern:
 - **Specialized system prompt** with domain expertise
-- **Judge Agent reflection loop**: Output is scored 1–10; if < 8/10, the agent revises with Judge's critique
+- **Judge Agent reflection loop**: Effort-based — flash: 0 reflections, mid: 1, max: 2. Output scored 1–10; if below threshold, agent revises with Judge's critique
 - **Temperature 0.7** for creative tasks (writer), **0.2** for analytical (data analyst)
 
 | Agent | File | Tools / Backend | Judge Loop |
 |---|---|---|---|
-| Researcher | `agents/researcher/researcher.py` | Tavily web search API | ✅ < 7/10 revises |
-| Writer | `agents/util_agents/writer/writer.py` | Direct LLM generation | ✅ < 8/10 revises |
-| CMO Marketing | `agents/marketing/cmo.py` | SerpAPI (Trends, News, Shopping) + web search | ✅ < 8/10 revises |
+| Researcher | `agents/researcher/researcher.py` | Tavily web search API | ✅ effort-based |
+| Writer | `agents/util_agents/writer/writer.py` | Direct LLM generation | ✅ effort-based |
+| CMO Marketing | `agents/marketing/cmo.py` | SerpAPI (Trends, News, Shopping) + web search | ❌ |
 | Data Analyst | `agents/data_analyst/data_agent.py` | e2b code sandbox (Python, Pandas, Matplotlib) | ❌ (direct execution) |
 | Graphic Designer | `agents/graphic_design/graphic_designer.py` | OpenRouter `google/gemini-2.5-flash-image`, color palette tools | ❌ (direct generation) |
 | Judge | `agents/judge/llm_as_judge.py` | LLM-as-Judge prompt (GPT-OSS-120B) | N/A (evaluator) |
@@ -267,7 +266,7 @@ Each agent prompt is defined as a module-level constant (e.g., `RESEARCHER_SYSTE
 | UI Animation | framer-motion 12.42.0 |
 | Icons | lucide-react 1.21.0 |
 | Markdown | react-markdown 10.1.0, remark-gfm 4.0.1 |
-| LLM Provider | OpenRouter (DeepSeek, GPT-OSS, Gemma, GLM, text-embedding-3-small) |
+| LLM Provider | OpenRouter (DeepSeek, GLM, GPT-OSS 120b/20b, Gemma, Morph, text-embedding-3-small) |
 | Web Search | Tavily Search API |
 | Market Data | SerpAPI (Google Trends, Google News, Google Shopping) |
 | Vector Search | Supabase pgvector (cosine similarity + keyword fusion) |
@@ -295,9 +294,37 @@ Each agent prompt is defined as a module-level constant (e.g., `RESEARCHER_SYSTE
 
 ## Performance Improvements
 
-Redis caching and in-memory agent caching were added in v0.8.1. All caches use **best-effort fallback** — if Redis is unavailable, the system degrades gracefully to the original Supabase/API calls.
+### Effort-Based Execution (v0.9.0)
 
-### Cache Strategy
+Every chat request accepts an `effort` parameter (⚡ Flash / ⚖️ Mid / 🎯 Max) that controls the entire agent pipeline:
+
+| Aspect | ⚡ Flash | ⚖️ Mid | 🎯 Max |
+|--------|---------|--------|-------|
+| CEO model | DeepSeek | GLM (tool-use) | GLM (tool-use) |
+| Researcher reflections | 0 | 1 | 2 |
+| Writer reflections | 0 | 1 | 2 |
+| Writing/Creative model | DeepSeek | DeepSeek | GPT_OSS 120b |
+| Classification model | MIMO 20b | MIMO 20b | MIMO 20b |
+| Chat memory generation | ❌ skipped | ✅ | ✅ |
+| Title generation | ❌ skipped | ✅ | ✅ |
+| Expected latency | ~30-60s | ~2-4min | ~5-7min |
+
+**Frontend**: Dropdown selector in the chat input bar — no text input needed. Defaults to Flash for fastest responses.
+
+**Model selection** is handled by `get_best_llm(tasks, effort)` in `agents/helpers/choose_llm.py`. Each effort level maps task combinations to the optimal OpenRouter model based on actual model capabilities.
+
+### Model Selection Strategy
+
+| Model | Role | Best For |
+|-------|------|----------|
+| `deepseek/deepseek-v4-flash` | Default + Flash | Very fast, 1M context, excellent perf |
+| `z-ai/glm-4.5-air` | Max tool-use agents | Strong tool-use, agents & coding |
+| `openai/gpt-oss-120b` | Max writing/creative | High-end reasoning, best quality |
+| `openai/gpt-oss-20b` | Classification | Small reasoning model |
+| `google/gemma-4-26b-a4b-it` | OCR | General reasoning, multimodal, MoE |
+| `morph/morph-v3-fast` | Reserved | File-editing engine — not a general LLM |
+
+### Redis & Agent Caching (v0.8.1)
 
 | Cache | Key Pattern | TTL | Location |
 |-------|------------|-----|----------|
@@ -306,7 +333,7 @@ Redis caching and in-memory agent caching were added in v0.8.1. All caches use *
 | Chat sessions list | `chat_sessions:{id}` | 2min | `backend/db/get_from_sql.py` |
 | Session messages | `session_msgs:{id}` | 30s | `backend/db/get_from_sql.py` |
 | Embeddings | `embedding:{sha256}` | 1h | `RAG_Engine/embeddings.py` |
-| CEO agent instance | In-memory per `company_id` | ∞ | `agents/CEO/CEO.py` |
+| CEO agent instance | In-memory per `(company_id, effort)` | ∞ | `agents/CEO/CEO.py` |
 
 ### Measured Impact (real `logs.log` timestamps)
 
@@ -332,7 +359,7 @@ After:  "best selling product" → Data Analyst → reads CSV → actual data an
 
 ## Status
 
-Functional end-to-end prerelease (v0.8.1). The core chat loop, multi-agent system, RAG pipeline, file management, and onboarding flow are operational. Known gaps:
+Functional end-to-end prerelease (v0.9.0). The core chat loop, multi-agent system, RAG pipeline, file management, and onboarding flow are operational. Known gaps:
 - **Web Developer agent — coming soon** (not yet active; shown as a preview in the UI)
 - **Finance Advisor agent — coming soon** (not yet active; shown as a preview in the UI)
 - Settings page is a placeholder
@@ -342,35 +369,28 @@ Functional end-to-end prerelease (v0.8.1). The core chat loop, multi-agent syste
 - CORS hardcoded to localhost
 - Supabase free tier REST API adds 3-7s latency per RPC call (embedding serialization overhead)
 
-## Changelog (v0.7.2 → v0.8.1)
+## Changelog (v0.8.1 → v0.9.0)
 
-### Bug Fixes
-- **CRITICAL: Conversation history was never passed to the CEO.** DB column is `message`, but `talk_to_ceo()` read `turn.get("content")` — always `None`, all history silently dropped. Fixed to `turn.get("content") or turn.get("message")`.
-- **`match_chat_memories` RPC function was missing on Supabase.** Created `schemas/match_chat_memories.sql`; previously every memory fetch fell back to local cosine similarity with 3-4s timeout penalty.
-- **MCQ answer wrapper polluted LLM context.** Frontend sent `Answering your question "...": answer` — now sends raw answer only.
-- **Agent routing**: "What is my best selling product" misrouted to Researcher (web search) instead of Data Analyst (CSV analysis). Added AGENT ROUTING GUIDE with per-agent examples, anti-patterns, and 6 routing rules.
-- **Redis `get_company_id` crash**: Referenced removed module-level variable → `NameError`. Fixed to `_get_redis()` per function.
-- **Redis cache logs invisible**: 17 cache logs at `logger.debug()` but root at `INFO`. Changed to `logger.info()`.
+### Effort-Based Execution System
+- **End-to-end effort pipeline**: flash (fastest), mid (balanced), max (highest quality)
+- **Frontend**: Dropdown selector (⚡ Flash / ⚖️ Mid / 🎯 Max) in chat input bar, defaults to Flash
+- **Backend API**: `/chat` endpoint accepts `effort` parameter, validates and passes through
+- **Model selection**: `get_best_llm(tasks, effort)` selects models based on task type + effort level
+- **Reflection control**: flash: 0 reflections, mid: 1, max: 2 for Researcher and Writer agents
+- **Chat memory + title**: Skipped in flash mode for speed; enabled in mid/max
 
-### New Features
-- **Redis caching layer** — 5 cache types (company data, user mapping, sessions, messages, embeddings) with best-effort fallback. See [Performance Improvements](#performance-improvements) for measured 70-100% speedups.
-- **In-memory CEO agent cache** — agent cached per `company_id`, zero rebuild on repeat requests.
-- **Copy button** on every assistant message; code blocks have dedicated copy buttons.
-- **CEO output formatting** — deliverables wrapped in `` ```text `` for easy extraction.
+### Model Selection Overhaul
+- **Model enum restructured** based on actual OpenRouter model capabilities:
+  - `MIMO` → `openai/gpt-oss-20b` (small reasoning model for classification)
+  - Added `MORPH = morph/morph-v3-fast` (file-editing engine — NOT used for general LLM tasks)
+  - `GPT_OSS = openai/gpt-oss-120b` retained for high-end reasoning (max writing/creative, judge)
+- **GLM (z-ai/glm-4.5-air)** now used for tool-use agents at mid/max (CEO, CMO)
+- **DeepSeek** is the flash-mode default — "very fast, excellent price/performance"
+- **MORPH excluded** from all mappings — it's a code-editing engine, not a general LLM
+- CEO tasks updated to `[PLANNING, RESEARCH, WRITING]` to match GLM tool-use path
 
-### Hardening
-- **MCQ abuse guard**: after 2 MCQs per session, `[SYSTEM DIRECTIVE]` injected to force execution.
-- **CEO prompt**: MCQ limit "2 TOTAL per task". Tool description has "HARD LIMIT".
-- **Chat memory decoupled**: `knowledge_request` searches documents only. Memories injected once at entry.
-- **Data Analyst self-sufficiency**: CEO no longer pre-searches files — Data Analyst discovers them on its own.
+### Agent Caching
+- **CEO agent cache keyed by `(company_id, effort)`** — separate cached agent per effort level
+- **CMO agent** passes effort to `get_best_llm()` (CMO is recreated per call, no cache issue)
+- Module-level specialist agents (Researcher, Writer, Data Analyst, Graphic Designer) default to flash-appropriate models
 
-### Agent Prompts
-- **`ceo_prompts.py`**: AGENT ROUTING GUIDE (~60 lines) — per-agent "USE FOR", anti-patterns, 6 rules, 3 examples.
-- **`CEO.py` tool descriptions**: `research_request` now "Search the WEB" / "Does NOT have access to company files"; `data_analysis_request` now "Use for: best/top/worst selling products" / "reads YOUR files".
-
-### New Files
-- `backend/db/redis_client.py` — Redis singleton with lazy connection
-
-## Contributing
-
-Anyone can contribute. Please follow the agent architecture rules in [`Agents_rules.md`](Agents_rules.md) and maintain code style consistency with the existing codebase. If everything looks good, we will accept the PR.

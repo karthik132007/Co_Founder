@@ -13,6 +13,8 @@ import {
   MessageSquare,
   Copy,
   Check,
+  Zap,
+  ChevronDown,
 } from "lucide-react";
 import { fetchSessionMessages, sendChatMessage } from "@/lib/api";
 import type { Clarification } from "@/lib/api";
@@ -32,6 +34,8 @@ type Message = {
   clarification?: Clarification;
   imageDataUrl?: string;
 };
+
+type Effort = "flash" | "mid" | "max";
 
 type ChatProps = {
   user: SessionUser;
@@ -378,6 +382,7 @@ export default function Chat({
   const [sessionId, setSessionId] = useState<string | null>(initialSessionId);
   const [chatTitle, setChatTitle] = useState<string | null>(initialTitle);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [effort, setEffort] = useState<Effort>("flash");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -455,6 +460,7 @@ export default function Chat({
           user.id,
           text,
           sessionId ?? undefined,
+          effort,
         );
 
         if (response.is_new_session || !sessionId) {
@@ -498,7 +504,7 @@ export default function Chat({
         inputRef.current?.focus();
       }
     },
-    [user.id, sessionId, onSessionCreated],
+    [user.id, sessionId, onSessionCreated, effort],
   );
 
   const handleSend = useCallback(async () => {
@@ -757,6 +763,20 @@ export default function Chat({
       {/* Input */}
       <div className="shrink-0 pt-4 pb-2 relative z-10 before:absolute before:inset-0 before:bg-gradient-to-t before:from-[#fafafa] before:via-[#fafafa]/90 before:to-transparent before:-z-10 before:pointer-events-none">
         <div className="bg-white border border-[#e5e7eb] rounded-2xl px-4 py-2.5 flex items-center gap-3 focus-within:border-[#4f46e5] focus-within:ring-4 focus-within:ring-[#4f46e5]/10 transition-all shadow-[0_2px_12px_-4px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)]">
+          {/* Effort dropdown */}
+          <div className="relative shrink-0">
+            <select
+              value={effort}
+              onChange={(e) => setEffort(e.target.value as Effort)}
+              disabled={sending}
+              className="appearance-none bg-[#f9fafb] border border-[#e5e7eb] rounded-xl pl-3 pr-8 py-2 text-xs font-semibold text-[#374151] cursor-pointer outline-none focus:border-[#4f46e5] hover:border-[#4f46e5]/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <option value="flash">⚡ Flash</option>
+              <option value="mid">⚖️ Mid</option>
+              <option value="max">🎯 Max</option>
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-[#9ca3af] pointer-events-none" />
+          </div>
           <input
             ref={inputRef}
             type="text"
@@ -786,7 +806,11 @@ export default function Chat({
           </button>
         </div>
         <p className="text-[11px] text-[#9ca3af] text-center mt-3">
-          Your CEO agent coordinates strategy and delegates to specialist agents.
+          {effort === "flash"
+            ? "Flash — instant responses, no reflections. Best for quick tasks."
+            : effort === "mid"
+              ? "Mid — balanced speed & quality with light review."
+              : "Max — full agent pipeline with reflections. Highest quality."}
         </p>
       </div>
     </div>

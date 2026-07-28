@@ -13,9 +13,9 @@ from backend.db.insert_to_sql import update_chat_session_title
 logger = logging.getLogger(__name__)
 
 
-def chat(company_id:int, user_message:str, history:list[dict] | None = None):
+def chat(company_id:int, user_message:str, history:list[dict] | None = None, effort: str = "flash"):
     try:
-        result = talk_to_ceo(company_id, user_message, history)
+        result = talk_to_ceo(company_id, user_message, history, effort=effort)
         return result
     except Exception:
         logger.exception("chat failed for company_id=%s", company_id)
