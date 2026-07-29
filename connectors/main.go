@@ -1,5 +1,0 @@
-package connectors
-
-func main(){
-	
-}

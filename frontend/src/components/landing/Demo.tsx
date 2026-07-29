@@ -91,6 +91,12 @@ export function Demo() {
     return () => clearTimeout(timer);
   }, [running]);
 
+  // Auto-scroll terminal to bottom as text types in
+  useEffect(() => {
+    const el = termRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [lines]);
+
   // Start when in view
   useEffect(() => {
     const el = root.current;
@@ -187,7 +193,7 @@ export function Demo() {
 
         <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
           {/* Terminal */}
-          <div className="terminal relative rounded-2xl glass-strong p-6 md:p-8 min-h-[420px] overflow-hidden">
+          <div className="terminal relative rounded-2xl glass-strong p-6 md:p-8 h-[420px] overflow-y-auto">
             <div className="flex items-center gap-2 mb-6">
               <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
               <span className="h-3 w-3 rounded-full bg-[#febc2e]" />

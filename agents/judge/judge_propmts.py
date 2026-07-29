@@ -32,6 +32,21 @@ The score must be from 0 to 10.
 Pass only if score is 8 or higher.
 """
 
+
+def get_judge_to_researcher_prompt_flash(v1: any, task: str) -> str:
+    return f"""
+Judge this research output against the task. Rate 0-10.
+
+Task: {task}
+
+Output: {v1}
+
+Criteria: relevance, accuracy, recency, source quality, completeness, uncertainty handling, no hallucinations.
+
+Return JSON: {{"score": 0, "passed": false, "critique": "...", "suggestions": "...", "missing_questions": [...]}}
+Pass if score >= 8.
+"""
+
 def get_judge_to_writer_prompt(v1: any, task: str) -> str:
     return f"""
 You are judging a Writer Agent's output.
@@ -74,4 +89,19 @@ The score must be between 0 and 10.
 Set "passed" to true only if the score is 8 or higher.
 
 Return ONLY the JSON object.
+"""
+
+
+def get_judge_to_writer_prompt_flash(v1: any, task: str) -> str:
+    return f"""
+Judge this writer output against the task. Rate 0-10.
+
+Task: {task}
+
+Output: {v1}
+
+Criteria: follows task, clear & concise, well-structured, appropriate tone, correct grammar, no filler, no invented facts, actionable.
+
+Return JSON: {{"score": 0, "passed": false, "critique": "...", "suggestions": "..."}}
+Pass if score >= 8. Scoring: 9-10=excellent, 8=very good, 6-7=needs revision, <6=rewrite.
 """
