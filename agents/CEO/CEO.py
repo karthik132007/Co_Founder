@@ -3,26 +3,22 @@ The main CEO agent that interacts with the user and delegates work to specialist
 """
 import json
 import logging
-import sys
+from agents.CEO import ceo_state
 from pathlib import Path
 
 from langchain.agents import create_agent
-from langchain.tools import tool
 
+from agents.CEO.ceo_resources import get_session_resources,init_session_resources,format_resources_for_prompt,consume_resource
 logger = logging.getLogger(__name__)
 
-from agents.CEO.ceo_agent_tools import ask_mcq_for_user, view_all_agents
+from agents.CEO.ceo_agent_tools import _build_ceo_tools
 from agents.helpers.choose_llm import Task, get_best_llm
-from agents.CEO.ceo_prompts import get_ceo_system_prompt
+from agents.CEO.ceo_prompts import get_ceo_system_prompt,get_ceo_system_prompt_flash
 from backend.db.get_from_sql import get_company_data
-from agents.marketing.cmo import spawn_cmo
-from agents.researcher.researcher import spawn_researcher
-from agents.util_agents.writer.writer import spawn_writer
-from agents.data_analyst.data_agent import spawn_data_analyst
-from agents.graphic_design.graphic_designer import spawn_graphic_designer
+
 from RAG_Engine.chat_memory import get_chat_memories_by_query
 
-
+from agents.CEO.ceo_agent_tools import _build_user_message_with_memories,_build_ceo_tools
 def _extract_content(response):
     content = response["messages"][-1].content
     return content
@@ -43,131 +39,16 @@ def _get_relevant_chat_memories(company_id: int, query: str, top_k: int = 5):
         return []
 
 
-def _format_chat_memories(memories: list[dict]) -> str:
-    if not memories:
-        return "No relevant chat memories found."
-    lines = []
-    for index, memory in enumerate(memories, start=1):
-        title = memory.get("title") or ""
-        category = memory.get("category") or "uncategorized"
-        importance = memory.get("importance") or "unknown"
-        lines.append(f"{index}. [{importance} | {category}] {title}")
-    result = "\n".join(lines)
-    return result
-
-
-def _build_user_message_with_memories(message: str, memories: list[dict]) -> str:
-    return f"""
-Hey CEO, here are retrieved relevant memories from past conversations with the founder:
-{_format_chat_memories(memories)}
-
-Use these memories as context when relevant to the founder's current message below. Do NOT mention that memories were retrieved — just use them naturally.
-
-Founder's message:
-{message}
-""".strip()
-
-
-def _build_ceo_tools(company_id: int):
-    @tool(
-        "knowledge_request",
-        description="Search the company's document knowledge base (files, chunks). Does NOT search chat memories — those are injected automatically.",
-    )
-    def knowledge_request(query: str, top_k: int = 5):
-        logger.info("knowledge_request called: query='%s', top_k=%d, company_id=%d", query, top_k, company_id)
-        repo_root = Path(__file__).resolve().parents[2]
-        rag_dir = repo_root / "RAG_Engine"
-        for path in (repo_root, rag_dir):
-            path_str = str(path)
-            if path_str not in sys.path:
-                sys.path.insert(0, path_str)
-
-        from RAG_Engine.rag import kg
-
-        # Chat memories are already injected into the user prompt by talk_to_ceo.
-        # Only search documents here to avoid duplicate/conflicting memory results.
-        results = kg.search(company_id=company_id, query=query, top_k=top_k, include_chat_memory=False)
-        logger.info("RAG search returned %d results for query: %s", len(results), query)
-
-        return json.dumps(
-            {
-                "query": query,
-                "top_k": top_k,
-                "results": results,
-            },
-            default=str,
-        )
-
-    @tool(
-        "research_request",
-        description="Search the WEB for external/public information. Use for: market research, competitor analysis, industry trends, regulations, benchmarks. Does NOT have access to company files — use data_analysis_request for any question about uploaded CSV/Excel/sales data.",
-    )
-    def research_request(task: str):
-        logger.info("research_request called: task='%s', effort=%s", task, _current_effort)
-        result = spawn_researcher(task, effort=_current_effort)
-        logger.info("research_request completed for task: '%s'", task)
-        return result
-
-    @tool(
-        "writing_request",
-        description="Delegate drafting and polishing to the Writer agent.",
-    )
-    def writing_request(task: str):
-        logger.info("writing_request called: task='%s', effort=%s", task, _current_effort)
-        result = spawn_writer(task, effort=_current_effort)
-        logger.info("writing_request completed for task: '%s'", task)
-        return result
-
-    @tool(
-        "marketing_request",
-        description="Delegate market strategy and growth work to the CMO agent.",
-    )
-    def marketing_request(task: str):
-        logger.info("marketing_request called: task='%s', company_id=%d, effort=%s", task, company_id, _current_effort)
-        result = spawn_cmo(company_id, task, effort=_current_effort)
-        logger.info("marketing_request completed for task: '%s'", task)
-        return result
-
-    @tool(
-        "data_analysis_request",
-        description="Analyze company data files (CSV, Excel, etc.). Use for: best/top/worst selling products, sales trends, revenue analysis, profit margins, any question about company-uploaded spreadsheets. This agent reads YOUR files and runs Python — use it for ANY question about your own company data.",
-    )
-    def data_analysis_request(task: str):
-        logger.info("data_analysis_request called: task='%s', company_id=%d, effort=%s", task, company_id, _current_effort)
-        result = spawn_data_analyst(company_id, task, effort=_current_effort)
-        logger.info("data_analysis_request completed for task: '%s'", task)
-        return result
-
-    @tool(
-        "graphic_design_request",
-        return_direct=True,
-        description="Delegate branded visual assets and color-palette work to the Graphic Designer agent.",
-    )
-    def graphic_design_request(task: str):
-        logger.info("graphic_design_request called: task='%s', company_id=%d, effort=%s", task, company_id, _current_effort)
-        result = spawn_graphic_designer(company_id, task, effort=_current_effort)
-        logger.info("graphic_design_request completed for task: '%s'", task)
-        return result
-
-    return [
-        view_all_agents,
-        ask_mcq_for_user,
-        knowledge_request,
-        research_request,
-        writing_request,
-        marketing_request,
-        data_analysis_request,
-        graphic_design_request,
-    ]
 
 # ── In-memory agent cache ─────────────────────────────────────────────────
 # LangChain agents can't be pickled (closure tools, live connections), so we
 # keep them in a process-local dict.  company_data is cached in Redis separately.
 _ceo_agent_cache: dict[tuple, object] = {}  # keyed by (company_id, effort)
 
-# Module-level effort setting, set by talk_to_ceo before agent invocation.
-# Tool closures read this instead of capturing effort so the agent stays cacheable.
-_current_effort: str = "flash"
+# Module-level settings, set by talk_to_ceo before agent invocation.
+# Tool closures read these instead of capturing them so the agent stays cacheable.
+current_effort: str = "flash"
+_current_session_id: str = ""
 
 
 def invalidate_ceo_agent_cache(company_id: int | None = None) -> int:
@@ -200,11 +81,13 @@ def _get_ceo_agent(company_id: int, effort: str = "flash"):
     if not company_data:
         logger.error("No company found for company_id=%d", company_id)
         raise ValueError(f"No company found for company_id={company_id}")
-
+    system_prompt = get_ceo_system_prompt(company_data)
+    if effort=="flash":
+        system_prompt = get_ceo_system_prompt_flash(company_data)
 
     ceo_agent = create_agent(
         name="CEO Agent",
-        system_prompt=get_ceo_system_prompt(company_data),
+        system_prompt=system_prompt,
         model=get_best_llm([Task.PLANNING, Task.RESEARCH, Task.WRITING], effort=effort),
         tools=_build_ceo_tools(company_id),
     )
@@ -213,7 +96,8 @@ def _get_ceo_agent(company_id: int, effort: str = "flash"):
     return ceo_agent
 
 
-def talk_to_ceo(company_id: int, message: str, history: list[dict] | None = None, effort: str = "flash"):
+
+def talk_to_ceo(company_id: int, message: str, history: list[dict] | None = None, effort: str = "flash", session_id: str = ""):
     """Talk to the CEO agent.
 
     Returns either a plain string reply, or a dict payload
@@ -223,6 +107,9 @@ def talk_to_ceo(company_id: int, message: str, history: list[dict] | None = None
     effort: "flash" (fastest, skips chat memories + reflections),
             "mid" (balanced),
             "max" (full quality).
+
+    session_id: when provided, tool-call and LLM events are streamed
+                to the WebSocket observability layer.
     """
     logger.info("talk_to_ceo called: company_id=%d, message='%s', history_len=%d, effort=%s", company_id, message[:100], len(history or []), effort)
     ceo_agent = _get_ceo_agent(company_id, effort=effort)
@@ -232,9 +119,25 @@ def talk_to_ceo(company_id: int, message: str, history: list[dict] | None = None
         chat_memories = _get_relevant_chat_memories(company_id, message)
     user_message = _build_user_message_with_memories(message, chat_memories)
 
+    if session_id:
+        existing = get_session_resources(session_id)
+        if existing is None:
+            init_session_resources(session_id, effort)
+        # If effort changed mid-session, re-init (or you could choose to preserve)
+        elif existing.get("effort") != effort:
+            init_session_resources(session_id, effort)
+    
+    
+
     # Build the message list: prior conversation turns + current message.
     # Cap at the last 20 turns to keep context manageable.
     messages = []
+
+    if session_id:
+        resource_prompt = format_resources_for_prompt(session_id)
+        if resource_prompt:
+            messages.append({"role": "system", "content": resource_prompt})
+
     if history:
         recent = history[-20:]
         for turn in recent:
@@ -245,14 +148,23 @@ def talk_to_ceo(company_id: int, message: str, history: list[dict] | None = None
                 messages.append({"role": role, "content": content.strip()})
     messages.append({"role": "user", "content": user_message})
 
-    # Set module-level effort so tool closures can read it (avoids breaking agent cache)
-    global _current_effort
-    _current_effort = effort
+
+
+    # Set module-level state so tool closures can read it (avoids breaking agent cache)
+    ceo_state._current_effort = effort
+    ceo_state._current_session_id = session_id
+
+    # ── Observability callback ──────────────────────────────────────
+    invoke_config: dict = {}
+    if session_id:
+        from agents.helpers.observability import ObservabilityCallback
+        invoke_config["callbacks"] = [ObservabilityCallback(session_id)]
 
     result = ceo_agent.invoke(
         {
             "messages": messages
-        }
+        },
+        config=invoke_config if invoke_config else None,
     )
     # Check tool outputs for image_generated payload (from graphic_design_request)
     image_payload = _find_image_generated_payload(result)

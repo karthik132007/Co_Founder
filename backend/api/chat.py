@@ -1,6 +1,10 @@
+import asyncio
+import contextlib
 import logging
 
-from fastapi import APIRouter, BackgroundTasks, Form, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Form, HTTPException, Query, WebSocket
+from starlette.websockets import WebSocketDisconnect
+
 from main import chat, store_chat_memory, store_chat_title
 from backend.db.get_from_sql import get_company_id, get_chats_in_session, get_chat_sessions
 from backend.db.insert_to_sql import create_chat_session, add_message_to_session
@@ -9,6 +13,12 @@ from uuid import uuid4
 from typing import Optional
 from agents.helpers.utils import base64_to_img
 from backend.db.put_to_drive import save_generated_graphic
+from backend.api.connection_manager import manager, event_bus
+from backend.api.observability_events import (
+    make_session_start,
+    make_session_end,
+    make_error as make_obs_error,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -98,7 +108,12 @@ def chat_with_user(
             f"User message: {message}"
         )
 
-    reply = chat(company_id, ceo_message, history, effort=effort)
+    try:
+        reply = chat(company_id, ceo_message, history, effort=effort, session_id=session_id)
+    finally:
+        # Signal the WebSocket drain loop that no more events are coming.
+        # Safe to call even if nobody is listening on the WS for this session.
+        event_bus.send_sentinel(session_id)
 
     # CEO may return a clarification request (MCQ) instead of a text reply.
     if isinstance(reply, dict) and reply.get("type") == "clarification_request":
@@ -246,3 +261,55 @@ def delete_session(
         raise HTTPException(status_code=404, detail="Session not found")
 
     return {"status": "success", "message": "Chat session deleted"}
+
+
+@router.websocket("/chat/ws")
+async def show_internals(ws: WebSocket, session_id: str = Query(...)):
+    """Stream internal agent activity (tool calls, subagent spawns, LLM tokens)
+    in real time for a specific chat session.
+
+    Connect from the frontend:
+        const ws = new WebSocket(`ws://host:8000/chat/ws?session_id=${sid}`);
+
+    Receives JSON objects matching ``ObservabilityEvent.to_json()``.
+    """
+    logger.info("WS client connecting — session_id=%s", session_id)
+
+    # Lazy-initialise the event loop reference on first connection.
+    loop = asyncio.get_running_loop()
+    event_bus.set_event_loop(loop)
+
+    await manager.connect(session_id, ws)
+    await manager.broadcast(session_id, make_session_start(session_id))
+
+    # ── heartbeat: keepalive ping every 30 s ────────────────────────────
+    async def _heartbeat() -> None:
+        while True:
+            await asyncio.sleep(30)
+            try:
+                await manager.broadcast_heartbeat(session_id)
+            except Exception:
+                break
+
+    heartbeat_task = asyncio.create_task(_heartbeat())
+
+    try:
+        # Drain events from the bus and forward to all listeners.
+        # Blocks until event_bus.send_sentinel() is called by chat_with_user.
+        async for event in event_bus.drain(session_id):
+            await manager.broadcast(session_id, event)
+
+        # Sent a session_end so the frontend knows the stream is done.
+        await manager.broadcast(session_id, make_session_end(session_id))
+
+    except WebSocketDisconnect:
+        logger.info("WS client disconnected — session_id=%s", session_id)
+    except Exception:
+        logger.exception("WS error for session_id=%s", session_id)
+        await manager.broadcast_error(session_id, "Internal stream error")
+    finally:
+        heartbeat_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await heartbeat_task
+        manager.disconnect(session_id, ws)
+        logger.info("WS cleanup complete — session_id=%s", session_id)

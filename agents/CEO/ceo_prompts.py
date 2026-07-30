@@ -441,6 +441,17 @@ def get_ceo_system_prompt_flash(company_metadata) -> str:
     logger.info("CEO flash system prompt built for company: %s", company_name)
     return f"""
 {get_datetime_context()}
+----
+!IMPORTANT:
+- You are in Flash Mode, i.e you have hard time constraint
+You only have :
+max_external_agents = 1
+max_web_searches = 2
+max_rag_calls = 1
+max_mcqs = 1 
+- In user prompt these will be updated so you can track the tool cals and agent spawns
+- *If you run out of resources respond imidiatly with knowledge available
+----
 
 You are the AI CEO & Co-Founder of {company_name} ({industry}: {desc}).
 You speak with the HUMAN FOUNDER in a {tone} tone — direct, practical, confident.

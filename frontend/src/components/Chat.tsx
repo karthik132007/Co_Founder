@@ -19,6 +19,7 @@ import {
 import { fetchSessionMessages, sendChatMessage } from "@/lib/api";
 import type { Clarification } from "@/lib/api";
 import type { SessionUser } from "@/lib/session";
+import AgentTimeline from "@/components/AgentTimeline";
 
 const ACCENT = "#4f46e5";
 
@@ -813,6 +814,9 @@ export default function Chat({
               : "Max — full agent pipeline with reflections. Highest quality."}
         </p>
       </div>
+
+      {/* Agent observability trace panel */}
+      <AgentTimeline sessionId={sessionId} />
     </div>
   );
 }
