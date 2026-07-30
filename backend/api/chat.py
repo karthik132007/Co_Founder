@@ -24,8 +24,15 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-# Hard limit: after this many MCQs in a session, we force the CEO to execute.
-_MAX_MCQ_PER_SESSION = 2
+
+def _get_mcq_limit_for_effort(effort: str) -> int:
+    """Return the MCQ limit matching the resource system for the given effort."""
+    if effort == "flash":
+        return 1
+    elif effort == "mid":
+        return 2
+    else:  # max
+        return 3
 
 
 def _count_mcqs_in_history(history: list[dict]) -> int:
@@ -76,8 +83,7 @@ def chat_with_user(
         # exists and as conversation history for the CEO.
         history = get_chats_in_session(session_id)
         if not history:
-            logger.warning("Session %s not found — creating new session", session_id)
-            session_id = str(uuid4())
+            logger.info("Session %s not found — creating it now", session_id)
             title = "New Chat"
             create_chat_session(session_id, company_id, title=title)
             if effort != "flash":
@@ -92,17 +98,19 @@ def chat_with_user(
     # ── MCQ abuse guard ──
     # If the CEO has already asked too many questions in this session,
     # inject a hard system directive into the message to force execution.
+    # Limit matches the per-effort resource system (ceo_resources.py).
     mcq_count = _count_mcqs_in_history(history)
+    mcq_limit = _get_mcq_limit_for_effort(effort)
     ceo_message = message
-    if mcq_count >= _MAX_MCQ_PER_SESSION:
+    if mcq_count >= mcq_limit:
         logger.warning(
             "MCQ limit reached (%d/%d) for session_id=%s — injecting execution directive",
-            mcq_count, _MAX_MCQ_PER_SESSION, session_id,
+            mcq_count, mcq_limit, session_id,
         )
         ceo_message = (
             f"[SYSTEM DIRECTIVE — READ THIS FIRST]\n"
             f"You have already asked {mcq_count} clarification questions in this session. "
-            f"The hard limit is {_MAX_MCQ_PER_SESSION}. "
+            f"The hard limit is {mcq_limit}. "
             f"You MUST execute the task NOW with the information you have. "
             f"Do NOT call ask_mcq_for_user again. Delegate immediately.\n\n"
             f"User message: {message}"
@@ -120,8 +128,11 @@ def chat_with_user(
         logger.info("CEO returned clarification request for session_id=%s", session_id)
         question = reply.get("question", "")
         options = reply.get("options", [])
-        # Store the question so conversation history stays coherent.
+        multi_select = reply.get("multi_select", False)
+        # Store as text with multi_select flag preserved for reload
         stored_text = question
+        if multi_select:
+            stored_text = "[multi]\n" + stored_text
         if options:
             stored_text += "\n\nOptions: " + " | ".join(options)
         add_message_to_session(session_id, "assistant", stored_text)
@@ -294,13 +305,15 @@ async def show_internals(ws: WebSocket, session_id: str = Query(...)):
     heartbeat_task = asyncio.create_task(_heartbeat())
 
     try:
-        # Drain events from the bus and forward to all listeners.
-        # Blocks until event_bus.send_sentinel() is called by chat_with_user.
-        async for event in event_bus.drain(session_id):
-            await manager.broadcast(session_id, event)
+        # Keep the WS alive across multiple queries.
+        # Each query pushes events → sentinel → drain exits → session_end sent →
+        # loop creates a fresh drain queue for the next query.
+        while True:
+            async for event in event_bus.drain(session_id):
+                await manager.broadcast(session_id, event)
 
-        # Sent a session_end so the frontend knows the stream is done.
-        await manager.broadcast(session_id, make_session_end(session_id))
+            # Signal the frontend that this query's stream is complete.
+            await manager.broadcast(session_id, make_session_end(session_id))
 
     except WebSocketDisconnect:
         logger.info("WS client disconnected — session_id=%s", session_id)

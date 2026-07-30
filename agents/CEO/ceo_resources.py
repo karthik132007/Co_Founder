@@ -89,21 +89,24 @@ def format_resources_for_prompt(session_id: str) -> str:
     if state is None:
         return ""
 
-    limits = state["limits"]
-    consumed = state["consumed"]
+    limits = state.get("limits", {})
+    consumed = state.get("consumed", {})
+
+    def _rem(key: str) -> int:
+        return max(0, limits.get(key, 0) - consumed.get(key, 0))
 
     remaining = {
-        "external_agents": limits["max_external_agents"] - consumed["external_agents"],
-        "web_searches": limits["max_web_searches"] - consumed["web_searches"],
-        "rag_calls": limits["max_rag_calls"] - consumed["rag_calls"],
-        "mcqs": limits["max_mcqs"] - consumed["mcqs"],
+        "external_agents": _rem("max_external_agents"),
+        "web_searches": _rem("max_web_searches"),
+        "rag_calls": _rem("max_rag_calls"),
+        "mcqs": _rem("max_mcqs"),
     }
 
     return (
-        f"SESSION RESOURCE BUDGET (effort: {state['effort']}):\n"
-        f"  - External agents remaining: {remaining['external_agents']}/{limits['max_external_agents']}\n"
-        f"  - Web searches remaining:   {remaining['web_searches']}/{limits['max_web_searches']}\n"
-        f"  - RAG/knowledge calls remaining: {remaining['rag_calls']}/{limits['max_rag_calls']}\n"
-        f"  - MCQs remaining:           {remaining['mcqs']}/{limits['max_mcqs']}\n\n"
+        f"SESSION RESOURCE BUDGET (effort: {state.get('effort', 'flash')}):\n"
+        f"  - External agents remaining: {remaining['external_agents']}/{limits.get('max_external_agents', 0)}\n"
+        f"  - Web searches remaining:   {remaining['web_searches']}/{limits.get('max_web_searches', 0)}\n"
+        f"  - RAG/knowledge calls remaining: {remaining['rag_calls']}/{limits.get('max_rag_calls', 0)}\n"
+        f"  - MCQs remaining:           {remaining['mcqs']}/{limits.get('max_mcqs', 0)}\n\n"
         f"IMPORTANT: Do NOT exceed these limits. Once a resource hits 0, you MUST NOT call that tool again."
     )

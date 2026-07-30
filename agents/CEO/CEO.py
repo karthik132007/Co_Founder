@@ -45,11 +45,6 @@ def _get_relevant_chat_memories(company_id: int, query: str, top_k: int = 5):
 # keep them in a process-local dict.  company_data is cached in Redis separately.
 _ceo_agent_cache: dict[tuple, object] = {}  # keyed by (company_id, effort)
 
-# Module-level settings, set by talk_to_ceo before agent invocation.
-# Tool closures read these instead of capturing them so the agent stays cacheable.
-current_effort: str = "flash"
-_current_session_id: str = ""
-
 
 def invalidate_ceo_agent_cache(company_id: int | None = None) -> int:
     """Remove cached CEO agent(s).  Pass a company_id to evict one; pass None to
@@ -150,9 +145,8 @@ def talk_to_ceo(company_id: int, message: str, history: list[dict] | None = None
 
 
 
-    # Set module-level state so tool closures can read it (avoids breaking agent cache)
-    ceo_state._current_effort = effort
-    ceo_state._current_session_id = session_id
+    # Store request state in Redis (thread-safe across any execution context)
+    ceo_state.init_request_state(session_id, effort)
 
     # ── Observability callback ──────────────────────────────────────
     invoke_config: dict = {}

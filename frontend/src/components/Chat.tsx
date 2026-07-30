@@ -13,13 +13,14 @@ import {
   MessageSquare,
   Copy,
   Check,
-  Zap,
   ChevronDown,
 } from "lucide-react";
 import { fetchSessionMessages, sendChatMessage } from "@/lib/api";
 import type { Clarification } from "@/lib/api";
 import type { SessionUser } from "@/lib/session";
-import AgentTimeline from "@/components/AgentTimeline";
+import { useObservability } from "@/lib/observability";
+import type { ToolRun } from "@/lib/observability";
+import AgentTraceInline from "@/components/AgentTimeline";
 
 const ACCENT = "#4f46e5";
 
@@ -34,6 +35,7 @@ type Message = {
   timestamp: number;
   clarification?: Clarification;
   imageDataUrl?: string;
+  traceRuns?: ToolRun[];
 };
 
 type Effort = "flash" | "mid" | "max";
@@ -387,6 +389,9 @@ export default function Chat({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // WebSocket observability — one persistent connection per session
+  const { runs, snapshotRuns, startQuery } = useObservability(sessionId);
+
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
@@ -426,14 +431,42 @@ export default function Chat({
       .then((data) => {
         if (cancelled) return;
         setMessages(
-          data.messages.map((m) => ({
-            id: String(m.id),
-            role: m.role as "user" | "assistant",
-            content: m.content,
-            timestamp: m.created_at
-              ? new Date(m.created_at).getTime()
-              : Date.now(),
-          })),
+          data.messages.map((m) => {
+            const base: Message = {
+              id: String(m.id),
+              role: m.role as "user" | "assistant",
+              content: m.content,
+              timestamp: m.created_at
+                ? new Date(m.created_at).getTime()
+                : Date.now(),
+            };
+            // Parse MCQ clarification from stored "Options:" format
+            if (m.role === "assistant" && m.content.includes("Options:")) {
+              const parts = m.content.split("Options:");
+              let question = (parts[0] ?? "").trim();
+              const optionsStr = (parts[1] ?? "").trim();
+              // Detect [multi] prefix stored by backend
+              let multiSelect = false;
+              if (question.startsWith("[multi]")) {
+                multiSelect = true;
+                question = question.slice(7).trim();
+              }
+              const options = optionsStr
+                .split("|")
+                .map((o) => o.trim())
+                .filter(Boolean);
+              if (question && options.length > 0) {
+                base.clarification = {
+                  question,
+                  options,
+                  allow_custom: true,
+                  multi_select: multiSelect,
+                };
+                base.content = question;
+              }
+            }
+            return base;
+          }),
         );
       })
       .catch((err) => {
@@ -456,19 +489,36 @@ export default function Chat({
       setSending(true);
       setError("");
 
+      // Pre-generate session ID so the WebSocket can connect before the API call
+      let sid = sessionId;
+      if (!sid) {
+        sid = crypto.randomUUID();
+        setSessionId(sid);
+      }
+
+      // Reset trace for this new query + ensure WS is connected
+      startQuery(sid);
+
       try {
         const response = await sendChatMessage(
           user.id,
           text,
-          sessionId ?? undefined,
+          sid,
           effort,
         );
 
+        // Snapshot agent trace runs so they stick to this message
+        const traceRuns = snapshotRuns();
+
         if (response.is_new_session || !sessionId) {
-          setSessionId(response.session_id);
+          // Use the backend's session_id if it differs (should match our pre-generated one)
+          const finalSid = response.session_id || sid;
+          if (finalSid !== sessionId) {
+            setSessionId(finalSid);
+          }
           const title = response.title ?? "Untitled Chat";
           setChatTitle(title);
-          onSessionCreated(response.session_id, title);
+          onSessionCreated(finalSid, title);
         }
 
         if (response.type === "clarification_request" && response.clarification) {
@@ -478,6 +528,7 @@ export default function Chat({
             content: "",
             timestamp: Date.now(),
             clarification: response.clarification,
+            traceRuns: traceRuns.length > 0 ? traceRuns : undefined,
           };
           setMessages((prev) => [...prev, mcqMsg]);
         } else if (response.type === "image_generated" && response.image_data_url) {
@@ -487,6 +538,7 @@ export default function Chat({
             content: response.message ?? "Here is the generated graphic preview.",
             timestamp: Date.now(),
             imageDataUrl: response.image_data_url,
+            traceRuns: traceRuns.length > 0 ? traceRuns : undefined,
           };
           setMessages((prev) => [...prev, imageMsg]);
         } else {
@@ -495,6 +547,7 @@ export default function Chat({
             role: "assistant",
             content: response.message ?? "",
             timestamp: Date.now(),
+            traceRuns: traceRuns.length > 0 ? traceRuns : undefined,
           };
           setMessages((prev) => [...prev, assistantMsg]);
         }
@@ -505,7 +558,7 @@ export default function Chat({
         inputRef.current?.focus();
       }
     },
-    [user.id, sessionId, onSessionCreated, effort],
+    [user.id, sessionId, onSessionCreated, effort, snapshotRuns, startQuery],
   );
 
   const handleSend = useCallback(async () => {
@@ -697,6 +750,11 @@ export default function Chat({
                   >
                     {formatTime(msg.timestamp)}
                   </span>
+
+                  {/* Inline agent trace for this assistant message */}
+                  {msg.role === "assistant" && msg.traceRuns && msg.traceRuns.length > 0 && (
+                    <AgentTraceInline runs={msg.traceRuns} />
+                  )}
                 </div>
 
                 {msg.role === "user" && (
@@ -735,6 +793,25 @@ export default function Chat({
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* Live agent trace while CEO is processing */}
+          {sending && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex gap-3"
+            >
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+                style={{ background: ACCENT }}
+              >
+                <Sparkles className="w-4 h-4 text-white" />
+              </div>
+              <div className="min-w-0 max-w-[85%] py-1.5 flex-1">
+                <AgentTraceInline runs={runs} isStreaming />
+              </div>
+            </motion.div>
+          )}
 
           {/* Error */}
           <AnimatePresence>
@@ -814,9 +891,6 @@ export default function Chat({
               : "Max — full agent pipeline with reflections. Highest quality."}
         </p>
       </div>
-
-      {/* Agent observability trace panel */}
-      <AgentTimeline sessionId={sessionId} />
     </div>
   );
 }

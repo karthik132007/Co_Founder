@@ -110,12 +110,17 @@ class SessionEventBus:
     Sync call-sites call ``push(event)`` — non-blocking, thread-safe.
     Async WebSocket code iterates ``drain(session_id)`` to consume.
 
-    Internally backed by per-session ``asyncio.Queue`` instances.
-    A ``None`` sentinel signals "no more events for this session".
+    Each ``drain()`` call creates its own queue; events are fanned out
+    to all active drain loops for the session.  A ``None`` sentinel is
+    pushed to each queue when ``send_sentinel()`` is called, signaling
+    the corresponding drain loop to stop.
+
+    Queues are cleaned up when the drain loop exits (normally or via
+    exception in the caller's finally block).
     """
 
     def __init__(self) -> None:
-        self._queues: dict[str, asyncio.Queue[ObservabilityEvent | None]] = {}
+        self._queues: dict[str, list[asyncio.Queue[ObservabilityEvent | None]]] = {}
         self._loop: asyncio.AbstractEventLoop | None = None
 
     # ------------------------------------------------------------------
@@ -135,11 +140,25 @@ class SessionEventBus:
     # queue management
     # ------------------------------------------------------------------
 
-    def _get_or_create_queue(self, session_id: str) -> asyncio.Queue[ObservabilityEvent | None]:
-        if session_id not in self._queues:
-            self._queues[session_id] = asyncio.Queue()
-            logger.debug("EventBus: created queue for session_id=%s", session_id)
-        return self._queues[session_id]
+    def _register_queue(self, session_id: str) -> asyncio.Queue[ObservabilityEvent | None]:
+        """Create a new queue for a drain loop and register it."""
+        q: asyncio.Queue[ObservabilityEvent | None] = asyncio.Queue()
+        self._queues.setdefault(session_id, []).append(q)
+        logger.debug("EventBus: registered queue for session_id=%s (total=%d)", session_id, len(self._queues[session_id]))
+        return q
+
+    def _unregister_queue(self, session_id: str, q: asyncio.Queue[ObservabilityEvent | None]) -> None:
+        """Remove a queue after its drain loop exits."""
+        queues = self._queues.get(session_id)
+        if queues is None:
+            return
+        try:
+            queues.remove(q)
+        except ValueError:
+            pass
+        if not queues:
+            self._queues.pop(session_id, None)
+            logger.debug("EventBus: removed last queue for session_id=%s", session_id)
 
     # ------------------------------------------------------------------
     # push (sync, thread-safe)
@@ -148,18 +167,22 @@ class SessionEventBus:
     def push(self, event: ObservabilityEvent) -> None:
         """Enqueue an event from **any thread**.  Non-blocking, never raises.
 
-        If the event loop reference hasn't been set yet the event is
-        silently dropped (shouldn't happen once the server is running).
+        If no drain loops are listening for this session the event is
+        silently dropped.
         """
         if self._loop is None:
             logger.warning("EventBus: push() called but no event loop set — dropping event type=%s", event.type)
             return
 
-        queue = self._get_or_create_queue(event.session_id)
-        try:
-            self._loop.call_soon_threadsafe(queue.put_nowait, event)
-        except Exception:
-            logger.exception("EventBus: failed to push event type=%s for session_id=%s", event.type, event.session_id)
+        queues = self._queues.get(event.session_id)
+        if not queues:
+            return  # nobody listening — silently drop
+
+        for q in queues:
+            try:
+                self._loop.call_soon_threadsafe(q.put_nowait, event)
+            except Exception:
+                logger.exception("EventBus: failed to push event type=%s for session_id=%s", event.type, event.session_id)
 
     # ------------------------------------------------------------------
     # drain (async generator)
@@ -168,34 +191,41 @@ class SessionEventBus:
     async def drain(self, session_id: str) -> AsyncIterator[ObservabilityEvent]:
         """Async generator yielding events for *session_id*.
 
-        Stops when a ``None`` sentinel is received, then cleans up the queue.
+        Creates its own queue so multiple drain loops for the same
+        session receive all events independently.
+
+        Stops when a ``None`` sentinel is received.  The queue is
+        automatically cleaned up on exit.
         """
-        queue = self._get_or_create_queue(session_id)
+        queue = self._register_queue(session_id)
         logger.debug("EventBus: draining started for session_id=%s", session_id)
-        while True:
-            event = await queue.get()
-            if event is None:
-                logger.debug("EventBus: sentinel received for session_id=%s", session_id)
-                break
-            yield event
-        # Cleanup
-        self._queues.pop(session_id, None)
-        logger.debug("EventBus: queue cleaned up for session_id=%s", session_id)
+        try:
+            while True:
+                event = await queue.get()
+                if event is None:
+                    logger.debug("EventBus: sentinel received for session_id=%s", session_id)
+                    break
+                yield event
+        finally:
+            self._unregister_queue(session_id, queue)
+            logger.debug("EventBus: queue cleaned up for session_id=%s", session_id)
 
     # ------------------------------------------------------------------
-    # sentinel (signals end-of-stream)
+    # sentinel (signals end-of-stream to all active drain loops)
     # ------------------------------------------------------------------
 
     def send_sentinel(self, session_id: str) -> None:
         """Signal that no more events will be pushed for *session_id*.
 
-        The ``drain()`` iterator will exit after consuming all prior events.
-        Safe to call from any thread.
+        Pushes a ``None`` sentinel to every active drain queue so all
+        ``drain()`` iterators exit.  Safe to call from any thread.
         """
-        queue = self._queues.get(session_id)
-        if queue is not None and self._loop is not None:
-            self._loop.call_soon_threadsafe(queue.put_nowait, None)
-            logger.debug("EventBus: sentinel queued for session_id=%s", session_id)
+        queues = self._queues.get(session_id)
+        if queues is None or self._loop is None:
+            return
+        for q in queues:
+            self._loop.call_soon_threadsafe(q.put_nowait, None)
+        logger.debug("EventBus: sentinel queued for session_id=%s (%d queue(s))", session_id, len(queues))
 
 
 # ── Module-level singletons ─────────────────────────────────────────────────

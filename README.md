@@ -1,4 +1,4 @@
-# Co_Founder — v0.9.0 (Prerelease)
+# Co_Founder — v0.9.5 (Prerelease)
 
 > **📘 For complete system context and understanding, please refer to [`Agents_rules.md`](Agents_rules.md) before contributing or making changes.**
 
@@ -261,6 +261,16 @@ Each agent prompt is defined as a module-level constant (e.g., `RESEARCHER_SYSTE
 - All agents and tools use `logger.info()` / `logger.debug()` / `logger.error()` with consistent format: `[timestamp] [LEVEL] module: message`
 - Log file location: `logs.log` in project root
 
+### WebSocket Agent Trace (v0.9.5)
+
+Real-time observability streamed to the frontend via WebSocket:
+
+- **Backend**: `SessionEventBus` (fan-out queue per drain loop) + `ObservabilityCallback` (LangGraph callback) pushes `tool_start`, `tool_end`, `tool_error`, `subagent_spawn`, `subagent_end`, `subagent_error`, `session_start`, `session_end`, `heartbeat` events
+- **Frontend**: `useObservability` hook maintains persistent WS connection; `AgentTraceInline` renders Claude-style collapsible trace below each assistant message
+- **Per-query isolation**: Trace resets at each new query; completed trace snapshotted and attached to the message; trace survives page reload (stored in message state)
+- **Live streaming**: Trace appears immediately when user sends query, populates in real-time as tool calls execute
+- **Connection**: Single persistent WS per session — backend `while True` loop keeps it alive across queries
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -331,7 +341,7 @@ Every chat request accepts an `effort` parameter (⚡ Flash / ⚖️ Mid / 🎯 
 | `google/gemma-4-26b-a4b-it` | OCR | General reasoning, multimodal, MoE |
 | `morph/morph-v3-fast` | Reserved | File-editing engine — not a general LLM |
 
-### Redis & Agent Caching (v0.8.1)
+### Redis & Agent Caching (v0.8.1, extended v0.9.5)
 
 | Cache | Key Pattern | TTL | Location |
 |-------|------------|-----|----------|
@@ -340,7 +350,9 @@ Every chat request accepts an `effort` parameter (⚡ Flash / ⚖️ Mid / 🎯 
 | Chat sessions list | `chat_sessions:{id}` | 2min | `backend/db/get_from_sql.py` |
 | Session messages | `session_msgs:{id}` | 30s | `backend/db/get_from_sql.py` |
 | Embeddings | `embedding:{sha256}` | 1h | `RAG_Engine/embeddings.py` |
-| CEO agent instance | In-memory per `(company_id, effort)` | ∞ | `agents/CEO/CEO.py` |
+| CEO agent instance | In-memory `(company_id, effort)` | ∞ | `agents/CEO/CEO.py` |
+| **CEO request state** | `ceo_req:{uuid}` | 5min | `agents/CEO/ceo_state.py` ✨ |
+| **Session resources** | `session_resources:{id}` | 1h | `agents/CEO/ceo_resources.py` |
 
 ### Measured Impact (real `logs.log` timestamps)
 
@@ -366,7 +378,7 @@ After:  "best selling product" → Data Analyst → reads CSV → actual data an
 
 ## Status
 
-Functional end-to-end prerelease (v0.9.0). The core chat loop, multi-agent system, RAG pipeline, file management, and onboarding flow are operational. Known gaps:
+Functional end-to-end prerelease (v0.9.5). The core chat loop, multi-agent system, RAG pipeline, file management, WebSocket observability, and onboarding flow are operational. Known gaps:
 - **Web Developer agent — coming soon** (not yet active; shown as a preview in the UI)
 - **Finance Advisor agent — coming soon** (not yet active; shown as a preview in the UI)
 - Settings page is a placeholder
@@ -376,28 +388,49 @@ Functional end-to-end prerelease (v0.9.0). The core chat loop, multi-agent syste
 - CORS hardcoded to localhost
 - Supabase free tier REST API adds 3-7s latency per RPC call (embedding serialization overhead)
 
-## Changelog (v0.8.1 → v0.9.0)
 
-### Effort-Based Execution System
-- **End-to-end effort pipeline**: flash (fastest), mid (balanced), max (highest quality)
-- **Frontend**: Dropdown selector (⚡ Flash / ⚖️ Mid / 🎯 Max) in chat input bar, defaults to Flash
-- **Backend API**: `/chat` endpoint accepts `effort` parameter, validates and passes through
-- **Model selection**: `get_best_llm(tasks, effort)` selects models based on task type + effort level
-- **Reflection control**: flash: 0 reflections, mid: 1, max: 2 for Researcher and Writer agents
-- **Chat memory + title**: Skipped in flash mode for speed; enabled in mid/max
+## Changelog (v0.9.0 → v0.9.5)
 
-### Model Selection Overhaul
-- **Model enum restructured** based on actual OpenRouter model capabilities:
-  - `MIMO` → `openai/gpt-oss-20b` (small reasoning model for classification)
-  - Added `MORPH = morph/morph-v3-fast` (file-editing engine — NOT used for general LLM tasks)
-  - `GPT_OSS = openai/gpt-oss-120b` retained for high-end reasoning (max writing/creative, judge)
-- **GLM (z-ai/glm-4.5-air)** now used for tool-use agents at mid/max (CEO, CMO)
-- **DeepSeek** is the flash-mode default — "very fast, excellent price/performance"
-- **MORPH excluded** from all mappings — it's a code-editing engine, not a general LLM
-- CEO tasks updated to `[PLANNING, RESEARCH, WRITING]` to match GLM tool-use path
+### Thread-Safe CEO State (Redis-backed)
+- **Race condition fixed**: `ceo_state.py` rewritten from module-level globals (`_current_session_id`, `_current_effort`) to Redis-backed per-request state
+- Each `talk_to_ceo` call generates a unique UUID request key; stores `{sid, effort}` in Redis (`ceo_req:{uuid}`, 5-min TTL); sets it in a `contextvars.ContextVar`
+- Tool functions read via `ceo_state._current_session_id` → `__getattr__` → Redis GET → correct session/effort for that request
+- **Concurrent test passed**: Two threads simultaneously reading correct, isolated values
+- Request-level Redis cache: same request key returns cached state (1 Redis call instead of 2 per tool invocation)
 
-### Agent Caching
-- **CEO agent cache keyed by `(company_id, effort)`** — separate cached agent per effort level
-- **CMO agent** passes effort to `get_best_llm()` (CMO is recreated per call, no cache issue)
-- Module-level specialist agents (Researcher, Writer, Data Analyst, Graphic Designer) default to flash-appropriate models
+### WebSocket Observability Overhaul
+- **Real-time agent trace**: WebSocket (`/chat/ws?session_id=`) streams tool calls, subagent spawns, and errors to the frontend
+- **Claude-style inline trace**: `AgentTraceInline` component renders below each assistant message — collapsible panel showing tool runs with expand/collapse per row
+- **Live trace**: While CEO is processing, trace appears in real-time with "Waiting for agent…" spinner → populates as tool calls arrive
+- **Per-query isolation**: `startQuery()` resets trace at the start of each new query; `snapshotRuns()` captures completed trace to attach to the assistant message
+- **Persistent connection**: Backend WS handler uses `while True` loop — one connection lasts the entire session, no reconnect needed between queries
+- **Fan-out event bus**: `SessionEventBus` refactored from single-queue to multi-queue — each drain loop gets its own queue, events fan out to all listeners
+- **Frontend pre-generates session ID**: `crypto.randomUUID()` before API call so WS connects before backend starts processing — eliminates race where events arrived before WS was ready
+
+### Tool Run ID Matching
+- Backend now passes `tool_run_id` (LangChain UUID) in `tool_start`, `tool_end`, `tool_error` events
+- Frontend matches by `toolRunId` instead of `toolName` — parallel calls to the same tool are correctly tracked as separate runs
+- No more duplicate/mismatched tool runs in the agent trace
+
+### MCQ Guard Aligned with Effort
+- Replaced hardcoded `_MAX_MCQ_PER_SESSION = 2` with `_get_mcq_limit_for_effort()` — Flash: 1, Mid: 2, Max: 3
+- Matches the per-effort resource limits in `ceo_resources.py`
+
+### return_direct Tool Trace Fix
+- `ask_mcq_for_user` and `graphic_design_request` use `return_direct=True` which skips LangChain's `on_tool_end` callback
+- Both now call `_push_tool_end_manual()` before returning — tool runs complete correctly in the trace instead of staying stuck in "running" state
+
+### MCQ Improvements
+- `allow_custom` is now a real parameter in `ask_mcq_for_user` — LLM can set it to `False` to restrict to predefined options
+- `multi_select` flag preserved across DB reload: backend stores `[multi]\n` prefix in message text; frontend parses it back
+
+### Robustness Fixes
+- All `except Exception: ... sys.exc_info()[1]` → `except Exception as e: ... str(e)` — 5 locations fixed
+- `format_resources_for_prompt` uses `.get(key, 0)` for all dict access — no more `KeyError` on corrupted Redis state
+- Dead code removed: `current_effort` / `_current_session_id` module vars from `CEO.py`; `_Proxy` class hack from `ceo_state.py`
+
+### CEO Prompt: Informational vs Action Queries
+- Added explicit distinction: **informational** ("What time should I post?") → answer directly; **action** ("Create a post") → delegate
+- Hallucination guard: "Never assume the founder wants to DO something just because they asked ABOUT something"
+- Prevents the CEO from turning simple questions into agent-spawning projects
 

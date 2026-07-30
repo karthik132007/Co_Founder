@@ -34,6 +34,19 @@ from backend.api.observability_events import (
 logger = logging.getLogger(__name__)
 
 
+def _push_tool_end_manual(session_id: str, tool_name: str, duration_ms: float, output: str) -> None:
+    """Push a tool_end event manually (for return_direct=True tools that skip the callback)."""
+    event_bus.push(
+        make_tool_end(
+            session_id=session_id,
+            tool_name=tool_name,
+            duration_ms=duration_ms,
+            tool_output=output,
+            agent="CEO",
+        )
+    )
+
+
 class ObservabilityCallback(GraphCallbackHandler):
     """LangGraph callback that streams agent activity to the WebSocket layer.
 
@@ -97,6 +110,7 @@ class ObservabilityCallback(GraphCallbackHandler):
                 tool_name=tool_name,
                 tool_input=input_str,
                 agent=self._agent,
+                tool_run_id=str(run_id),
             )
         )
 
@@ -122,6 +136,7 @@ class ObservabilityCallback(GraphCallbackHandler):
                 duration_ms=duration_ms,
                 tool_output=str(output),
                 agent=self._agent,
+                tool_run_id=str(run_id),
             )
         )
 
@@ -145,6 +160,7 @@ class ObservabilityCallback(GraphCallbackHandler):
                 agent=self._agent,
                 tool_name=tool_name,
                 error_message=str(error),
+                tool_run_id=str(run_id),
             )
         )
 

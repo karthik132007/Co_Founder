@@ -116,6 +116,7 @@ def make_tool_start(
     tool_name: str,
     tool_input: str,
     agent: str = "CEO",
+    tool_run_id: str = "",
 ) -> ObservabilityEvent:
     return ObservabilityEvent(
         type=EventType.TOOL_START,
@@ -124,6 +125,7 @@ def make_tool_start(
         data={
             "tool_name": tool_name,
             "tool_input": str(tool_input)[:500],
+            "tool_run_id": str(tool_run_id),
         },
     )
 
@@ -134,6 +136,7 @@ def make_tool_end(
     duration_ms: float,
     tool_output: str,
     agent: str = "CEO",
+    tool_run_id: str = "",
 ) -> ObservabilityEvent:
     return ObservabilityEvent(
         type=EventType.TOOL_END,
@@ -144,6 +147,7 @@ def make_tool_end(
             "duration_ms": round(duration_ms, 1),
             "tool_output": str(tool_output)[:500],
             "success": True,
+            "tool_run_id": str(tool_run_id),
         },
     )
 
@@ -153,6 +157,7 @@ def make_tool_error(
     tool_name: str,
     error_message: str,
     agent: str = "CEO",
+    tool_run_id: str = "",
 ) -> ObservabilityEvent:
     return ObservabilityEvent(
         type=EventType.TOOL_ERROR,
@@ -161,6 +166,7 @@ def make_tool_error(
         data={
             "tool_name": tool_name,
             "error": str(error_message)[:500],
+            "tool_run_id": str(tool_run_id),
         },
     )
 

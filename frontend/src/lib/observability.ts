@@ -48,6 +48,7 @@ export interface ObservabilityEvent {
 /** A tool-call "run" that groups start, subagent events, and end together. */
 export interface ToolRun {
   runId: string;
+  toolRunId: string;        // from the backend (unique per invocation, survives parallel calls)
   toolName: string;
   agent: string;
   toolInput: string;
@@ -87,6 +88,11 @@ export interface ObservabilityState {
   streamEnded: boolean;
   /** Number of connection retries */
   retryCount: number;
+  /** Snapshot current runs (for attaching to a completed message) */
+  snapshotRuns: () => ToolRun[];
+  /** Reset runs for a new query (does NOT reconnect the WebSocket).
+   *  Pass the sessionId if it was just generated and React hasn't re-rendered yet. */
+  startQuery: (overrideSessionId?: string) => void;
 }
 
 /* ─────────────────────────────────────────────
@@ -121,6 +127,13 @@ export function useObservability(
   const runsRef = useRef<ToolRun[]>([]);
   const eventsRef = useRef<ObservabilityEvent[]>([]);
   const cancelledRef = useRef(false);
+  const retryCountRef = useRef(0);
+  const sessionRef = useRef(sessionId);
+  sessionRef.current = sessionId;
+  // Tracks which session ID the WS was last opened for
+  const connectedSessionRef = useRef<string | null>(null);
+
+  retryCountRef.current = retryCount;
 
   const addEvent = useCallback((ev: ObservabilityEvent) => {
     eventsRef.current = [...eventsRef.current, ev];
@@ -135,216 +148,236 @@ export function useObservability(
     [],
   );
 
-  // Connect / reconnect when sessionId changes
-  useEffect(() => {
-    if (!sessionId) {
-      wsRef.current?.close();
-      wsRef.current = null;
-      // Defer state reset so it isn't synchronous in the effect body
-      queueMicrotask(() => {
-        eventsRef.current = [];
-        runsRef.current = [];
-        setEvents([]);
-        setRuns([]);
-        setStreamEnded(false);
-        setConnectionStatus("disconnected");
-      });
-      return;
-    }
+  // ── snapshotRuns ──
+  const snapshotRuns = useCallback((): ToolRun[] => {
+    return runsRef.current.map((r) => ({ ...r, subagent: r.subagent ? { ...r.subagent } : null }));
+  }, []);
 
+  // ── Internal: create & wire up a WebSocket ──
+  const _openSocket = useCallback((overrideSessionId?: string) => {
+    const sid = overrideSessionId ?? sessionRef.current;
+    if (!sid) return;
+
+    // Close previous socket if any
+    cancelledRef.current = true;
+    wsRef.current?.close();
+    wsRef.current = null;
     cancelledRef.current = false;
 
-    // Reset refs immediately (no render) and defer React state reset
-    eventsRef.current = [];
-    runsRef.current = [];
-    queueMicrotask(() => {
-      setEvents([]);
-      setRuns([]);
-      setStreamEnded(false);
-    });
+    setConnectionStatus("connecting");
+    const url = wsUrl(sid);
+    const socket = new WebSocket(url);
 
-    function connect() {
+    socket.onopen = () => {
       if (cancelledRef.current) return;
+      setConnectionStatus("connected");
+      setRetryCount(0);
+    };
 
-      setConnectionStatus("connecting");
-      const url = wsUrl(sessionId!);
-      const socket = new WebSocket(url);
+    socket.onmessage = (msg) => {
+      if (cancelledRef.current) return;
+      try {
+        const ev: ObservabilityEvent = JSON.parse(msg.data as string);
+        addEvent(ev);
 
-      socket.onopen = () => {
-        if (cancelledRef.current) return;
-        setConnectionStatus("connected");
-        setRetryCount(0);
-      };
+        switch (ev.type) {
+          case "tool_start": {
+            const backendRunId = String(ev.data.tool_run_id ?? "");
+            const run: ToolRun = {
+              runId: nextRunId(),
+              toolRunId: backendRunId,
+              toolName: String(ev.data.tool_name ?? "unknown"),
+              agent: ev.agent,
+              toolInput: String(ev.data.tool_input ?? ""),
+              startedAt: ev.timestamp,
+              endedAt: null,
+              durationMs: null,
+              toolOutput: null,
+              error: null,
+              subagent: null,
+              status: "running",
+            };
+            updateRun((prev) => [...prev, run]);
+            break;
+          }
 
-      socket.onmessage = (msg) => {
-        if (cancelledRef.current) return;
-        try {
-          const ev: ObservabilityEvent = JSON.parse(msg.data as string);
-          addEvent(ev);
+          case "tool_end": {
+            const backendRunId = String(ev.data.tool_run_id ?? "");
+            updateRun((prev) =>
+              prev.map((r) => {
+                if (r.toolRunId === backendRunId && r.status === "running") {
+                  return {
+                    ...r,
+                    endedAt: ev.timestamp,
+                    durationMs: (ev.data.duration_ms as number) ?? null,
+                    toolOutput: String(ev.data.tool_output ?? ""),
+                    status: "ok" as const,
+                  };
+                }
+                return r;
+              }),
+            );
+            break;
+          }
 
-          // ── Build grouped tool runs ──
-          switch (ev.type) {
-            case "tool_start": {
-              const run: ToolRun = {
-                runId: nextRunId(),
-                toolName: String(ev.data.tool_name ?? "unknown"),
-                agent: ev.agent,
-                toolInput: String(ev.data.tool_input ?? ""),
-                startedAt: ev.timestamp,
-                endedAt: null,
-                durationMs: null,
-                toolOutput: null,
-                error: null,
-                subagent: null,
-                status: "running",
+          case "tool_error": {
+            const backendRunId = String(ev.data.tool_run_id ?? "");
+            updateRun((prev) =>
+              prev.map((r) => {
+                if (r.toolRunId === backendRunId && r.status === "running") {
+                  return {
+                    ...r,
+                    endedAt: ev.timestamp,
+                    error: String(ev.data.error ?? "Unknown error"),
+                    status: "error" as const,
+                  };
+                }
+                return r;
+              }),
+            );
+            break;
+          }
+
+          case "subagent_spawn": {
+            const subagentName = String(ev.data.subagent_name ?? "");
+            updateRun((prev) => {
+              const idx = [...prev].reverse().findIndex((r) => r.status === "running");
+              if (idx === -1) return prev;
+              const mapped = [...prev];
+              const realIdx = mapped.length - 1 - idx;
+              mapped[realIdx] = {
+                ...mapped[realIdx],
+                subagent: {
+                  name: subagentName,
+                  task: String(ev.data.task ?? ""),
+                  effort: String(ev.data.effort ?? "flash"),
+                  startedAt: ev.timestamp,
+                  endedAt: null,
+                  durationMs: null,
+                  resultPreview: null,
+                  error: null,
+                },
               };
-              updateRun((prev) => [...prev, run]);
-              break;
-            }
+              return mapped;
+            });
+            break;
+          }
 
-            case "tool_end": {
-              const toolName = String(ev.data.tool_name ?? "");
-              updateRun((prev) =>
-                prev.map((r) => {
-                  // Match the most recent running run with the same tool name
-                  if (r.toolName === toolName && r.status === "running") {
-                    return {
-                      ...r,
+          case "subagent_end": {
+            const subagentName = String(ev.data.subagent_name ?? "");
+            updateRun((prev) =>
+              prev.map((r) => {
+                if (r.subagent?.name === subagentName && r.subagent.startedAt !== null && r.subagent.endedAt === null) {
+                  return {
+                    ...r,
+                    subagent: {
+                      ...r.subagent,
                       endedAt: ev.timestamp,
                       durationMs: (ev.data.duration_ms as number) ?? null,
-                      toolOutput: String(ev.data.tool_output ?? ""),
-                      status: "ok" as const,
-                    };
-                  }
-                  return r;
-                }),
-              );
-              break;
-            }
+                      resultPreview: String(ev.data.result_preview ?? ""),
+                    },
+                  };
+                }
+                return r;
+              }),
+            );
+            break;
+          }
 
-            case "tool_error": {
-              const toolName = String(ev.data.tool_name ?? "");
-              updateRun((prev) =>
-                prev.map((r) => {
-                  if (r.toolName === toolName && r.status === "running") {
-                    return {
-                      ...r,
+          case "subagent_error": {
+            const subagentName = String(ev.data.subagent_name ?? "");
+            updateRun((prev) =>
+              prev.map((r) => {
+                if (r.subagent?.name === subagentName && r.subagent.endedAt === null) {
+                  return {
+                    ...r,
+                    subagent: {
+                      ...r.subagent,
                       endedAt: ev.timestamp,
                       error: String(ev.data.error ?? "Unknown error"),
-                      status: "error" as const,
-                    };
-                  }
-                  return r;
-                }),
-              );
-              break;
-            }
-
-            case "subagent_spawn": {
-              const subagentName = String(ev.data.subagent_name ?? "");
-              updateRun((prev) => {
-                // Find the most recent running tool run
-                const idx = [...prev].reverse().findIndex((r) => r.status === "running");
-                if (idx === -1) return prev;
-                const mapped = [...prev];
-                const realIdx = mapped.length - 1 - idx;
-                mapped[realIdx] = {
-                  ...mapped[realIdx],
-                  subagent: {
-                    name: subagentName,
-                    task: String(ev.data.task ?? ""),
-                    effort: String(ev.data.effort ?? "flash"),
-                    startedAt: ev.timestamp,
-                    endedAt: null,
-                    durationMs: null,
-                    resultPreview: null,
-                    error: null,
-                  },
-                };
-                return mapped;
-              });
-              break;
-            }
-
-            case "subagent_end": {
-              const subagentName = String(ev.data.subagent_name ?? "");
-              updateRun((prev) =>
-                prev.map((r) => {
-                  if (r.subagent?.name === subagentName && r.subagent.startedAt !== null && r.subagent.endedAt === null) {
-                    return {
-                      ...r,
-                      subagent: {
-                        ...r.subagent,
-                        endedAt: ev.timestamp,
-                        durationMs: (ev.data.duration_ms as number) ?? null,
-                        resultPreview: String(ev.data.result_preview ?? ""),
-                      },
-                    };
-                  }
-                  return r;
-                }),
-              );
-              break;
-            }
-
-            case "subagent_error": {
-              const subagentName = String(ev.data.subagent_name ?? "");
-              updateRun((prev) =>
-                prev.map((r) => {
-                  if (r.subagent?.name === subagentName && r.subagent.endedAt === null) {
-                    return {
-                      ...r,
-                      subagent: {
-                        ...r.subagent,
-                        endedAt: ev.timestamp,
-                        error: String(ev.data.error ?? "Unknown error"),
-                      },
-                    };
-                  }
-                  return r;
-                }),
-              );
-              break;
-            }
-
-            case "session_end":
-              setStreamEnded(true);
-              break;
+                    },
+                  };
+                }
+                return r;
+              }),
+            );
+            break;
           }
-        } catch {
-          // Malformed event — ignore
+
+          case "session_end":
+            setStreamEnded(true);
+            break;
         }
-      };
+      } catch {
+        // Malformed event — ignore
+      }
+    };
 
-      socket.onclose = () => {
-        if (cancelledRef.current) return;
-        setConnectionStatus("disconnected");
-        // Auto-reconnect if stream hasn't ended (max 3 retries)
-        if (!streamEnded && !cancelledRef.current) {
-          const delay = Math.min(1000 * 2 ** retryCount, 8000);
-          setRetryCount((c) => c + 1);
-          setTimeout(() => {
-            if (!cancelledRef.current && retryCount < 3) connect();
-          }, delay);
-        }
-      };
+    socket.onclose = () => {
+      if (cancelledRef.current) return;
+      setConnectionStatus("disconnected");
+      // Auto-reconnect on unexpected close (backend keeps WS alive across queries)
+      const retries = retryCountRef.current;
+      if (!cancelledRef.current && retries < 5) {
+        const delay = Math.min(1000 * 2 ** retries, 10000);
+        setRetryCount((c) => c + 1);
+        setTimeout(() => {
+          if (!cancelledRef.current) _openSocket();
+        }, delay);
+      }
+    };
 
-      socket.onerror = () => {
-        // onclose will fire next — no need to handle here
-      };
+    socket.onerror = () => {
+      // onclose fires next
+    };
 
-      wsRef.current = socket;
+    wsRef.current = socket;
+    connectedSessionRef.current = sid;
+  }, [addEvent, updateRun]);
+
+  // ── startQuery: reset runs + ensure WS is connected ──
+  // Pass an explicit sessionId to override the current state (needed when
+  // the session ID was just generated but React hasn't re-rendered yet).
+  const startQuery = useCallback((overrideSessionId?: string) => {
+    runsRef.current = [];
+    eventsRef.current = [];
+    setRuns([]);
+    setEvents([]);
+    setStreamEnded(false);
+
+    const sid = overrideSessionId ?? sessionRef.current;
+    if (!sid) return;
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+      _openSocket(overrideSessionId);
     }
+  }, [_openSocket]);
 
-    connect();
+  // ── Close WS when switching to a DIFFERENT session (not null→new, not same) ──
+  useEffect(() => {
+    if (sessionId && connectedSessionRef.current && connectedSessionRef.current !== sessionId) {
+      // User switched to a different existing chat — close old WS
+      cancelledRef.current = true;
+      wsRef.current?.close();
+      wsRef.current = null;
+      connectedSessionRef.current = null;
+      cancelledRef.current = false;
+      runsRef.current = [];
+      eventsRef.current = [];
+      setRuns([]);
+      setEvents([]);
+      setStreamEnded(false);
+    }
+  }, [sessionId]);
 
+  // ── Cleanup on unmount ──
+  useEffect(() => {
     return () => {
       cancelledRef.current = true;
       wsRef.current?.close();
       wsRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId]);
+  }, []);
 
-  return { events, runs, connectionStatus, streamEnded, retryCount };
+  return { events, runs, connectionStatus, streamEnded, retryCount, snapshotRuns, startQuery };
 }

@@ -63,18 +63,22 @@ Founder's message:
 def _build_ceo_tools(company_id: int):
     
     @tool('ask_mcq_for_user', return_direct=True, description="Ask the user a multiple choice question shown as clickable buttons. HARD LIMIT: call this at most 2 times total per task — then you MUST act. Use only for critical decisions (budget, direction, priority, format, channel). Batch related questions into ONE call with multi_select=True. NEVER re-ask something the user already answered. The user can always type a custom answer, so never add an 'other' option.")
-    def ask_mcq_for_user(question: str, options: list[str], multi_select: bool = False):
+    def ask_mcq_for_user(question: str, options: list[str], multi_select: bool = False, allow_custom: bool = True):
         """Ask a multiple choice question to the user and get their answer."""
         logger.info("ask_mcq_for_user called: question='%s', options=%s, multi_select=%s", question, options, multi_select)
         sid = ceo_state._current_session_id
         if sid and not consume_resource(sid, "mcqs"):
             return json.dumps({"error": "mcqs budget exhausted for this session."})
+        # return_direct=True means LangChain skips on_tool_end — push it manually
+        if sid:
+            from agents.helpers.observability import _push_tool_end_manual
+            _push_tool_end_manual(sid, "ask_mcq_for_user", 0, "MCQ presented to user")
         return json.dumps(
             {
                 "type": "clarification_request",
                 "question": question,
                 "options": options,
-                "allow_custom": True,
+                "allow_custom": allow_custom,
                 "multi_select": multi_select,
             }
         )
@@ -132,9 +136,9 @@ def _build_ceo_tools(company_id: int):
                 event_bus.push(make_subagent_end(sid, "Researcher", (time.time() - t0) * 1000, str(result)))
             logger.info("research_request completed for task: '%s'", task)
             return result
-        except Exception:
+        except Exception as e:
             if sid:
-                event_bus.push(make_subagent_error(sid, "Researcher", str(sys.exc_info()[1])))
+                event_bus.push(make_subagent_error(sid, "Researcher", str(e)))
             raise
 
     @tool(
@@ -157,9 +161,9 @@ def _build_ceo_tools(company_id: int):
                 event_bus.push(make_subagent_end(sid, "Writer", (time.time() - t0) * 1000, str(result)))
             logger.info("writing_request completed for task: '%s'", task)
             return result
-        except Exception:
+        except Exception as e:
             if sid:
-                event_bus.push(make_subagent_error(sid, "Writer", str(sys.exc_info()[1])))
+                event_bus.push(make_subagent_error(sid, "Writer", str(e)))
             raise
 
     @tool(
@@ -181,9 +185,9 @@ def _build_ceo_tools(company_id: int):
                 event_bus.push(make_subagent_end(sid, "CMO", (time.time() - t0) * 1000, str(result)))
             logger.info("marketing_request completed for task: '%s'", task)
             return result
-        except Exception:
+        except Exception as e:
             if sid:
-                event_bus.push(make_subagent_error(sid, "CMO", str(sys.exc_info()[1])))
+                event_bus.push(make_subagent_error(sid, "CMO", str(e)))
             raise
 
     @tool(
@@ -206,9 +210,9 @@ def _build_ceo_tools(company_id: int):
                 event_bus.push(make_subagent_end(sid, "DataAnalyst", (time.time() - t0) * 1000, str(result)))
             logger.info("data_analysis_request completed for task: '%s'", task)
             return result
-        except Exception:
+        except Exception as e:
             if sid:
-                event_bus.push(make_subagent_error(sid, "DataAnalyst", str(sys.exc_info()[1])))
+                event_bus.push(make_subagent_error(sid, "DataAnalyst", str(e)))
             raise
 
     @tool(
@@ -229,11 +233,14 @@ def _build_ceo_tools(company_id: int):
             result = spawn_graphic_designer(company_id, task, effort=ceo_state._current_effort)
             if sid:
                 event_bus.push(make_subagent_end(sid, "GraphicDesigner", (time.time() - t0) * 1000, str(result)))
+            # return_direct=True skips on_tool_end — push it manually
+            from agents.helpers.observability import _push_tool_end_manual
+            _push_tool_end_manual(sid, "graphic_design_request", (time.time() - t0) * 1000, str(result)[:200])
             logger.info("graphic_design_request completed for task: '%s'", task)
             return result
-        except Exception:
+        except Exception as e:
             if sid:
-                event_bus.push(make_subagent_error(sid, "GraphicDesigner", str(sys.exc_info()[1])))
+                event_bus.push(make_subagent_error(sid, "GraphicDesigner", str(e)))
             raise
 
     return [
