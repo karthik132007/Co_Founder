@@ -1,11 +1,16 @@
 import asyncio
 import contextlib
 import logging
-
+import json
 from fastapi import APIRouter, BackgroundTasks, Form, HTTPException, Query, WebSocket
 from starlette.websockets import WebSocketDisconnect
 
-from main import chat, store_chat_memory, store_chat_title
+from backend.kafka_jobs.producers.producer import (
+    queue_session_message,
+    queue_chat_memory,
+    queue_title_creation,
+)
+from main import chat
 from backend.db.get_from_sql import get_company_id, get_chats_in_session, get_chat_sessions
 from backend.db.insert_to_sql import create_chat_session, add_message_to_session
 from backend.db.delete_from_sql import delete_chat_session
@@ -17,7 +22,6 @@ from backend.api.connection_manager import manager, event_bus
 from backend.api.observability_events import (
     make_session_start,
     make_session_end,
-    make_error as make_obs_error,
 )
 
 logger = logging.getLogger(__name__)
@@ -75,8 +79,8 @@ def chat_with_user(
         title = "New Chat"
         logger.info("Creating new chat session — session_id=%s, company_id=%s", session_id, company_id)
         create_chat_session(session_id, company_id, title=title)
-        if effort != "flash":
-            background_tasks.add_task(store_chat_title, session_id, message)
+        
+        queue_title_creation(session_id, message)
         is_new_session = True
     else:
         # Fetch existing messages once — used both to verify the session
@@ -86,8 +90,8 @@ def chat_with_user(
             logger.info("Session %s not found — creating it now", session_id)
             title = "New Chat"
             create_chat_session(session_id, company_id, title=title)
-            if effort != "flash":
-                background_tasks.add_task(store_chat_title, session_id, message)
+            
+            queue_title_creation(session_id, message)
             is_new_session = True
             history = []
         else:
@@ -135,7 +139,14 @@ def chat_with_user(
             stored_text = "[multi]\n" + stored_text
         if options:
             stored_text += "\n\nOptions: " + " | ".join(options)
+
+        # Persist directly to DB so the MCQ is immediately visible in history.
+        # Also queue via Kafka for async consumers (chat memory, etc.).
         add_message_to_session(session_id, "assistant", stored_text)
+        try:
+            queue_session_message(session_id, company_id, "assistant", stored_text)
+        except Exception:
+            logger.exception("Kafka side-queue failed for MCQ reply — already saved to DB")
         response = {
             "status": "success",
             "type": "clarification_request",
@@ -167,8 +178,8 @@ def chat_with_user(
 
         add_message_to_session(session_id, "assistant", generated_message)
         background_tasks.add_task(save_generated_graphic, company_id, image_bytes)
-        if effort != "flash":
-            background_tasks.add_task(store_chat_memory, company_id, message, generated_message)
+
+        queue_chat_memory(company_id, message, generated_message)
         response = {
             "status": "success",
             "type": "image_generated",
@@ -182,8 +193,8 @@ def chat_with_user(
         return response
 
     add_message_to_session(session_id, "assistant", reply)
-    if effort != "flash":
-        background_tasks.add_task(store_chat_memory, company_id, message, reply)
+    
+    queue_chat_memory(company_id, message, reply)
 
     response = {
         "status": "success",

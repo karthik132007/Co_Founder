@@ -16,3 +16,4 @@ tavily
 e2b-code-interpreter
 redis
 requests
+confluent_kafka

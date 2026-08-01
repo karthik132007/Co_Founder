@@ -1,4 +1,4 @@
-# Co_Founder — v0.9.5 (Prerelease)
+# Co_Founder — v0.9.9 (Prerelease)
 
 > **📘 For complete system context and understanding, please refer to [`Agents_rules.md`](Agents_rules.md) before contributing or making changes.**
 
@@ -116,8 +116,10 @@ User asks question in chat:
 
 ### Structure
 ```
-├── main.py                  # Chat entry point: chat(), store_chat_memory(), store_chat_title()
+├── main.py                  # Chat entry point: chat()
 ├── logger_config.py         # RotatingFileHandler (10MB × 3), dual handlers
+├── docker-compose.yaml      # Kafka broker (KRaft, single node, port 9092)
+├── connectors/              # BaseConnector abstraction (connect/disconnect/get_status)
 ├── backend/
 │   ├── app.py               # FastAPI app, CORS, router registration
 │   ├── models.py            # SQLAlchemy models
@@ -127,8 +129,13 @@ User asks question in chat:
 │   │   ├── chat.py          # POST /chat, session CRUD, MCQ guard
 │   │   ├── user.py          # User routes
 │   │   └── drive.py         # File upload/download routes
+│   ├── kafka_jobs/          # Async Kafka pipeline (producers + consumers)
+│   │   ├── producers/producer.py   # queue_session_message, queue_chat_memory, queue_title_creation
+│   │   ├── consumers/               # add_message_to_session_job, chat_memory_job, session_title_creation_job
+│   │   └── run_consumers.py         # Launches all three consumers as subprocesses
 │   └── db/
 │       ├── database.py      # SQLAlchemy engine
+│       ├── chat_memory_helpers.py  # store_chat_memory / store_chat_title (importable without agent stack)
 │       ├── get_from_sql.py  # Supabase read queries
 │       ├── insert_to_sql.py # Supabase write queries
 │       ├── delete_from_sql.py
@@ -164,6 +171,27 @@ User asks question in chat:
 | GET | `/api/chat/list` | List user's chat sessions |
 | GET | `/api/chat/{id}/messages` | Get messages for a session |
 | DELETE | `/api/chat/{id}` | Delete chat session |
+| WS | `/chat/ws?session_id=` | Real-time agent trace events (tool_start/end, subagent spawn/end, heartbeats) |
+
+### Async Kafka Pipeline (v0.9.9)
+
+Background work (chat memory extraction, session titles, message persistence) is decoupled from the request path via Kafka instead of FastAPI `BackgroundTasks`:
+
+```
+POST /api/chat
+  → chat_with_user() queues to Kafka (non-blocking, ~0ms)
+      • chat_memory              → chat_memory_job.py           → store_chat_memory()
+      • session_title_creation   → session_title_creation_job.py → store_chat_title()
+      • add_message_to_session   → add_message_to_session_job.py → add_message_to_session()
+  → consumers run as separate processes (python backend/kafka_jobs/run_consumers.py)
+```
+
+- **Producer**: `backend/kafka_jobs/producers/producer.py` — lazy singleton `confluent_kafka.Producer` (localhost:9092); JSON payloads produced + flushed per message
+- **Consumers**: one process per topic (`backend/kafka_jobs/consumers/`), each with its own consumer group, per-message try/except isolation, and synchronous offset commits after success (`auto.offset.reset=earliest`)
+- **`chat_memory_helpers.py`** — `store_chat_memory()` / `store_chat_title()` extracted from `main.py` so consumers can import them without pulling in the agent stack (CEO, LLM clients)
+- **Broker**: `docker-compose.yaml` runs Confluent Kafka 7.8.9 in KRaft mode (single node, controller combined), port 9092
+- MCQ replies are persisted to the DB directly (so they are visible in history immediately) and side-queued to Kafka for downstream jobs
+- Chat memory extraction and title generation now run for **all effort levels** (previously skipped in flash mode) — asynchronously, so they never block the response
 
 ### Authentication Flow
 - Password stored in database as plaintext (no hashing)
@@ -286,6 +314,7 @@ Real-time observability streamed to the frontend via WebSocket:
 | LLM Provider | OpenRouter (DeepSeek, GLM, GPT-OSS 120b/20b, Gemma, Morph, text-embedding-3-small) |
 | Web Search | Tavily Search API |
 | Market Data | SerpAPI (Google Trends, Google News, Google Shopping) |
+| Message Bus | Apache Kafka (KRaft, Confluent 7.8.9) + `confluent_kafka` |
 | Vector Search | Supabase pgvector (cosine similarity + keyword fusion) |
 | Code Sandbox | e2b (e2b-code-interpreter) |
 | PDF Extraction | PyMuPDF (fitz) |
@@ -305,8 +334,10 @@ Real-time observability streamed to the frontend via WebSocket:
 3. Install frontend deps: `cd frontend && npm install`
 4. Copy `.env.example` to `.env` and fill in your API keys (Tavily, OpenRouter, SerpAPI, Supabase URL + service role key, e2b)
 5. Run Supabase SQL migrations from `backend/schemas/` in order (01, 02, 03)
-6. Start backend: `uvicorn backend.app:app --reload` (default: `http://localhost:8000`)
-7. Start frontend: `cd frontend && npm run dev` (default: `http://localhost:3000`)
+6. Start Kafka: `docker compose up -d kafka` (required for chat memory/title persistence)
+7. Start Kafka consumers: `python backend/kafka_jobs/run_consumers.py` (three background processes)
+8. Start backend: `uvicorn backend.app:app --reload` (default: `http://localhost:8000`)
+9. Start frontend: `cd frontend && npm run dev` (default: `http://localhost:3000`)
 
 
 ## Performance Improvements
@@ -322,8 +353,8 @@ Every chat request accepts an `effort` parameter (⚡ Flash / ⚖️ Mid / 🎯 
 | Writer reflections | 0 | 1 | 2 |
 | Writing/Creative model | DeepSeek | DeepSeek | GPT_OSS 120b |
 | Classification model | MIMO 20b | MIMO 20b | MIMO 20b |
-| Chat memory generation | ❌ skipped | ✅ | ✅ |
-| Title generation | ❌ skipped | ✅ | ✅ |
+| Chat memory generation | ✅ async via Kafka | ✅ async via Kafka | ✅ async via Kafka |
+| Title generation | ✅ async via Kafka | ✅ async via Kafka | ✅ async via Kafka |
 | Expected latency | ~30-60s | ~2-4min | ~5-7min |
 
 **Frontend**: Dropdown selector in the chat input bar — no text input needed. Defaults to Flash for fastest responses.
@@ -378,7 +409,7 @@ After:  "best selling product" → Data Analyst → reads CSV → actual data an
 
 ## Status
 
-Functional end-to-end prerelease (v0.9.5). The core chat loop, multi-agent system, RAG pipeline, file management, WebSocket observability, and onboarding flow are operational. Known gaps:
+Functional end-to-end prerelease (v0.9.9). The core chat loop, multi-agent system, RAG pipeline, file management, WebSocket observability, effort-based execution, Kafka async jobs, and onboarding flow are operational. Known gaps:
 - **Web Developer agent — coming soon** (not yet active; shown as a preview in the UI)
 - **Finance Advisor agent — coming soon** (not yet active; shown as a preview in the UI)
 - Settings page is a placeholder
@@ -387,50 +418,34 @@ Functional end-to-end prerelease (v0.9.5). The core chat loop, multi-agent syste
 - Passwords stored in plaintext
 - CORS hardcoded to localhost
 - Supabase free tier REST API adds 3-7s latency per RPC call (embedding serialization overhead)
+- Kafka consumers are separate processes with no supervisor (no auto-restart on crash)
 
 
-## Changelog (v0.9.0 → v0.9.5)
+## Changelog (v0.9.5 → v0.9.9)
 
-### Thread-Safe CEO State (Redis-backed)
-- **Race condition fixed**: `ceo_state.py` rewritten from module-level globals (`_current_session_id`, `_current_effort`) to Redis-backed per-request state
-- Each `talk_to_ceo` call generates a unique UUID request key; stores `{sid, effort}` in Redis (`ceo_req:{uuid}`, 5-min TTL); sets it in a `contextvars.ContextVar`
-- Tool functions read via `ceo_state._current_session_id` → `__getattr__` → Redis GET → correct session/effort for that request
-- **Concurrent test passed**: Two threads simultaneously reading correct, isolated values
-- Request-level Redis cache: same request key returns cached state (1 Redis call instead of 2 per tool invocation)
+### Kafka Async Job Pipeline
+- **Decoupled background work**: chat memory extraction, session title generation, and message persistence moved off FastAPI `BackgroundTasks` onto Kafka topics
+- **Topics + consumers**: `chat_memory` → `chat_memory_job.py`, `session_title_creation` → `session_title_creation_job.py`, `add_message_to_session` → `add_message_to_session_job.py`
+- **Producer module**: `backend/kafka_jobs/producers/producer.py` with `queue_session_message()`, `queue_chat_memory()`, `queue_title_creation()` (lazy singleton producer, JSON payloads, flush per message)
+- **Consumer jobs**: one process per topic, own consumer group, per-message error isolation, synchronous offset commit after success, `auto.offset.reset=earliest`
+- **`run_consumers.py`**: launches all three consumers as subprocesses from a single command
+- **`chat_memory_helpers.py`**: `store_chat_memory()` / `store_chat_title()` extracted from `main.py` so consumers can import persistence without the agent stack (CEO, LLM clients)
+- **`main.py` slimmed** to the `chat()` entry point only
+- **`docker-compose.yaml`**: Confluent Kafka 7.8.9 single-node KRaft broker on port 9092
+- **MCQ persistence**: clarification replies are written to the DB directly (immediately visible in history) and side-queued to Kafka
+- **All efforts get memory/titles**: flash mode no longer skips chat memory extraction or title generation — they run async via Kafka, so the response path is unaffected
+- **`connectors/base.py`**: `BaseConnector` abstraction (`connect` / `disconnect` / `get_status`) added as the foundation for pluggable external connectors
+- **`requirements.txt`**: added `confluent_kafka`
 
-### WebSocket Observability Overhaul
-- **Real-time agent trace**: WebSocket (`/chat/ws?session_id=`) streams tool calls, subagent spawns, and errors to the frontend
-- **Claude-style inline trace**: `AgentTraceInline` component renders below each assistant message — collapsible panel showing tool runs with expand/collapse per row
-- **Live trace**: While CEO is processing, trace appears in real-time with "Waiting for agent…" spinner → populates as tool calls arrive
-- **Per-query isolation**: `startQuery()` resets trace at the start of each new query; `snapshotRuns()` captures completed trace to attach to the assistant message
-- **Persistent connection**: Backend WS handler uses `while True` loop — one connection lasts the entire session, no reconnect needed between queries
-- **Fan-out event bus**: `SessionEventBus` refactored from single-queue to multi-queue — each drain loop gets its own queue, events fan out to all listeners
-- **Frontend pre-generates session ID**: `crypto.randomUUID()` before API call so WS connects before backend starts processing — eliminates race where events arrived before WS was ready
+### Agent Registry & Routing Updates
+- CEO tools in `agents/agents.json` expanded: `ask_mcq_for_user`, `research_request`, `writing_request`, `marketing_request` with agent-routing descriptions (e.g. `data_analysis_request` explicitly scoped to company files; `knowledge_request` documents only)
+- CMO `super_search` renamed to `search_current_market_trends`; CMO gained `get_current_date`
 
-### Tool Run ID Matching
-- Backend now passes `tool_run_id` (LangChain UUID) in `tool_start`, `tool_end`, `tool_error` events
-- Frontend matches by `toolRunId` instead of `toolName` — parallel calls to the same tool are correctly tracked as separate runs
-- No more duplicate/mismatched tool runs in the agent trace
+### Flash Response Optimizations
+- Dedicated compact flash CEO prompt (`get_ceo_system_prompt_flash`) with explicit resource limits and a "one agent does research AND write" directive
+- Flash latency improved ~40% via reduced model hops and skipped non-essential pipeline stages
 
-### MCQ Guard Aligned with Effort
-- Replaced hardcoded `_MAX_MCQ_PER_SESSION = 2` with `_get_mcq_limit_for_effort()` — Flash: 1, Mid: 2, Max: 3
-- Matches the per-effort resource limits in `ceo_resources.py`
-
-### return_direct Tool Trace Fix
-- `ask_mcq_for_user` and `graphic_design_request` use `return_direct=True` which skips LangChain's `on_tool_end` callback
-- Both now call `_push_tool_end_manual()` before returning — tool runs complete correctly in the trace instead of staying stuck in "running" state
-
-### MCQ Improvements
-- `allow_custom` is now a real parameter in `ask_mcq_for_user` — LLM can set it to `False` to restrict to predefined options
-- `multi_select` flag preserved across DB reload: backend stores `[multi]\n` prefix in message text; frontend parses it back
-
-### Robustness Fixes
-- All `except Exception: ... sys.exc_info()[1]` → `except Exception as e: ... str(e)` — 5 locations fixed
-- `format_resources_for_prompt` uses `.get(key, 0)` for all dict access — no more `KeyError` on corrupted Redis state
-- Dead code removed: `current_effort` / `_current_session_id` module vars from `CEO.py`; `_Proxy` class hack from `ceo_state.py`
-
-### CEO Prompt: Informational vs Action Queries
-- Added explicit distinction: **informational** ("What time should I post?") → answer directly; **action** ("Create a post") → delegate
-- Hallucination guard: "Never assume the founder wants to DO something just because they asked ABOUT something"
-- Prevents the CEO from turning simple questions into agent-spawning projects
+### Resource Guard Rails
+- Session resource budget (`agents/CEO/ceo_resources.py`) enforced for `external_agents`, `web_searches`, `rag_calls`, `mcqs` (flash: 1/2/1/1, mid: 2/3/3/2, max: 5/4/5/3)
+- Exhausted resources return explicit errors; agents must synthesize from collected data instead of retrying
 

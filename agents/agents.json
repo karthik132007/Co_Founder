@@ -14,18 +14,53 @@
           "args": {}
         },
         {
+          "id": "ask_mcq_for_user",
+          "name": "ask_mcq_for_user",
+          "description": "Ask the user a multiple choice question shown as clickable buttons. HARD LIMIT: at most 2 calls total per task — then you MUST act. Use only for critical decisions (budget, direction, priority, format, channel). Batch related questions into ONE call with multi_select=True. NEVER re-ask something the user already answered. The user can always type a custom answer, so never add an 'other' option.",
+          "args": {
+            "question": "Question to ask the user",
+            "options": "List of answer options",
+            "multi_select": "Whether multiple options can be selected",
+            "allow_custom": "Whether the user can type a custom answer"
+          }
+        },
+        {
           "id": "knowledge_request",
           "name": "knowledge_request",
-          "description": "Search company knowledge across files and memory via the RAG engine.",
+          "description": "Search the company's document knowledge base (files, chunks). Does NOT search chat memories — those are injected automatically.",
           "args": {
             "query": "Search query",
             "top_k": "Maximum results to return"
           }
         },
         {
+          "id": "research_request",
+          "name": "research_request",
+          "description": "Search the WEB for external/public information. Use for: market research, competitor analysis, industry trends, regulations, benchmarks. Does NOT have access to company files — use data_analysis_request for any question about uploaded CSV/Excel/sales data.",
+          "args": {
+            "task": "Research task description"
+          }
+        },
+        {
+          "id": "writing_request",
+          "name": "writing_request",
+          "description": "Delegate drafting and polishing to the Writer agent.",
+          "args": {
+            "task": "Writing task description"
+          }
+        },
+        {
+          "id": "marketing_request",
+          "name": "marketing_request",
+          "description": "Delegate market strategy and growth work to the CMO agent.",
+          "args": {
+            "task": "Marketing task description"
+          }
+        },
+        {
           "id": "data_analysis_request",
           "name": "data_analysis_request",
-          "description": "Delegate data analysis, EDA, and file-based insights to the Data Analyst agent.",
+          "description": "Analyze company data files (CSV, Excel, etc.). Use for: best/top/worst selling products, sales trends, revenue analysis, profit margins, any question about company-uploaded spreadsheets. This agent reads YOUR files and runs Python — use it for ANY question about your own company data.",
           "args": {
             "task": "Analysis task description"
           }
@@ -83,9 +118,9 @@
       "description": "Develops marketing strategy, campaigns, SEO, branding, and growth plans.",
       "tools": [
         {
-          "id": "super_search",
-          "name": "super_search",
-          "description": "Search trends, news, and shopping results for a given query.",
+          "id": "search_current_market_trends",
+          "name": "search_current_market_trends",
+          "description": "Super search the google trends,news,shopping for a given query and return a list of results.",
           "args": {
             "query": "Topic to search"
           }
@@ -102,10 +137,16 @@
         {
           "id": "extract_content_from_webpages",
           "name": "extract_content_from_webpages",
-          "description": "Extract content from a webpage.",
+          "description": "Extract content from webpage.",
           "args": {
             "urls": "URL or URLs to extract"
           }
+        },
+        {
+          "id": "get_current_date",
+          "name": "get_current_date",
+          "description": "Return current date in YYYY-MM-DD format.",
+          "args": {}
         }
       ],
       "enabled": true,
