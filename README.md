@@ -7,6 +7,7 @@
 
 - [Overview](#overview)
 - [Architecture](#architecture)
+- [Tech Stack](#tech-stack)
 - [Agent System](#agent-system)
 - [RAG Engine](#rag-engine)
 - [Backend](#backend)
@@ -14,7 +15,6 @@
 - [Code Sandbox](#code-sandbox)
 - [Prompt System & Tool Registry](#prompt-system--tool-registry)
 - [Logging & Observability](#logging--observability)
-- [Tech Stack](#tech-stack)
 - [Setup](#setup)
 - [Performance Improvements](#performance-improvements)
 - [Status](#status)
@@ -27,6 +27,7 @@ Copyright (C) 2026 Karthikeya Kumar
 This project is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0).
 
 See the LICENSE file for details.
+
 ## Overview
 
 AI Co-Founder is a multi-agent AI platform that replaces a human founding team with a CEO orchestrator agent and specialized sub-agents. Founders describe their business idea through a conversational chat interface, and the agents collaboratively handle strategy, market research, content writing, data analysis, and knowledge management via a shared RAG + chat memory backbone.
@@ -35,16 +36,51 @@ AI Co-Founder is a multi-agent AI platform that replaces a human founding team w
 
 ![System Architecture](docs/sys_arch2.png)
 
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Orchestration | Python 3.13+, LangChain (`create_agent` factory) |
+| Backend | FastAPI, Uvicorn |
+| Caching | Redis (company data, user→company mapping, sessions, messages, embeddings, CEO state, session resources) |
+| Message Bus | Apache Kafka (KRaft, Confluent 7.8.9) + `confluent_kafka` (fire-and-forget background jobs) |
+| Vector Search | Supabase pgvector (cosine similarity + keyword fusion) |
+| LLM Provider | OpenRouter (DeepSeek, GLM, GPT-OSS 120b/20b, Gemma, Morph, text-embedding-3-small) |
+| Web Search | Tavily Search API |
+| Market Data | SerpAPI (Google Trends, Google News, Google Shopping) |
+| Code Sandbox | e2b (e2b-code-interpreter) |
+| PDF Extraction | PyMuPDF (fitz) |
+| OCR | Vision LLM (Gemma 4 26B via OpenRouter) |
+| Database | Supabase PostgreSQL + pgvector (HNSW indexes) |
+| Storage | Supabase Storage (S3-compatible) |
+| Frontend | Next.js 16.2.9, React 19.2.4, Tailwind CSS v4 |
+| UI Animation | framer-motion 12.42.0, GSAP 3.15.0, Lenis, Three.js 0.185 (React Three Fiber, drei, postprocessing) |
+| Icons | lucide-react 1.21.0 |
+| Markdown | react-markdown 10.1.0, remark-gfm 4.0.1 |
+
 ## Agent System
 
 ### CEO Orchestrator
-The CEO (`backend/agents/ceo_agent.py`) is a LangChain agent built with `create_agent()` — a custom wrapper around LangChain's agent framework. It is initialized with:
-- **System prompt**: A detailed persona describing the CEO's role, decision-making style, and constraint rules
-- **Tool registry**: 10+ tools that the CEO dynamically selects via LLM reasoning
+The CEO (`agents/CEO/CEO.py`) is a LangChain agent built with the stock `create_agent()` factory (`from langchain.agents import create_agent`). It is initialized with:
+- **System prompt**: A detailed persona describing the CEO's role, decision-making style, and constraint rules (flash effort swaps in a dedicated compact prompt, `get_ceo_system_prompt_flash`)
+- **Tool registry**: 8 tools that the CEO dynamically selects via LLM reasoning (all defined in `agents/CEO/ceo_agent_tools.py`)
 - **LLM backend**: OpenRouter with effort-based model selection via `get_best_llm(tasks, effort)` — picks DeepSeek, GLM, GPT-OSS, Gemma, or MIMO based on task type and effort level (flash/mid/max)
 
+**CEO tool registry** (8 tools):
+
+| Tool | Description |
+|---|---|
+| `view_all_agents` | Lists available sub-agents from `agents/agents.json` |
+| `ask_mcq_for_user` | Presents MCQ clarification cards to the user |
+| `knowledge_request` | Queries RAG engine for company documents (no chat memories) |
+| `research_request` | Delegates to Researcher agent |
+| `writing_request` | Delegates to Writer agent for content generation |
+| `marketing_request` | Delegates to CMO Marketing agent |
+| `data_analysis_request` | Delegates to Data Analyst with file references |
+| `graphic_design_request` | Delegates to Graphic Designer agent |
+
 **Decision loop**:
-1. User message received via `POST /api/chat`
+1. User message received via `POST /chat`
 2. CEO plans next actions (research, write, analyze, or clarify)
 3. Delegates to sub-agents via tool calls
 4. Synthesizes results into a coherent response
@@ -53,8 +89,8 @@ The CEO (`backend/agents/ceo_agent.py`) is a LangChain agent built with `create_
 ### Sub-Agent Architecture
 Each sub-agent follows a common pattern:
 - **Specialized system prompt** with domain expertise
-- **Judge Agent reflection loop**: Effort-based — flash: 0 reflections, mid: 1, max: 2. Output scored 1–10; if below threshold, agent revises with Judge's critique
-- **Temperature 0.7** for creative tasks (writer), **0.2** for analytical (data analyst)
+- **Judge Agent reflection loop**: Effort-based — flash: 0 reflections, mid: 1, max: 2. Output scored 0–10; if below threshold (7 for researcher, 8 for writer), agent revises with Judge's critique
+- **Temperature**: all agents use the default temperature 1.0 in `agents/helpers/CreateLLM.py` (no per-agent temperature tuning)
 
 | Agent | File | Tools / Backend | Judge Loop |
 |---|---|---|---|
@@ -65,36 +101,37 @@ Each sub-agent follows a common pattern:
 | Graphic Designer | `agents/graphic_design/graphic_designer.py` | OpenRouter `google/gemini-2.5-flash-image`, color palette tools | ❌ (direct generation) |
 | Judge | `agents/judge/llm_as_judge.py` | LLM-as-Judge prompt (GPT-OSS-120B) | N/A (evaluator) |
 | Chat Memory | `agents/util_agents/chat_memory_creator.py` | Structured memory extraction from conversations | ❌ |
-| Doc Description | `agents/util_agents/description_genrator.py` | LLM + OCR for document/image summarization | ❌ |
+| Doc Description | `agents/util_agents/description_genrator.py` | LLM for document summarization | ❌ |
+| Image Description | `agents/util_agents/image_description.py` | Vision LLM (Gemma) for image OCR/description | ❌ |
 | Title Creator | `agents/util_agents/title_creator.py` | LLM chat session title generation | ❌ |
 
 ### Interactive MCQ Clarifications
 The CEO uses the `ask_mcq_for_user` tool to present **multiple-choice question cards** in the chat UI. Implementation details:
-- `agents/CEO/ceo_agent_tools.py` defines the tool with a structured JSON payload: question text, options list, multi_select flag, allow_custom flag
-- The CEO agent is instructed to ask **at most 2 questions total per task** — exceeding this triggers a programmatic `[SYSTEM DIRECTIVE]` guard in `backend/api/chat.py` that forces execution
-- Frontend renders MCQ cards via `Chat.tsx` — displays as interactive cards with checkboxes, a custom answer input, and a confirm button
+- `agents/CEO/ceo_agent_tools.py` defines the tool with a structured JSON payload: `{type: "clarification_request", question, options, allow_custom, multi_select}`
+- The tool description and CEO prompt instruct asking **at most 2 questions total per task** — a programmatic `[SYSTEM DIRECTIVE]` guard in `backend/api/chat.py` enforces effort-based limits (flash: 1, mid: 2, max: 3) and forces execution when exceeded
+- Frontend renders MCQ cards via `frontend/src/components/Chat.tsx` — displays as interactive cards with checkboxes, a custom answer input, and a confirm button
 - On confirmation, the raw answer (not a verbose wrapper) is sent to the backend, keeping LLM context clean
-- **Critical fix (v0.8.0):** DB columns use `message` not `content`. `talk_to_ceo` now reads `turn.get("content") or turn.get("message")` — without this, ALL conversation history was silently dropped and the CEO had zero context.
+- **Critical fix (v0.8.0):** DB columns use `message` not `content`. `talk_to_ceo` now reads `turn.get("content") or turn.get("message")` — without this, ALL conversation history was silently dropped and the CEO had zero context (`agents/CEO/CEO.py:141`).
 
 ## RAG Engine
 
-The RAG pipeline (`backend/RAG_Engine/rag.py`) is the shared knowledge layer. Data flow:
+The RAG pipeline (`RAG_Engine/rag.py`) is the shared knowledge layer. Data flow:
 
 ### Ingestion Pipeline
 ```
-User uploads file → POST /api/files/upload
-  → PyMuPDF extraction (PDFs) / OCR (images)
+User uploads file → POST /upload
+  → PyMuPDF extraction (PDFs) / vision-LLM OCR (Gemma, for images)
   → Description Agent generates a retrieval-optimized summary
-  → LangChain SemanticChunker splits text by semantic boundaries
+  → LangChain SemanticChunker (langchain_experimental) splits text by semantic boundaries
   → OpenRouter text-embedding-3-small generates 1536-dim vectors
-  → Supabase pgvector RPC inserts (content, embedding, metadata)
+  → Supabase direct table inserts into document_chunks (content, embedding, metadata)
   → File stored in Supabase Storage
 ```
 
 ### Retrieval Pipeline
 ```
 User asks question in chat:
-  → Chat memories are retrieved FIRST and injected into the user prompt
+  → Chat memories are retrieved FIRST and injected into the user prompt (skipped in flash mode)
   → CEO calls knowledge_request tool (documents only, no chat memories)
   → Embed query with text-embedding-3-small
   → Sequential RPC calls (shared httpx client):
@@ -116,19 +153,32 @@ User asks question in chat:
 
 ### Structure
 ```
+Co_Founder/
 ├── main.py                  # Chat entry point: chat()
 ├── logger_config.py         # RotatingFileHandler (10MB × 3), dual handlers
 ├── docker-compose.yaml      # Kafka broker (KRaft, single node, port 9092)
-├── connectors/              # BaseConnector abstraction (connect/disconnect/get_status)
+├── requirements.txt
+├── agents/                  # Agent implementations (repo root)
+│   ├── agents.json          # Central agent registry (10 agents)
+│   ├── CEO/                 # CEO orchestrator (CEO.py, ceo_prompts.py, ceo_agent_tools.py, ceo_resources.py, ceo_state.py)
+│   ├── researcher/          # Web research agent
+│   ├── marketing/           # CMO marketing agent
+│   ├── data_analyst/        # Data analysis + e2b sandbox
+│   ├── graphic_design/      # Image generation agent
+│   ├── judge/               # LLM-as-Judge evaluator
+│   ├── util_agents/         # Chat memory, title, description, image description, writer agents
+│   └── helpers/             # LLM selection, datetime, utilities
 ├── backend/
 │   ├── app.py               # FastAPI app, CORS, router registration
 │   ├── models.py            # SQLAlchemy models
 │   ├── utils.py             # Supabase client init, helpers
 │   ├── api/
-│   │   ├── auth.py          # Auth routes
-│   │   ├── chat.py          # POST /chat, session CRUD, MCQ guard
-│   │   ├── user.py          # User routes
-│   │   └── drive.py         # File upload/download routes
+│   │   ├── auth.py          # /auth/signup, /auth/login
+│   │   ├── chat.py          # POST /chat, session CRUD, WS /chat/ws, MCQ guard
+│   │   ├── user.py          # /user/onboarding, /user/dashboard, /user/files
+│   │   ├── drive.py         # POST /upload, DELETE /file/{id}
+│   │   ├── connection_manager.py    # ConnectionManager + SessionEventBus (WS traces)
+│   │   └── observability_events.py  # Agent trace event types/factories
 │   ├── kafka_jobs/          # Async Kafka pipeline (producers + consumers)
 │   │   ├── producers/producer.py   # queue_session_message, queue_chat_memory, queue_title_creation
 │   │   ├── consumers/               # add_message_to_session_job, chat_memory_job, session_title_creation_job
@@ -136,22 +186,14 @@ User asks question in chat:
 │   └── db/
 │       ├── database.py      # SQLAlchemy engine
 │       ├── chat_memory_helpers.py  # store_chat_memory / store_chat_title (importable without agent stack)
-│       ├── get_from_sql.py  # Supabase read queries
+│       ├── get_from_sql.py  # Supabase read queries (Redis-cached)
 │       ├── insert_to_sql.py # Supabase write queries
 │       ├── delete_from_sql.py
-│       └── put_to_drive.py  # Supabase Storage uploads
-├── agents/                  # Agent implementations
-│   ├── agents.json          # Central agent registry
-│   ├── CEO/                 # CEO orchestrator (CEO.py, ceo_prompts.py, ceo_agent_tools.py)
-│   ├── researcher/          # Web research agent
-│   ├── marketing/           # CMO marketing agent
-│   ├── data_analyst/        # Data analysis + e2b sandbox
-│   ├── graphic_design/      # Image generation agent
-│   ├── judge/               # LLM-as-Judge evaluator
-│   ├── util_agents/         # Chat memory, title, description, writer agents
-│   └── helpers/             # LLM selection, datetime, utilities
+│       ├── put_to_drive.py  # Supabase Storage uploads
+│       └── redis_client.py  # Redis client singleton
 ├── RAG_Engine/              # rag.py, chat_memory.py, retrive.py, embeddings.py, chunking.py
 ├── e2b_sandbox/             # Secure Python code execution sandbox
+├── connectors/              # BaseConnector abstraction (connect/disconnect/get_status)
 ├── evals/                   # Per-agent test scripts
 └── schemas/                 # Raw SQL migration files
 ```
@@ -159,32 +201,33 @@ User asks question in chat:
 ### API Endpoints
 | Method | Path | Description |
 |---|---|---|
-| POST | `/signup` | Create user (plaintext password) |
-| POST | `/login` | Authenticate user |
-| POST | `/onboard-company` | Create company profile (name, description, industry, tone) |
-| GET | `/company` | Fetch company details |
-| POST | `/api/files/upload` | Upload file (PDF, image, CSV, Excel, JSON, Parquet) |
-| GET | `/api/files/list-files` | List company files |
-| DELETE | `/api/files/delete-file` | Delete file |
-| POST | `/api/chat` | Send message to CEO agent |
-| POST | `/api/chat/new` | Create new chat session |
-| GET | `/api/chat/list` | List user's chat sessions |
-| GET | `/api/chat/{id}/messages` | Get messages for a session |
-| DELETE | `/api/chat/{id}` | Delete chat session |
+| POST | `/auth/signup` | Create user (plaintext password) |
+| POST | `/auth/login` | Authenticate user (returns id + email) |
+| POST | `/user/onboarding` | Create company profile (name, description, industry, tone) |
+| GET | `/user/dashboard` | Fetch company + dashboard details |
+| POST | `/upload` | Upload file (PDF, image, CSV, Excel, JSON, Parquet) |
+| GET | `/user/files` | List company files |
+| DELETE | `/file/{file_id}` | Delete file |
+| POST | `/chat` | Send message to CEO agent (auto-creates session if `session_id` omitted) |
+| GET | `/chat/sessions` | List user's chat sessions |
+| GET | `/chat/sessions/{session_id}` | Get messages for a session |
+| DELETE | `/chat/sessions/{session_id}` | Delete chat session |
 | WS | `/chat/ws?session_id=` | Real-time agent trace events (tool_start/end, subagent spawn/end, heartbeats) |
 
 ### Async Kafka Pipeline (v0.9.9)
 
-Background work (chat memory extraction, session titles, message persistence) is decoupled from the request path via Kafka instead of FastAPI `BackgroundTasks`:
+Background work (chat memory extraction, session titles, message persistence) is decoupled from the request path via **fire-and-forget Kafka jobs** — the request handler produces the message (non-blocking, ~0ms) and returns immediately without waiting for consumers; failures never block or fail the chat response:
 
 ```
-POST /api/chat
-  → chat_with_user() queues to Kafka (non-blocking, ~0ms)
+POST /chat
+  → chat_with_user() queues to Kafka (fire-and-forget, ~0ms)
       • chat_memory              → chat_memory_job.py           → store_chat_memory()
       • session_title_creation   → session_title_creation_job.py → store_chat_title()
       • add_message_to_session   → add_message_to_session_job.py → add_message_to_session()
   → consumers run as separate processes (python backend/kafka_jobs/run_consumers.py)
 ```
+
+- **Fire-and-forget semantics**: producers produce + `flush()` per message and return; there is no acknowledgement back to the request path. Each consumer isolates per-message failures with try/except — a failed job is logged and skipped, and since the offset is only committed after success, uncommitted messages are redelivered on restart (at-least-once delivery)
 
 - **Producer**: `backend/kafka_jobs/producers/producer.py` — lazy singleton `confluent_kafka.Producer` (localhost:9092); JSON payloads produced + flushed per message
 - **Consumers**: one process per topic (`backend/kafka_jobs/consumers/`), each with its own consumer group, per-message try/except isolation, and synchronous offset commits after success (`auto.offset.reset=earliest`)
@@ -195,8 +238,8 @@ POST /api/chat
 
 ### Authentication Flow
 - Password stored in database as plaintext (no hashing)
-- On login, `authenticate_user()` compares raw strings
-- On success, user metadata (id, email, company_id) is returned
+- On login, `authenticate_user()` compares raw strings (`backend/db/insert_to_sql.py`)
+- On success, user metadata (id, email) is returned — `company_id` is not included
 - Client stores in `localStorage` and sends `user_id` as a query/form parameter
 - No JWT, no HTTP-only cookies, no session expiry
 
@@ -204,28 +247,48 @@ POST /api/chat
 
 ### Structure
 ```
-frontend/
+frontend/src/
 ├── app/
-│   ├── page.tsx          # Landing page (835 lines) — hero, problem, solution, agents showcase, features, comparison, CTA, footer
-│   ├── auth/page.tsx      # Auth page (277 lines) — login/signup toggle, brand panel, animated transitions
-│   ├── onboarding/page.tsx # Onboarding wizard (421 lines) — 4-step form with progress bar
-│   ├── dashboard/page.tsx  # Dashboard (824 lines) — sidebar nav, overview stats, drive grid, chat interface
-│   └── globals.css        # Design system tokens, neumorphic cards, glass nav, animations
+│   ├── layout.tsx            # Root layout
+│   ├── page.tsx              # Landing page (47 lines — thin orchestrator; content lives in components/landing/)
+│   ├── landing.css           # Landing page styles (357 lines)
+│   ├── globals.css           # Design system tokens, cards, glass nav, animations
+│   ├── auth/page.tsx         # Auth page (277 lines) — login/signup toggle, brand panel, animated transitions
+│   ├── onboarding/page.tsx   # Onboarding wizard (421 lines) — 4-step form with progress bar
+│   └── (app)/                # Authenticated route group
+│       ├── layout.tsx        # AppShell wrapper
+│       ├── dashboard/page.tsx # Dashboard (145 lines) — overview stats, recent files, quick actions
+│       ├── chat/page.tsx     # Chat page (28 lines)
+│       ├── drive/page.tsx    # Drive (136 lines) — file grid, upload/delete
+│       ├── plugins/page.tsx  # Plugins (19 lines) — "Coming Soon"
+│       ├── settings/page.tsx # Settings (82 lines) — tabbed UI, placeholder content
+│       ├── profile/page.tsx  # Profile (145 lines)
+│       ├── profile/settings/page.tsx
+│       └── [sessionId]/page.tsx
 ├── components/
-│   ├── Chat.tsx           # Full chat component (617 lines) — message list, MCQ cards, typing indicator, session management
-│   └── ...
-└── ...
+│   ├── AppLayout.tsx         # Collapsible sidebar, session management, chat history
+│   ├── Chat.tsx              # Full chat component (896 lines) — messages, MCQ cards, typing indicator, effort selector
+│   ├── AgentTimeline.tsx     # AgentTraceInline — collapsible trace below each message
+│   ├── landing/              # 19 landing section components (Hero, HowItThinks, Features, Comparison, CTA…)
+│   └── ui/
+└── lib/
+    ├── api.ts                # API client (271 lines)
+    ├── observability.ts      # useObservability hook — persistent WS connection (383 lines)
+    ├── session.ts            # localStorage session helpers
+    └── hooks/                # useLenis, useMouse, useScramble
 ```
 
 ### Page Details
 
-**Landing Page** (`/`): Animated hero with orbiting agent chips (orbiting icons for each agent role). Sections for problem/solution, how-it-works (5-step visual pipeline), agent cards (6 agents with role descriptions), feature grid, comparison table, and CTA. Responsive with mobile hamburger menu.
+**Landing Page** (`/`): Animated hero with a Three.js scene (noise-shader icosahedron, neural net, particle field) animated by GSAP. `HowItThinks` shows a horizontal pinned-scroll of 7 agent cards (CEO, Researcher, Writer, CMO, Data Analyst, Graphic Designer, Judge) + an end card. Sections for solution/product surface, feature grid (6 cards), cinematic two-column comparison (cost, speed, availability, tools, coordination, memory), CTA, and footer.
 
-**Auth Page** (`/auth`): Split layout — left brand panel (desktop) or stacked (mobile). Animated form toggle between login/signup. Input validation, loading spinner, error/success toasts. Redirects to `/dashboard` on login, `/onboarding` on signup.
+**Auth Page** (`/auth`): Split layout — left brand panel with static agent chips (desktop) or stacked (mobile). Animated form toggle between login/signup. Input validation, loading spinner, error/success toasts. Redirects to `/dashboard` on login, `/onboarding` on signup.
 
-**Onboarding Wizard** (`/onboarding`): 4 steps — company name → description (max 500 words with counter) → industry (animated scroll selector) → brand tone (radio cards: Friendly/Professional/Witty). Progress bar, back/continue/finish buttons, animated transitions between steps.
+**Onboarding Wizard** (`/onboarding`): 4 steps — company name → description (max 500 words with counter) → industry (text input) → brand tone (radio cards: Friendly/Professional/Witty). Progress bar, back/continue/finish buttons, animated transitions between steps.
 
-**Dashboard** (`/dashboard`): Collapsible sidebar with 4 nav items — Overview (stats cards: files, storage, sessions; recent files grid; quick action buttons), Drive (file grid with type icons, upload/delete), Chat (full conversational UI with session sidebar), Settings (placeholder — "coming soon").
+**App Shell** (`/(app)`): Collapsible sidebar with 4 nav items — Overview, Chat, Drive, Plugins — plus New Chat button, recent-chats list, and a Settings link in the footer. Settings is a separate route with tabbed UI (General, Appearance, Notifications, Security, Billing) but placeholder ("Coming Soon") content; Plugins page is also a "Coming Soon" placeholder.
+
+**Dashboard** (`/dashboard`): Overview stats cards (files, storage, sessions), recent files grid, quick action buttons. File management lives on `/drive` (file grid with type icons, upload/delete).
 
 ### Chat Component
 - Renders message list with react-markdown + remark-gfm
@@ -235,17 +298,18 @@ frontend/
 - Auto-scroll to bottom on new messages
 - **Copy button** — every assistant message has a hover-visible copy button (top-right). Code blocks (```text) have a dedicated copy button inside the dark block
 - **Deliverable formatting** — CEO wraps emails, captions, ads in ```text blocks; frontend renders with dark background, spacing, and copy affordance
+- **Effort selector** — dropdown in the chat input bar (⚡ Flash / ⚖️ Mid / 🎯 Max), defaults to Flash
 
 ### Design System (`globals.css`)
 - Tailwind v4 `@theme` custom tokens for colors, fonts, spacing
-- Neumorphic card system with inset shadows and hover lifts
+- Flat card system with borders and soft shadows, hover lifts
 - Glass-morphism navigation with backdrop blur
 - Grid background pattern and text gradient utilities
-- Custom scrollbar, keyframe animations (fade-in, slide-up, orbit), reduced-motion media query support
+- Custom scrollbar, keyframe animations (fade-in, slide-up, float), reduced-motion media query support
 
 ## Code Sandbox
 
-The Data Analyst agent uses **e2b** (`backend/agents/data_analyst.py`) for secure Python execution:
+The Data Analyst agent uses **e2b** (`agents/data_analyst/data_agent.py` + `e2b_sandbox/codig_env.py`) for secure Python execution:
 
 1. Agent receives file references from the CEO
 2. Files are downloaded from Supabase Storage
@@ -257,32 +321,30 @@ The Data Analyst agent uses **e2b** (`backend/agents/data_analyst.py`) for secur
 
 ## Prompt System & Tool Registry
 
-### CEO Tool Definitions (`backend/tools/`)
-| Tool | File | Description |
-|---|---|---|
-| `Researcher` | `tools.py` (inline) | Delegates to Researcher agent, returns structured research |
-| `Writer` | `tools.py` (inline) | Delegates to Writer agent for content generation |
-| `CMO` | `tools.py` (inline) | Delegates to CMO Marketing agent |
-| `Data Analyst` | `tools.py` (inline) | Delegates to Data Analyst with file references |
-| `ask_mcq_for_user` | `mcq_tools.py` | Presents MCQ cards to user |
-| `retrieve_knowledge` | `retrival_tool.py` | Queries RAG engine for company documents |
-| `get_chat_memories` | `retrival_tool.py` | Retrieves relevant past conversation memories |
-| `see_drive_files` | `file_tools.py` | Lists files in company drive |
-| `create_doc_description` | `file_tools.py` | Generates description for uploaded files |
+### CEO Tool Definitions
+All 8 CEO tools are defined in `agents/CEO/ceo_agent_tools.py` (see the [CEO tool registry table](#ceo-orchestrator)). Sub-agent tools live alongside their agents:
+- Researcher: `agents/researcher/researcher_agent_tools.py`
+- Writer: `agents/util_agents/writer/writer_agent_tools.py`
+- CMO: `agents/marketing/cmo_tools.py`
+- Data Analyst: `agents/data_analyst/data_analyst_tools.py`
+- Graphic Designer: `agents/graphic_design/graphic_desiger_tools.py`
+- Helpers: `agents/helpers/` (serp_helpers, coding_agent_tools, CreateLLM)
+
+`agents/agents.json` is the central registry mirroring the agents and their tools (10 agent entries).
 
 ### Prompt Engineering
 All agent prompts follow a structured format:
 - **Persona definition**: Role, expertise, tone, constraints
 - **Tool descriptions**: Name, parameters, usage guidelines, and examples
 - **Output formatting rules**: Markdown structure, required sections, length limits
-- **Quality constraints**: Judge review threshold (≥ 8/10), revision instructions
+- **Quality constraints**: Judge review threshold (≥ 8/10 for writer, ≥ 7/10 for researcher), revision instructions
 - **Edge case handling**: Missing information, ambiguous requests, error recovery
 
 Each agent prompt is defined as a module-level constant (e.g., `RESEARCHER_SYSTEM_PROMPT`, `WRITER_SYSTEM_PROMPT`) in the respective agent file.
 
 ## Logging & Observability
 
-- **`backend/logger_config.py`**: Dual-handler setup
+- **`logger_config.py`**: Dual-handler setup
   - `RotatingFileHandler`: 10 MB per file, 3 backup copies, DEBUG+ level
   - `StreamHandler`: Console output at INFO+ level
 - Logs capture: agent decisions, tool calls, RAG queries, API requests/responses, file operations, sandbox execution, errors/warnings
@@ -293,32 +355,11 @@ Each agent prompt is defined as a module-level constant (e.g., `RESEARCHER_SYSTE
 
 Real-time observability streamed to the frontend via WebSocket:
 
-- **Backend**: `SessionEventBus` (fan-out queue per drain loop) + `ObservabilityCallback` (LangGraph callback) pushes `tool_start`, `tool_end`, `tool_error`, `subagent_spawn`, `subagent_end`, `subagent_error`, `session_start`, `session_end`, `heartbeat` events
-- **Frontend**: `useObservability` hook maintains persistent WS connection; `AgentTraceInline` renders Claude-style collapsible trace below each assistant message
+- **Backend**: `SessionEventBus` (fan-out queue per drain loop) + `ObservabilityCallback` (LangGraph callback) in `backend/api/connection_manager.py` / `observability_events.py` pushes `tool_start`, `tool_end`, `tool_error`, `subagent_spawn`, `subagent_end`, `subagent_error`, `session_start`, `session_end`, `heartbeat` events
+- **Frontend**: `useObservability` hook (`frontend/src/lib/observability.ts`) maintains persistent WS connection; `AgentTraceInline` renders collapsible trace below each assistant message
 - **Per-query isolation**: Trace resets at each new query; completed trace snapshotted and attached to the message; trace survives page reload (stored in message state)
 - **Live streaming**: Trace appears immediately when user sends query, populates in real-time as tool calls execute
 - **Connection**: Single persistent WS per session — backend `while True` loop keeps it alive across queries
-
-## Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Orchestration | Python 3.12+, LangChain (custom `create_agent` wrapper) |
-| Backend | FastAPI, Uvicorn |
-| Database | Supabase PostgreSQL 15 + pgvector (HNSW indexes) |
-| Storage | Supabase Storage (S3-compatible) |
-| Frontend | Next.js 16.2.9, React 19.2.4, Tailwind CSS v4 |
-| UI Animation | framer-motion 12.42.0 |
-| Icons | lucide-react 1.21.0 |
-| Markdown | react-markdown 10.1.0, remark-gfm 4.0.1 |
-| LLM Provider | OpenRouter (DeepSeek, GLM, GPT-OSS 120b/20b, Gemma, Morph, text-embedding-3-small) |
-| Web Search | Tavily Search API |
-| Market Data | SerpAPI (Google Trends, Google News, Google Shopping) |
-| Message Bus | Apache Kafka (KRaft, Confluent 7.8.9) + `confluent_kafka` |
-| Vector Search | Supabase pgvector (cosine similarity + keyword fusion) |
-| Code Sandbox | e2b (e2b-code-interpreter) |
-| PDF Extraction | PyMuPDF (fitz) |
-| OCR | Pillow + custom image processing |
 
 ## Setup
 
@@ -332,8 +373,8 @@ Real-time observability streamed to the frontend via WebSocket:
 1. Clone the repo
 2. Install Python deps: `pip install -r requirements.txt`
 3. Install frontend deps: `cd frontend && npm install`
-4. Copy `.env.example` to `.env` and fill in your API keys (Tavily, OpenRouter, SerpAPI, Supabase URL + service role key, e2b)
-5. Run Supabase SQL migrations from `backend/schemas/` in order (01, 02, 03)
+4. Create a `.env` in the project root (there is no committed `.env.example`) with: `TAVILY_API_KEY`, `DATABASE_URL` (Supabase), `LLM_API_KEY` (OpenRouter), `SERP_API_KEY`, `SUPABSE_SERVICE_ROLE_KEY`, `E2B_API_KEY`
+5. Run Supabase SQL migrations from `schemas/` — create the tables, RPC functions, and HNSW indexes
 6. Start Kafka: `docker compose up -d kafka` (required for chat memory/title persistence)
 7. Start Kafka consumers: `python backend/kafka_jobs/run_consumers.py` (three background processes)
 8. Start backend: `uvicorn backend.app:app --reload` (default: `http://localhost:8000`)
@@ -371,6 +412,8 @@ Every chat request accepts an `effort` parameter (⚡ Flash / ⚖️ Mid / 🎯 
 | `openai/gpt-oss-20b` | Classification | Small reasoning model |
 | `google/gemma-4-26b-a4b-it` | OCR | General reasoning, multimodal, MoE |
 | `morph/morph-v3-fast` | Reserved | File-editing engine — not a general LLM |
+| `qwen/qwen3-coder-next` | Reserved | Defined in `choose_llm.py`, not yet routed |
+| `bytedance-seed/seedream-4.5` | Reserved | Image generation, not yet routed |
 
 ### Redis & Agent Caching (v0.8.1, extended v0.9.5)
 
@@ -385,7 +428,7 @@ Every chat request accepts an `effort` parameter (⚡ Flash / ⚖️ Mid / 🎯 
 | **CEO request state** | `ceo_req:{uuid}` | 5min | `agents/CEO/ceo_state.py` ✨ |
 | **Session resources** | `session_resources:{id}` | 1h | `agents/CEO/ceo_resources.py` |
 
-### Measured Impact (real `logs.log` timestamps)
+### Measured Impact
 
 | Metric | Before | After | Improvement |
 |--------|--------|-------|-------------|
@@ -400,7 +443,7 @@ Every chat request accepts an `effort` parameter (⚡ Flash / ⚖️ Mid / 🎯 
 
 ### Agent Routing Fix
 
-"What is my best selling product of all time" was misrouted to Researcher (web search) instead of Data Analyst (CSV analysis on uploaded files). Added an explicit **AGENT ROUTING GUIDE** in the CEO system prompt with per-agent "USE FOR" examples, anti-patterns, and 6 priority-ordered routing rules.
+"What is my best selling product of all time" was misrouted to Researcher (web search) instead of Data Analyst (CSV analysis on uploaded files). Added an explicit **AGENT ROUTING GUIDE** in the CEO system prompt with per-agent "USE FOR" examples, anti-patterns, and priority-ordered routing rules.
 
 ```
 Before: "best selling product" → Researcher → web search → no results
@@ -410,11 +453,9 @@ After:  "best selling product" → Data Analyst → reads CSV → actual data an
 ## Status
 
 Functional end-to-end prerelease (v0.9.9). The core chat loop, multi-agent system, RAG pipeline, file management, WebSocket observability, effort-based execution, Kafka async jobs, and onboarding flow are operational. Known gaps:
-- **Web Developer agent — coming soon** (not yet active; shown as a preview in the UI)
-- **Finance Advisor agent — coming soon** (not yet active; shown as a preview in the UI)
-- Settings page is a placeholder
+- Settings and Plugins pages are placeholders ("Coming Soon")
 - Image generation uses OpenRouter `google/gemini-2.5-flash-image`; slow (~30s) and blocks the CEO pipeline
-- No automated test suite — only ad-hoc eval scripts
+- No automated test suite — only ad-hoc eval scripts in `evals/`
 - Passwords stored in plaintext
 - CORS hardcoded to localhost
 - Supabase free tier REST API adds 3-7s latency per RPC call (embedding serialization overhead)
@@ -448,4 +489,3 @@ Functional end-to-end prerelease (v0.9.9). The core chat loop, multi-agent syste
 ### Resource Guard Rails
 - Session resource budget (`agents/CEO/ceo_resources.py`) enforced for `external_agents`, `web_searches`, `rag_calls`, `mcqs` (flash: 1/2/1/1, mid: 2/3/3/2, max: 5/4/5/3)
 - Exhausted resources return explicit errors; agents must synthesize from collected data instead of retrying
-
