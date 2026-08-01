@@ -33,7 +33,7 @@ AI Co-Founder is a multi-agent AI platform that replaces a human founding team w
 
 ## Architecture
 
-![System Architecture](docs/sys_arch.png)
+![System Architecture](docs/sys_arch2.png)
 
 ## Agent System
 
