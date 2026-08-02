@@ -3,6 +3,7 @@ python-dotenv
 python-multipart
 fastapi
 pydantic
+email-validator
 langchain
 langchain-experimental
 langchain-openrouter
@@ -17,3 +18,4 @@ e2b-code-interpreter
 redis
 requests
 confluent_kafka
+pwdlib[argon2]

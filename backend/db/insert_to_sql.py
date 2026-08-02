@@ -4,12 +4,24 @@ Replaces SQLAlchemy direct PostgreSQL connections which require IPv6.
 """
 import logging
 
+from postgrest.exceptions import APIError
+
 from backend.utils import get_supabase_client
-from typing import Optional, Dict, Any
+from backend.security import hash_password, verify_password
+from typing import Optional, Dict, Any, cast
 
 logger = logging.getLogger(__name__)
 
 _client = get_supabase_client()
+
+# Computed once at import; used in authenticate_user so the "user not found"
+# path takes about as long as a real password check, preventing an
+# account-existence timing leak. Verifying against it always returns False.
+_DUMMY_HASH = hash_password("")
+
+
+class UserAlreadyExistsError(Exception):
+    """Raised when a user with the given email already exists."""
 
 
 class _UserResult:
@@ -51,47 +63,100 @@ class _ChatMessageResult:
         self.message = message
 
 
-def create_user(email: str, password: str) -> Optional[_UserResult]:
-    """Create a new user. Returns a user-like object or None if the email already exists."""
-    # Check for existing user first
+def _to_user_result(row: Dict[str, Any]) -> Optional[_UserResult]:
+    """Build a _UserResult from a users row, guarding against a NULL/missing id."""
+    row_id = row.get("id")
+    if row_id is None:
+        logger.error("User row returned without an id — email=%s", row.get("email"))
+        return None
+    return _UserResult(id=int(row_id), email=str(row.get("email") or ""))
+
+
+def create_user(email: str, password: str) -> _UserResult:
+    """Create a new user.
+
+    Raises UserAlreadyExistsError if the email is already registered.
+    """
+    # Check for existing user first (fast path, before any expensive hashing
+    # happens in the caller).
     existing = _client.table("users").select("id").eq("email", email).execute()
     if existing.data:
         logger.warning("User with email=%s already exists", email)
-        return None
+        raise UserAlreadyExistsError(email)
 
-    response = _client.table("users").insert({
-        "email": email,
-        "password": password,
-    }).execute()
+    try:
+        response = _client.table("users").insert({
+            "email": email,
+            "password": password,
+        }).execute()
+    except APIError as exc:
+        # TOCTOU: a concurrent signup may have inserted the same email between
+        # our check above and this insert → unique constraint violation (23505).
+        if exc.code == "23505":
+            logger.warning("User with email=%s already exists (race)", email)
+            raise UserAlreadyExistsError(email)
+        logger.exception("Failed to insert user with email=%s", email)
+        raise
 
-    if response.data:
-        row = response.data[0]
-        logger.info("User created — id=%s, email=%s", row["id"], row["email"])
-        return _UserResult(id=row["id"], email=row["email"])
-    logger.error("Failed to create user with email=%s — no data returned", email)
-    return None
+    response_data = response.data or []
+    if not response_data:
+        logger.error("Failed to create user with email=%s — no data returned", email)
+        raise RuntimeError(f"Failed to create user with email={email}")
+
+    row = cast(Dict[str, Any], response_data[0])
+    result = _to_user_result(row)
+    if result is None:
+        raise RuntimeError(f"Failed to create user with email={email} — missing id")
+    logger.info("User created — id=%s, email=%s", result.id, result.email)
+    return result
 
 
 def get_user_by_email(email: str) -> Optional[_UserResult]:
     """Return a user-like object by email or None."""
     response = _client.table("users").select("*").eq("email", email).execute()
-    if response.data:
-        row = response.data[0]
-        return _UserResult(id=row["id"], email=row["email"])
+    response_data = response.data or []
+    if response_data:
+        return _to_user_result(cast(Dict[str, Any], response_data[0]))
     return None
 
 
 def authenticate_user(email: str, password: str) -> Optional[_UserResult]:
     """Authenticate credentials; return user-like object if valid, else None."""
     response = _client.table("users").select("*").eq("email", email).execute()
-    if response.data:
-        row = response.data[0]
-        if row.get("password") == password:
-            return _UserResult(id=row["id"], email=row["email"])
-        logger.warning("Authentication failed for email=%s — password mismatch", email)
-    else:
+    response_data = response.data or []
+    if not response_data:
+        # Run a real (but failing) verification so this path takes about as long
+        # as a genuine password check — prevents account-existence timing leaks.
+        verify_password(password, _DUMMY_HASH)
         logger.warning("Authentication failed for email=%s — user not found", email)
-    return None
+        return None
+
+    row = cast(Dict[str, Any], response_data[0])
+    stored_password = str(row.get("password") or "")
+    if not stored_password:
+        # Fail closed: a user row without a stored password hash must never
+        # authenticate, even with an empty submitted password.
+        verify_password(password, _DUMMY_HASH)
+        logger.warning("Authentication failed for email=%s — no stored password", email)
+        return None
+
+    if not verify_password(password, stored_password):
+        logger.warning("Authentication failed for email=%s — password mismatch", email)
+        return None
+
+    result = _to_user_result(row)
+    if result is None:
+        return None
+
+    if stored_password == password:
+        # Legacy plaintext → migrate to an argon2 hash. Best-effort: never fail
+        # a valid login because the rehash write failed (e.g. network error).
+        try:
+            _client.table("users").update({"password": hash_password(password)}).eq("id", result.id).execute()
+        except Exception:
+            logger.exception("Failed to rehash legacy password for email=%s", email)
+
+    return result
 
 
 def create_company(

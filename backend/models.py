@@ -1,6 +1,6 @@
 import logging
 
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field
 from .db.database import Base
 from sqlalchemy import Column, BigInteger, Text, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
@@ -30,8 +30,16 @@ class User(Base):
 
 
 class UserCreate(BaseModel):
-    email: str
-    password: str
+    """Signup payload — enforces a minimum password strength."""
+    email: EmailStr
+    password: str = Field(min_length=8, max_length=128)
+
+
+class LoginRequest(BaseModel):
+    """Login payload — password length is deliberately permissive so legacy
+    accounts created before the 8-char minimum can still sign in."""
+    email: EmailStr
+    password: str = Field(min_length=1, max_length=128)
 
 
 class Company(Base):

@@ -1,4 +1,4 @@
-# Co_Founder — v0.9.9 (Prerelease)
+# Co_Founder — v0.9.11 (Prerelease)
 
 > **📘 For complete system context and understanding, please refer to [`Agents_rules.md`](Agents_rules.md) before contributing or making changes.**
 
@@ -237,11 +237,14 @@ POST /chat
 - Chat memory extraction and title generation now run for **all effort levels** (previously skipped in flash mode) — asynchronously, so they never block the response
 
 ### Authentication Flow
-- Password stored in database as plaintext (no hashing)
-- On login, `authenticate_user()` compares raw strings (`backend/db/insert_to_sql.py`)
 - On success, user metadata (id, email) is returned — `company_id` is not included
 - Client stores in `localStorage` and sends `user_id` as a query/form parameter
 - No JWT, no HTTP-only cookies, no session expiry
+
+#### Password Hashing (v0.9.11)
+- Passwords are **hashed with Argon2id** (`pwdlib[argon2]`, `backend/security.py`) — plaintext is never stored; legacy plaintext rows are transparently rehashed on login (best-effort)
+- **Fail-closed**: empty/missing hashes never authenticate; login/signup are rate-limited (10/min per IP)
+- `UserCreate` enforces `EmailStr` + 8–128 char passwords; `LoginRequest` stays permissive for legacy accounts
 
 ## Frontend
 
@@ -452,17 +455,15 @@ After:  "best selling product" → Data Analyst → reads CSV → actual data an
 
 ## Status
 
-Functional end-to-end prerelease (v0.9.9). The core chat loop, multi-agent system, RAG pipeline, file management, WebSocket observability, effort-based execution, Kafka async jobs, and onboarding flow are operational. Known gaps:
-- Settings and Plugins pages are placeholders ("Coming Soon")
+Functional end-to-end prerelease (v0.9.9.11). The core chat loop, multi-agent system, RAG pipeline, file management, WebSocket observability, effort-based execution, Kafka async jobs, onboarding flow, and Argon2id password hashing are operational. Known gaps:
 - Image generation uses OpenRouter `google/gemini-2.5-flash-image`; slow (~30s) and blocks the CEO pipeline
 - No automated test suite — only ad-hoc eval scripts in `evals/`
-- Passwords stored in plaintext
 - CORS hardcoded to localhost
 - Supabase free tier REST API adds 3-7s latency per RPC call (embedding serialization overhead)
 - Kafka consumers are separate processes with no supervisor (no auto-restart on crash)
 
 
-## Changelog (v0.9.5 → v0.9.9)
+## Changelog (v0.9.5 → v0.9.11)
 
 ### Kafka Async Job Pipeline
 - **Decoupled background work**: chat memory extraction, session title generation, and message persistence moved off FastAPI `BackgroundTasks` onto Kafka topics

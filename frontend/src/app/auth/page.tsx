@@ -245,7 +245,7 @@ export default function AuthPage() {
                 required
                 className="input px-3.5 py-2.5 text-sm"
                 placeholder="••••••••"
-                minLength={!isLogin ? 6 : undefined}
+                minLength={!isLogin ? 8 : undefined}
               />
             </div>
 
