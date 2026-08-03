@@ -12,12 +12,15 @@ logger = logging.getLogger(__name__)
 
 
 class _EmbeddingAdapter:
+    # SemanticChunker embeds every candidate segment (twice — once as
+    # splits[:-1], once as splits[1:]) just to detect breakpoints. These are
+    # throwaway and never reused, so don't cache them in Redis.
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
-        results = [generate_embeddings(text) for text in texts]
+        results = [generate_embeddings(text, cache=False) for text in texts]
         return results
 
     def embed_query(self, text: str) -> list[float]:
-        result = generate_embeddings(text)
+        result = generate_embeddings(text, cache=False)
         return result
 
 

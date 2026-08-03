@@ -168,7 +168,7 @@
       "description": "Performs EDA and data-driven analysis on company data files (csv, xlsx, etc.) by running Python in a secure code sandbox.",
       "tools": [
         {
-          "id": "run_code",
+          "id": "run code",
           "name": "run code",
           "description": "Run Python code to DO EDA in an isolated sandbox.",
           "args": {
@@ -176,7 +176,7 @@
           }
         },
         {
-          "id": "get_datafiles",
+          "id": "get data files",
           "name": "get data files",
           "description": "Returns the list of files with descriptions which are suitable for data analysis tasks like .csv or .xlsx files.",
           "args": {
@@ -184,7 +184,7 @@
           }
         },
         {
-          "id": "get_files",
+          "id": "get files",
           "name": "get files",
           "description": "Downloads one or more files by name and loads them into the code sandbox. Returns sandbox paths for use in 'run code'.",
           "args": {

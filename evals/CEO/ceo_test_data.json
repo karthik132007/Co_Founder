@@ -1,0 +1,366 @@
+[
+    {
+        "query": "What is our GST registration number according to our company legal information document?",
+        "company_id": 1,
+        "effort": "flash",
+        "expected_tools": ["knowledge_request"],
+        "forbidden_tools": ["research_request", "data_analysis_request", "writing_request"]
+    },
+    {
+        "query": "What are the banking details listed in our company legal information document?",
+        "company_id": 1,
+        "effort": "flash",
+        "expected_tools": ["knowledge_request"],
+        "forbidden_tools": ["research_request", "data_analysis_request"]
+    },
+    {
+        "query": "What is the shelf life of the Herbal Hair Oil per its product information file?",
+        "company_id": 1,
+        "effort": "flash",
+        "expected_tools": ["knowledge_request"],
+        "forbidden_tools": ["research_request", "data_analysis_request"]
+    },
+    {
+        "query": "What is the registered office address stated in our company legal document?",
+        "company_id": 1,
+        "effort": "flash",
+        "expected_tools": ["knowledge_request"],
+        "forbidden_tools": ["research_request", "data_analysis_request"]
+    },
+    {
+        "query": "What is the return window per our shipping and returns policy?",
+        "company_id": 1,
+        "effort": "flash",
+        "expected_tools": ["knowledge_request"],
+        "forbidden_tools": ["research_request", "data_analysis_request"]
+    },
+    {
+        "query": "What is the company's authorized share capital according to our legal document?",
+        "company_id": 1,
+        "effort": "flash",
+        "expected_tools": ["knowledge_request"],
+        "forbidden_tools": ["research_request", "data_analysis_request"]
+    },
+    {
+        "query": "How many equity shares is the authorized capital divided into per our legal document?",
+        "company_id": 1,
+        "effort": "flash",
+        "expected_tools": ["knowledge_request"],
+        "forbidden_tools": ["research_request", "data_analysis_request"]
+    },
+    {
+        "query": "Which director is responsible for finance per our company legal document?",
+        "company_id": 1,
+        "effort": "flash",
+        "expected_tools": ["knowledge_request"],
+        "forbidden_tools": ["research_request", "data_analysis_request"]
+    },
+    {
+        "query": "What is the official email for compliance queries per our company documents?",
+        "company_id": 1,
+        "effort": "flash",
+        "expected_tools": ["knowledge_request"],
+        "forbidden_tools": ["research_request", "data_analysis_request"]
+    },
+    {
+        "query": "What is our best-selling product of all time?",
+        "company_id": 1,
+        "effort": "flash",
+        "expected_tools": ["data_analysis_request"],
+        "forbidden_tools": ["research_request", "knowledge_request"]
+    },
+    {
+        "query": "What were our total sales in Q1 2026?",
+        "company_id": 1,
+        "effort": "flash",
+        "expected_tools": ["data_analysis_request"],
+        "forbidden_tools": ["research_request", "knowledge_request"]
+    },
+    {
+        "query": "How many units of Kummudai Tailem were sold last month?",
+        "company_id": 1,
+        "effort": "flash",
+        "expected_tools": ["data_analysis_request"],
+        "forbidden_tools": ["research_request", "knowledge_request"]
+    },
+    {
+        "query": "Which product has the highest profit margin?",
+        "company_id": 1,
+        "effort": "flash",
+        "expected_tools": ["data_analysis_request"],
+        "forbidden_tools": ["research_request", "knowledge_request"]
+    },
+    {
+        "query": "What is the current active company color palette?",
+        "company_id": 1,
+        "effort": "flash",
+        "expected_tools": ["graphic_design_request"],
+        "forbidden_tools": ["research_request", "knowledge_request", "data_analysis_request"]
+    },
+    {
+        "query": "What is today's date?",
+        "company_id": 1,
+        "effort": "flash",
+        "expected_tools": [],
+        "forbidden_tools": ["research_request", "knowledge_request", "data_analysis_request", "writing_request"]
+    },
+    {
+        "query": "What is the company's official website according to our company documents?",
+        "company_id": 1,
+        "effort": "flash",
+        "expected_tools": ["knowledge_request"],
+        "forbidden_tools": ["research_request", "data_analysis_request"]
+    },
+    {
+        "query": "What are the business hours listed in our company legal document?",
+        "company_id": 1,
+        "effort": "flash",
+        "expected_tools": ["knowledge_request"],
+        "forbidden_tools": ["research_request", "data_analysis_request"]
+    },
+    {
+        "query": "Write a short product description for the Herbal Hair Oil using its product information file.",
+        "company_id": 1,
+        "effort": "mid",
+        "expected_tools": ["knowledge_request", "writing_request"],
+        "forbidden_tools": ["research_request", "data_analysis_request", "graphic_design_request"]
+    },
+    {
+        "query": "Summarize the key customer feedback from the testimonials document.",
+        "company_id": 1,
+        "effort": "mid",
+        "expected_tools": ["knowledge_request"],
+        "forbidden_tools": ["research_request", "data_analysis_request"]
+    },
+    {
+        "query": "Compare the sales performance of Kummudai Tailem vs. Herbal Hair Oil using our sales data.",
+        "company_id": 1,
+        "effort": "mid",
+        "expected_tools": ["data_analysis_request"],
+        "forbidden_tools": ["research_request", "knowledge_request"]
+    },
+    {
+        "query": "Research the top 3 competitors in the Ayurvedic skincare market.",
+        "company_id": 1,
+        "effort": "mid",
+        "expected_tools": ["research_request"],
+        "forbidden_tools": ["data_analysis_request", "knowledge_request"]
+    },
+    {
+        "query": "Draft a press release about our new product launch using our product information.",
+        "company_id": 1,
+        "effort": "mid",
+        "expected_tools": ["knowledge_request", "writing_request"],
+        "forbidden_tools": ["data_analysis_request", "graphic_design_request"]
+    },
+    {
+        "query": "Analyze customer demographics from our sales data.",
+        "company_id": 1,
+        "effort": "mid",
+        "expected_tools": ["data_analysis_request"],
+        "forbidden_tools": ["research_request", "knowledge_request"]
+    },
+    {
+        "query": "Generate 5 blog post ideas based on our product range and current market trends.",
+        "company_id": 1,
+        "effort": "mid",
+        "expected_tools": ["knowledge_request", "research_request", "writing_request"],
+        "forbidden_tools": ["data_analysis_request"]
+    },
+    {
+        "query": "What are the top 3 customer complaints mentioned in the testimonials document?",
+        "company_id": 1,
+        "effort": "mid",
+        "expected_tools": ["knowledge_request"],
+        "forbidden_tools": ["research_request", "data_analysis_request"]
+    },
+    {
+        "query": "Suggest a promotional strategy using our sales data and competitor pricing.",
+        "company_id": 1,
+        "effort": "mid",
+        "expected_tools": ["data_analysis_request", "research_request", "marketing_request"],
+        "forbidden_tools": ["knowledge_request", "graphic_design_request"]
+    },
+    {
+        "query": "Create a one-page FAQ for our website based on our product information file.",
+        "company_id": 1,
+        "effort": "mid",
+        "expected_tools": ["knowledge_request", "writing_request"],
+        "forbidden_tools": ["research_request", "data_analysis_request"]
+    },
+    {
+        "query": "Write a LinkedIn post about our sustainability practices mentioned in our company documents.",
+        "company_id": 1,
+        "effort": "mid",
+        "expected_tools": ["knowledge_request", "writing_request"],
+        "forbidden_tools": ["research_request", "data_analysis_request"]
+    },
+    {
+        "query": "Analyze seasonality in our sales data.",
+        "company_id": 1,
+        "effort": "mid",
+        "expected_tools": ["data_analysis_request"],
+        "forbidden_tools": ["research_request", "knowledge_request"]
+    },
+    {
+        "query": "Research the latest trends in Ayurvedic skincare and summarize them.",
+        "company_id": 1,
+        "effort": "mid",
+        "expected_tools": ["research_request"],
+        "forbidden_tools": ["data_analysis_request"]
+    },
+    {
+        "query": "Create an email newsletter draft about our new arrivals using our product files.",
+        "company_id": 1,
+        "effort": "mid",
+        "expected_tools": ["knowledge_request", "writing_request"],
+        "forbidden_tools": ["research_request", "data_analysis_request"]
+    },
+    {
+        "query": "Summarize our shipping policy for a customer inquiry.",
+        "company_id": 1,
+        "effort": "mid",
+        "expected_tools": ["knowledge_request"],
+        "forbidden_tools": ["research_request", "data_analysis_request"]
+    },
+    {
+        "query": "What are the key features of our best-selling product and how does it compare to the market?",
+        "company_id": 1,
+        "effort": "mid",
+        "expected_tools": ["data_analysis_request", "research_request"],
+        "forbidden_tools": ["knowledge_request"]
+    },
+    {
+        "query": "Draft a reply to a negative customer review.",
+        "company_id": 1,
+        "effort": "mid",
+        "expected_tools": ["writing_request"],
+        "forbidden_tools": ["research_request", "data_analysis_request"]
+    },
+    {
+        "query": "Create a full-year marketing plan including competitor research, sales data analysis, and content calendar draft.",
+        "company_id": 1,
+        "effort": "max",
+        "expected_tools": ["research_request", "data_analysis_request", "marketing_request", "writing_request"],
+        "forbidden_tools": ["graphic_design_request"]
+    },
+    {
+        "query": "Design a new product logo and packaging concept.",
+        "company_id": 1,
+        "effort": "max",
+        "expected_tools": ["graphic_design_request"],
+        "forbidden_tools": ["research_request", "data_analysis_request", "writing_request"]
+    },
+    {
+        "query": "Write a comprehensive report on our market position using our sales data and external market research.",
+        "company_id": 1,
+        "effort": "max",
+        "expected_tools": ["research_request", "data_analysis_request", "writing_request"],
+        "forbidden_tools": ["graphic_design_request"]
+    },
+    {
+        "query": "Prepare a quarterly sales presentation with charts and key takeaways from our sales data.",
+        "company_id": 1,
+        "effort": "max",
+        "expected_tools": ["data_analysis_request", "writing_request"],
+        "forbidden_tools": ["research_request", "graphic_design_request"]
+    },
+    {
+        "query": "Develop a complete social media strategy for the next quarter, including competitor research.",
+        "company_id": 1,
+        "effort": "max",
+        "expected_tools": ["research_request", "marketing_request"],
+        "forbidden_tools": ["data_analysis_request", "graphic_design_request", "writing_request"]
+    },
+    {
+        "query": "Conduct a SWOT analysis based on internal sales data and external market research.",
+        "company_id": 1,
+        "effort": "max",
+        "expected_tools": ["data_analysis_request", "research_request", "writing_request"],
+        "forbidden_tools": ["graphic_design_request"]
+    },
+    {
+        "query": "Create a series of email campaigns for a product launch using our product information.",
+        "company_id": 1,
+        "effort": "max",
+        "expected_tools": ["knowledge_request", "writing_request", "marketing_request"],
+        "forbidden_tools": ["data_analysis_request", "research_request"]
+    },
+    {
+        "query": "Analyze the ROI of our last marketing campaign from our sales data.",
+        "company_id": 1,
+        "effort": "max",
+        "expected_tools": ["data_analysis_request"],
+        "forbidden_tools": ["knowledge_request", "graphic_design_request", "research_request"]
+    },
+    {
+        "query": "Write a white paper on our product's efficacy using clinical research and our testimonials document.",
+        "company_id": 1,
+        "effort": "max",
+        "expected_tools": ["research_request", "knowledge_request", "writing_request"],
+        "forbidden_tools": ["data_analysis_request", "graphic_design_request"]
+    },
+    {
+        "query": "Propose a new product line based on market gaps and our manufacturing capabilities from our company documents.",
+        "company_id": 1,
+        "effort": "max",
+        "expected_tools": ["research_request", "knowledge_request", "writing_request"],
+        "forbidden_tools": ["graphic_design_request"]
+    },
+    {
+        "query": "Revise our website content for SEO based on competitor keyword analysis.",
+        "company_id": 1,
+        "effort": "max",
+        "expected_tools": ["research_request", "writing_request"],
+        "forbidden_tools": ["data_analysis_request", "graphic_design_request"]
+    },
+    {
+        "query": "Create a customer journey map document from our sales data.",
+        "company_id": 1,
+        "effort": "max",
+        "expected_tools": ["data_analysis_request", "writing_request"],
+        "forbidden_tools": ["research_request", "graphic_design_request"]
+    },
+    {
+        "query": "Draft a speech for the CEO for an industry conference, including current industry trends.",
+        "company_id": 1,
+        "effort": "max",
+        "expected_tools": ["research_request", "writing_request"],
+        "forbidden_tools": ["data_analysis_request", "graphic_design_request"]
+    },
+    {
+        "query": "Overhaul our entire pricing strategy based on competitive analysis and our cost data.",
+        "company_id": 1,
+        "effort": "max",
+        "expected_tools": ["research_request", "data_analysis_request", "marketing_request"],
+        "forbidden_tools": ["graphic_design_request", "writing_request"]
+    },
+    {
+        "query": "Plan a press conference strategy, including market research and draft press materials.",
+        "company_id": 1,
+        "effort": "max",
+        "expected_tools": ["research_request", "marketing_request", "writing_request"],
+        "forbidden_tools": ["data_analysis_request", "graphic_design_request"]
+    },
+    {
+        "query": "Create a 10-slide investor pitch deck with financials from our sales data.",
+        "company_id": 1,
+        "effort": "max",
+        "expected_tools": ["data_analysis_request", "writing_request"],
+        "forbidden_tools": ["research_request", "graphic_design_request"]
+    },
+    {
+        "query": "Ask the user about their budget for a marketing campaign.",
+        "company_id": 1,
+        "effort": "flash",
+        "expected_tools": ["ask_mcq_for_user"],
+        "forbidden_tools": ["research_request", "data_analysis_request", "knowledge_request", "writing_request"]
+    },
+    {
+        "query": "Create three packaging design concepts and ask the user to choose between them.",
+        "company_id": 1,
+        "effort": "mid",
+        "expected_tools": ["ask_mcq_for_user", "graphic_design_request"],
+        "forbidden_tools": ["research_request", "data_analysis_request", "knowledge_request"]
+    }
+]

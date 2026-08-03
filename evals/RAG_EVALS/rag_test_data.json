@@ -1,0 +1,102 @@
+[
+    {
+        "query": "What is the company's GST registration number?",
+        "company_id": 1,
+        "expected_chunk_ids": [1]
+    },
+    {
+        "query": "What is the Permanent Account Number (PAN) of Indian Herbs Pvt. Ltd.?",
+        "company_id": 1,
+        "expected_chunk_ids": [1]
+    },
+    {
+        "query": "What are the banking details for Indian Herbs, including account number and IFSC code?",
+        "company_id": 1,
+        "expected_chunk_ids": [3]
+    },
+    {
+        "query": "What is the shelf life of the Herbal Hair Oil product?",
+        "company_id": 1,
+        "expected_chunk_ids": [14]
+    },
+    {
+        "query": "How should I use the Herbal Hair Oil for best results?",
+        "company_id": 1,
+        "expected_chunk_ids": [14]
+    },
+    {
+        "query": "What are the key ingredients in Kumkumadi Tailem and their benefits?",
+        "company_id": 1,
+        "expected_chunk_ids": [4]
+    },
+    {
+        "query": "What are the benefits of using Kumkumadi Tailem for skin?",
+        "company_id": 1,
+        "expected_chunk_ids": [4]
+    },
+    {
+        "query": "What is the minimum order quantity (MOQ) for wholesale purchases of Kumkumadi Tailem?",
+        "company_id": 1,
+        "expected_chunk_ids": [5]
+    },
+    {
+        "query": "What did Arjun M. experience with Keshya Herbal Hair Oil?",
+        "company_id": 1,
+        "expected_chunk_ids": [10]
+    },
+    {
+        "query": "What was Meera D.'s feedback on the Sandalwood Cream?",
+        "company_id": 1,
+        "expected_chunk_ids": [11]
+    },
+    {
+        "query": "What is the return window for products purchased from Indian Herbs?",
+        "company_id": 1,
+        "expected_chunk_ids": [24]
+    },
+    {
+        "query": "What are the shipping charges for domestic orders and when is shipping free?",
+        "company_id": 1,
+        "expected_chunk_ids": [23]
+    },
+    {
+        "query": "How can I cancel my order and what is the cancellation fee?",
+        "company_id": 1,
+        "expected_chunk_ids": [23]
+    },
+    {
+        "query": "What is the contact information for returns and claims queries?",
+        "company_id": 1,
+        "expected_chunk_ids": [26]
+    },
+    {
+        "query": "What is the return policy for defective products and how do I contact support?",
+        "company_id": 1,
+        "expected_chunk_ids": [24, 26]
+    },
+    {
+        "query": "What is the authorized share capital of Indian Herbs Pvt. Ltd.?",
+        "company_id": 1,
+        "expected_chunk_ids": [1]
+    },
+    {
+        "query": "What are the key product features of the Herbal Hair Oil?",
+        "company_id": 1,
+        "expected_chunk_ids": [14]
+    },
+    {
+        "query": "What is the estimated delivery lead time for international export orders?",
+        "company_id": 1,
+        "expected_chunk_ids": [23]
+    },
+    {
+        "query": "How are damaged products handled under the returns policy?",
+        "company_id": 1,
+        "expected_chunk_ids": [24]
+    },
+    {
+        "query": "What is the registered office address of the company?",
+        "company_id": 1,
+        "expected_chunk_ids": [1]
+    }
+]

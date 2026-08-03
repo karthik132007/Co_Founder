@@ -22,7 +22,16 @@ def _get_redis():
     except Exception:
         return None
 
-def generate_embeddings(text: str):
+def generate_embeddings(text: str, cache: bool = True):
+    """Generate an embedding for text, optionally caching it in Redis.
+
+    Args:
+        text: The input text to embed.
+        cache: When True (default), read/write embeddings in Redis. Pass
+            ``False`` for throwaway embeddings (e.g. SemanticChunker's internal
+            breakpoint-detection embeddings) to avoid polluting the cache —
+            one upload can otherwise write ~80 throwaway keys to Redis.
+    """
     logger.debug("Generating embedding for text of length %d", len(text) if text else 0)
     if not text or not text.strip():
         logger.error("Empty text provided to generate_embeddings")
@@ -30,7 +39,7 @@ def generate_embeddings(text: str):
     
     text_hash = hashlib.sha256(text.encode("utf-8")).hexdigest()
     cache_key = f"embedding:{text_hash}"
-    redis_client = _get_redis()
+    redis_client = _get_redis() if cache else None
 
     if redis_client:
         try:

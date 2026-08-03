@@ -5,7 +5,8 @@ from uuid import uuid4
 from fastapi import APIRouter, HTTPException, Path, Query, UploadFile
 
 from RAG_Engine.chunking import chunk_document_text
-from agents.util_agents.description_genrator import get_file_description
+# TEMPORARILY DISABLED: file description generator
+# from agents.util_agents.description_genrator import get_file_description
 from agents.util_agents.image_description import get_image_description
 from backend.db.delete_from_sql import delete_file_by_id
 from backend.db.get_from_sql import get_company_id
@@ -44,7 +45,9 @@ def upload_to_drive(user_id: int, file: UploadFile):
 
         elif file_extension in data_extensions:
             sample = file_bytes[:8000].decode("utf-8", errors="replace")
-            file_desc = get_file_description(sample)
+            # TEMPORARILY DISABLED: file description generator
+            # file_desc = get_file_description(sample)
+            file_desc = None
 
         else:
             extracted_content = extract_text(
@@ -52,7 +55,9 @@ def upload_to_drive(user_id: int, file: UploadFile):
                 file_extension=file_extension,
                 mime_type=file_type,
             )
-            file_desc = get_file_description(extracted_content)
+            # TEMPORARILY DISABLED: file description generator
+            # file_desc = get_file_description(extracted_content)
+            file_desc = None
             document_chunks = chunk_document_text(
                 text=extracted_content,
                 file_path=original_file_name,
