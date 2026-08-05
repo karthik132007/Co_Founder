@@ -25,7 +25,7 @@ from backend.db.chat_memory_helpers import store_chat_title
 logger = logging.getLogger(__name__)
 
 consumer_config = {
-    'bootstrap.servers': 'localhost:9092',
+    'bootstrap.servers': os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"),
     'group.id': 'session_title_creator',
     'auto.offset.reset': 'earliest',
     'enable.auto.commit': False,

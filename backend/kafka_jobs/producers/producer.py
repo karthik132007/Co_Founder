@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 
 from confluent_kafka import Producer
 
@@ -12,7 +13,9 @@ def _get_producer() -> Producer:
     """Lazily create and cache the Kafka producer."""
     global _producer
     if _producer is None:
-        _producer = Producer({"bootstrap.servers": "localhost:9092"})
+        _producer = Producer({
+            "bootstrap.servers": os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"),
+        })
         logger.info("Kafka producer initialized")
     return _producer
 

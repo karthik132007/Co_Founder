@@ -2,7 +2,8 @@ import asyncio
 import contextlib
 import logging
 import json
-from fastapi import APIRouter, BackgroundTasks, Form, HTTPException, Query, WebSocket
+import os
+from fastapi import APIRouter, BackgroundTasks, Form, HTTPException, Query, Request, WebSocket
 from starlette.websockets import WebSocketDisconnect
 
 from backend.kafka_jobs.producers.producer import (
@@ -23,10 +24,17 @@ from backend.api.observability_events import (
     make_session_start,
     make_session_end,
 )
+from backend.api.rate_limit import SlidingWindowRateLimiter
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+# LLM calls are expensive — throttle per client IP to blunt abuse/DoS.
+_chat_limiter = SlidingWindowRateLimiter(
+    max_attempts=int(os.getenv("CHAT_RATE_LIMIT_PER_MINUTE", "30")),
+    window_seconds=60,
+)
 
 
 def _get_mcq_limit_for_effort(effort: str) -> int:
@@ -52,6 +60,7 @@ def _count_mcqs_in_history(history: list[dict]) -> int:
 @router.post("/chat")
 def chat_with_user(
     background_tasks: BackgroundTasks,
+    request: Request,
     user_id: int = Form(...),
     message: str = Form(...),
     session_id: Optional[str] = Form(None),
@@ -61,6 +70,7 @@ def chat_with_user(
     effort: "flash" (fastest, default), "mid", or "max" (highest quality).
     Controls agent reflection depth, model selection, and post-processing.
     """
+    _chat_limiter.check(request)
     if effort not in ("flash", "mid", "max"):
         effort = "flash"
     logger.info("chat_with_user called — user_id=%s, message_length=%d, session_id=%s, effort=%s", user_id, len(message), session_id, effort)

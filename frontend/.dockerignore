@@ -1,0 +1,12 @@
+# ── Build artifacts ──────────────────────────────────────────────────────────
+node_modules
+.next
+out
+
+# ── Env (build args supply what's needed; secrets never copied) ─────────────
+.env*
+
+# ── Misc ─────────────────────────────────────────────────────────────────────
+npm-debug.log*
+.DS_Store
+tsconfig.tsbuildinfo

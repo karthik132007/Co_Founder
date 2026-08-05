@@ -1,6 +1,4 @@
 import logging
-import time
-from collections import defaultdict, deque
 
 from fastapi import APIRouter, HTTPException, Request
 from backend.models import LoginRequest, UserCreate
@@ -11,6 +9,7 @@ from backend.db.insert_to_sql import (
     UserAlreadyExistsError,
 )
 from backend.security import hash_password
+from backend.api.rate_limit import SlidingWindowRateLimiter
 
 logger = logging.getLogger(__name__)
 
@@ -19,37 +18,16 @@ router = APIRouter(
     tags=["Authentication"]
 )
 
-# ── In-memory sliding-window rate limiter ──────────────────────────────────
-# Per process, per client IP. Blocks naive brute-force / signup spam on the
-# unauthenticated auth endpoints. Note: when running behind a reverse proxy,
-# `request.client.host` is the proxy address — swap in the X-Forwarded-For
-# header for multi-worker accuracy.
-_AUTH_WINDOW_SECONDS = 60
-_AUTH_MAX_ATTEMPTS = 10
-_attempts: defaultdict[str, deque[float]] = defaultdict(deque)
-
-
-def _client_ip(request: Request) -> str:
-    return request.client.host if request.client else "unknown"
-
-
-def _rate_limited(client_ip: str) -> bool:
-    """Return True if the client has exceeded the attempt budget in the window."""
-    now = time.monotonic()
-    window = _attempts[client_ip]
-    # Drop attempts older than the window.
-    while window and now - window[0] > _AUTH_WINDOW_SECONDS:
-        window.popleft()
-    if len(window) >= _AUTH_MAX_ATTEMPTS:
-        return True
-    window.append(now)
-    return False
+# ── Rate limiting ────────────────────────────────────────────────────────────
+# Sliding-window limiter per client IP. Blocks naive brute-force / signup spam
+# on the unauthenticated auth endpoints. `X-Forwarded-For` is honoured so the
+# real client IP is used behind a reverse proxy.
+_auth_limiter = SlidingWindowRateLimiter(max_attempts=10, window_seconds=60)
 
 
 @router.post("/login")
 def login(user: LoginRequest, request: Request):
-    if _rate_limited(_client_ip(request)):
-        raise HTTPException(status_code=429, detail="Too many attempts. Try again later.")
+    _auth_limiter.check(request)
     # logger.info("Login attempt for email=%s", user.email)
     authenticated = authenticate_user(email=user.email, password=user.password)
     if authenticated:
@@ -61,8 +39,7 @@ def login(user: LoginRequest, request: Request):
 
 @router.post("/signup")
 def signup(user: UserCreate, request: Request):
-    if _rate_limited(_client_ip(request)):
-        raise HTTPException(status_code=429, detail="Too many attempts. Try again later.")
+    _auth_limiter.check(request)
     # logger.info("Signup attempt for email=%s", user.email)
 
     # Check existence BEFORE hashing: argon2 is ~100ms of CPU, so spamming

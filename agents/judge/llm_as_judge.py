@@ -2,6 +2,7 @@
 Asking llm to critique a given answer to a question, give suggestions.
 """
 import logging
+import os
 
 import dotenv
 from openai import OpenAI
@@ -11,8 +12,10 @@ from agents.helpers.datetime_context import get_datetime_context
 
 logger = logging.getLogger(__name__)
 
+# Load .env if present (local dev); prefer the real environment so the key
+# works in containers where no .env file exists (env vars injected instead).
 dotenv.load_dotenv()
-LLM_API_KEY = dotenv.get_key(dotenv.find_dotenv(), "LLM_API_KEY")
+LLM_API_KEY = os.getenv("LLM_API_KEY")
 
 client = OpenAI(
   base_url="https://openrouter.ai/api/v1",

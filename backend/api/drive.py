@@ -1,8 +1,9 @@
 import logging
+import os
 from pathlib import Path as FilePath
 from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException, Path, Query, UploadFile
+from fastapi import APIRouter, HTTPException, Path, Query, Request, UploadFile
 
 from RAG_Engine.chunking import chunk_document_text
 # TEMPORARILY DISABLED: file description generator
@@ -14,14 +15,22 @@ from backend.db.insert_to_sql import add_document_chunks, add_meta_to_file
 from backend.db.put_to_drive import delete_from_cloud, upload_to_cloud
 from backend.utils import get_supabase_client
 from backend.utils import extract_text
+from backend.api.rate_limit import SlidingWindowRateLimiter
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+# Uploads run expensive extraction/OCR — throttle per client IP.
+_upload_limiter = SlidingWindowRateLimiter(
+    max_attempts=int(os.getenv("UPLOAD_RATE_LIMIT_PER_MINUTE", "20")),
+    window_seconds=60,
+)
+
 
 @router.post("/upload")
-def upload_to_drive(user_id: int, file: UploadFile):
+def upload_to_drive(user_id: int, file: UploadFile, request: Request):
+    _upload_limiter.check(request)
     logger.info("upload_to_drive called — user_id=%s, filename=%s, content_type=%s", user_id, file.filename, file.content_type)
     company_id = get_company_id(user_id)
     try:

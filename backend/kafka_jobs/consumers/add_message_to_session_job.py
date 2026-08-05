@@ -25,7 +25,7 @@ from backend.db.insert_to_sql import add_message_to_session
 logger = logging.getLogger(__name__)
 
 message_consumer = Consumer({
-    "bootstrap.servers": "localhost:9092",
+    "bootstrap.servers": os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"),
     "group.id": "add_message_to_session_job",
     "auto.offset.reset": "earliest",
     "enable.auto.commit": False,

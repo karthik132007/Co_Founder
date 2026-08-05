@@ -1,0 +1,32 @@
+# ── VCS ──────────────────────────────────────────────────────────────────────
+.git
+.gitignore
+
+# ── Python ───────────────────────────────────────────────────────────────────
+.venv
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# ── Secrets (supplied at runtime via env_file — never baked into the image) ──
+.env
+.env.*
+
+# ── Logs & runtime data ──────────────────────────────────────────────────────
+logs.log
+*.log
+dump.rdb
+
+# ── Frontend / node artifacts (not needed by the Python services) ───────────
+frontend/node_modules
+frontend/.next
+frontend/out
+frontend/.env*
+
+# ── Dev/test artifacts not referenced at runtime ─────────────────────────────
+evals
+data_to_test
+
+# ── OS junk ──────────────────────────────────────────────────────────────────
+.DS_Store

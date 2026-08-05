@@ -376,12 +376,56 @@ Real-time observability streamed to the frontend via WebSocket:
 1. Clone the repo
 2. Install Python deps: `pip install -r requirements.txt`
 3. Install frontend deps: `cd frontend && npm install`
-4. Create a `.env` in the project root (there is no committed `.env.example`) with: `TAVILY_API_KEY`, `DATABASE_URL` (Supabase), `LLM_API_KEY` (OpenRouter), `SERP_API_KEY`, `SUPABSE_SERVICE_ROLE_KEY`, `E2B_API_KEY`
+4. Create a `.env` in the project root with: `TAVILY_API_KEY`, `DATABASE_URL` (Supabase), `LLM_API_KEY` (OpenRouter), `SERP_API_KEY`, `SUPABSE_SERVICE_ROLE_KEY`, `E2B_API_KEY`
 5. Run Supabase SQL migrations from `schemas/` — create the tables, RPC functions, and HNSW indexes
 6. Start Kafka: `docker compose up -d kafka` (required for chat memory/title persistence)
 7. Start Kafka consumers: `python backend/kafka_jobs/run_consumers.py` (three background processes)
 8. Start backend: `uvicorn backend.app:app --reload` (default: `http://localhost:8000`)
 9. Start frontend: `cd frontend && npm run dev` (default: `http://localhost:3000`)
+
+### Docker (full stack)
+
+The whole stack — Kafka, Redis, FastAPI backend, Kafka consumers, and the Next.js
+frontend — can be run with a single command:
+
+```bash
+./start_docker.sh          # build + run in foreground
+./start_docker.sh -d       # build + run in the background
+# or directly:
+docker compose up --build
+```
+
+- Images: `Dockerfile` (Python backend + consumers) and `frontend/Dockerfile` (Next.js, `output: "standalone"`).
+- Secrets come from the root `.env` file (`env_file`) — they are never baked into images. Docker-specific endpoints (`KAFKA_BOOTSTRAP_SERVERS=kafka:29092`, `REDIS_URL=redis://redis:6379/0`) are injected by `docker-compose.yaml`.
+- Ports: frontend `:3000`, backend `:8000`, Kafka `:9092` (host), Redis `:6379`.
+- The backend/consumers wait for Kafka & Redis to become healthy before starting.
+
+### Deployment
+
+The stack is containerized and can be deployed to any Docker host or PaaS
+(Railway, Render, Fly.io, GCP/AWS) that supports Docker.
+
+1. **Provision the database**: run the SQL in `schemas/` against a Supabase
+   project (tables, RPC functions, HNSW indexes).
+2. **Environment variables** (backend/consumers): `DATABASE_URL`,
+   `LLM_API_KEY`, `TAVILY_API_KEY`, `SERP_API_KEY`, `SUPABSE_SERVICE_ROLE_KEY`,
+   plus `CORS_ORIGINS` (comma-separated allowed browser origins — set to your
+   frontend domain, e.g. `https://app.example.com`).
+3. **Build arg** (frontend): `NEXT_PUBLIC_API_URL` must be the public backend
+   URL (e.g. `https://api.example.com`). The WebSocket endpoint is derived from
+   it automatically.
+4. **Kafka + Redis**: either run the bundled containers or point
+   `KAFKA_BOOTSTRAP_SERVERS` / `REDIS_URL` at managed instances.
+5. **Reverse proxy / TLS**: put nginx or the PaaS router in front. The backend
+   honours `X-Forwarded-For` for rate limiting, so forward proxy headers.
+   Health endpoints: backend `/health`, frontend `/`.
+6. **Rate limits** (per client IP, configurable via env):
+   `/auth/*` 10/min, `/chat` 30/min (`CHAT_RATE_LIMIT_PER_MINUTE`),
+   `/upload` 20/min (`UPLOAD_RATE_LIMIT_PER_MINUTE`).
+
+> ⚠️ **Auth is demo-grade**: there is no JWT/session layer — the client passes
+> `user_id` directly. Argon2id hashing and per-IP rate limiting are in place,
+> but add real authentication before exposing the app to untrusted users.
 
 
 ## Performance Improvements
@@ -458,9 +502,9 @@ After:  "best selling product" → Data Analyst → reads CSV → actual data an
 Functional end-to-end prerelease (v0.9.9.11). The core chat loop, multi-agent system, RAG pipeline, file management, WebSocket observability, effort-based execution, Kafka async jobs, onboarding flow, and Argon2id password hashing are operational. Known gaps:
 - Image generation uses OpenRouter `google/gemini-2.5-flash-image`; slow (~30s) and blocks the CEO pipeline
 - No automated test suite — only ad-hoc eval scripts in `evals/`
-- CORS hardcoded to localhost
+- CORS is configured via the `CORS_ORIGINS` env var (defaults to localhost)
 - Supabase free tier REST API adds 3-7s latency per RPC call (embedding serialization overhead)
-- Kafka consumers are separate processes with no supervisor (no auto-restart on crash)
+- No JWT/session layer — the client passes `user_id` directly (demo-grade auth; rate limiting + Argon2id applied)
 
 
 ## Changelog (v0.9.5 → v0.9.11)

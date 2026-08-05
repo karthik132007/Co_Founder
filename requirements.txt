@@ -1,4 +1,5 @@
 sqlalchemy
+psycopg2-binary
 python-dotenv
 python-multipart
 fastapi
@@ -19,3 +20,4 @@ redis
 requests
 confluent_kafka
 pwdlib[argon2]
+uvicorn[standard]
