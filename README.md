@@ -1,17 +1,16 @@
-# Co_Founder — v0.9.11 (Prerelease)
+# Co_Founder — v1.0.0 (Production Test)
 
 > **📘 For complete system context and understanding, please refer to [`Agents_rules.md`](Agents_rules.md) before contributing or making changes.**
 
 
 ## Contents
-
+- [TL;DR For The Lazy](#tldr-for-the-lazy)
 - [Overview](#overview)
 - [Architecture](#architecture)
 - [Tech Stack](#tech-stack)
 - [Agent System](#agent-system)
 - [RAG Engine](#rag-engine)
 - [Backend](#backend)
-- [Frontend](#frontend)
 - [Code Sandbox](#code-sandbox)
 - [Prompt System & Tool Registry](#prompt-system--tool-registry)
 - [Logging & Observability](#logging--observability)
@@ -31,6 +30,17 @@ See the LICENSE file for details.
 ## Overview
 
 AI Co-Founder is a multi-agent AI platform that replaces a human founding team with a CEO orchestrator agent and specialized sub-agents. Founders describe their business idea through a conversational chat interface, and the agents collaboratively handle strategy, market research, content writing, data analysis, and knowledge management via a shared RAG + chat memory backbone.
+
+This v1.0.0 production test ships the full Dockerized stack, async Kafka persistence, effort-based agent routing, WebSocket observability, Argon2id password hashing, and env-driven CORS/rate limiting. The app is usable end-to-end.
+
+## TL;DR For The Lazy
+
+- This is a Dockerized multi-agent AI co-founder website, not a tiny demo.
+- The CEO agent routes work to Researcher, Writer, CMO, Data Analyst, Graphic Designer, Judge, and memory/title helpers.
+- Chat uses a shared RAG + chat memory system, plus Kafka-backed async persistence for messages, memories, and session titles.
+- `evals/` contains the current evaluation scripts; the latest RAG benchmark hit 95.00% pass rate, 0.950 Average Recall@5, and 0.883 Average MRR.
+- Harness-level benchmark testing is coming soon.
+
 
 ## Architecture
 
@@ -248,67 +258,9 @@ POST /chat
 
 ## Frontend
 
-### Structure
-```
-frontend/src/
-├── app/
-│   ├── layout.tsx            # Root layout
-│   ├── page.tsx              # Landing page (47 lines — thin orchestrator; content lives in components/landing/)
-│   ├── landing.css           # Landing page styles (357 lines)
-│   ├── globals.css           # Design system tokens, cards, glass nav, animations
-│   ├── auth/page.tsx         # Auth page (277 lines) — login/signup toggle, brand panel, animated transitions
-│   ├── onboarding/page.tsx   # Onboarding wizard (421 lines) — 4-step form with progress bar
-│   └── (app)/                # Authenticated route group
-│       ├── layout.tsx        # AppShell wrapper
-│       ├── dashboard/page.tsx # Dashboard (145 lines) — overview stats, recent files, quick actions
-│       ├── chat/page.tsx     # Chat page (28 lines)
-│       ├── drive/page.tsx    # Drive (136 lines) — file grid, upload/delete
-│       ├── plugins/page.tsx  # Plugins (19 lines) — "Coming Soon"
-│       ├── settings/page.tsx # Settings (82 lines) — tabbed UI, placeholder content
-│       ├── profile/page.tsx  # Profile (145 lines)
-│       ├── profile/settings/page.tsx
-│       └── [sessionId]/page.tsx
-├── components/
-│   ├── AppLayout.tsx         # Collapsible sidebar, session management, chat history
-│   ├── Chat.tsx              # Full chat component (896 lines) — messages, MCQ cards, typing indicator, effort selector
-│   ├── AgentTimeline.tsx     # AgentTraceInline — collapsible trace below each message
-│   ├── landing/              # 19 landing section components (Hero, HowItThinks, Features, Comparison, CTA…)
-│   └── ui/
-└── lib/
-    ├── api.ts                # API client (271 lines)
-    ├── observability.ts      # useObservability hook — persistent WS connection (383 lines)
-    ├── session.ts            # localStorage session helpers
-    └── hooks/                # useLenis, useMouse, useScramble
-```
+Frontend is a Next.js app with the main user flows in `frontend/src/app/` and shared chat/agent UI in `frontend/src/components/`. The important bits are the chat experience, onboarding, dashboard, drive, and observability views; the component-level breakdown is intentionally omitted here so the README stays readable.
 
-### Page Details
-
-**Landing Page** (`/`): Animated hero with a Three.js scene (noise-shader icosahedron, neural net, particle field) animated by GSAP. `HowItThinks` shows a horizontal pinned-scroll of 7 agent cards (CEO, Researcher, Writer, CMO, Data Analyst, Graphic Designer, Judge) + an end card. Sections for solution/product surface, feature grid (6 cards), cinematic two-column comparison (cost, speed, availability, tools, coordination, memory), CTA, and footer.
-
-**Auth Page** (`/auth`): Split layout — left brand panel with static agent chips (desktop) or stacked (mobile). Animated form toggle between login/signup. Input validation, loading spinner, error/success toasts. Redirects to `/dashboard` on login, `/onboarding` on signup.
-
-**Onboarding Wizard** (`/onboarding`): 4 steps — company name → description (max 500 words with counter) → industry (text input) → brand tone (radio cards: Friendly/Professional/Witty). Progress bar, back/continue/finish buttons, animated transitions between steps.
-
-**App Shell** (`/(app)`): Collapsible sidebar with 4 nav items — Overview, Chat, Drive, Plugins — plus New Chat button, recent-chats list, and a Settings link in the footer. Settings is a separate route with tabbed UI (General, Appearance, Notifications, Security, Billing) but placeholder ("Coming Soon") content; Plugins page is also a "Coming Soon" placeholder.
-
-**Dashboard** (`/dashboard`): Overview stats cards (files, storage, sessions), recent files grid, quick action buttons. File management lives on `/drive` (file grid with type icons, upload/delete).
-
-### Chat Component
-- Renders message list with react-markdown + remark-gfm
-- MCQ cards rendered as interactive HTML forms — checkboxes, custom text input, confirm button
-- Typing indicator (bouncing dots animation) during agent processing
-- Session management: create new, switch via sidebar, delete with confirmation dialog
-- Auto-scroll to bottom on new messages
-- **Copy button** — every assistant message has a hover-visible copy button (top-right). Code blocks (```text) have a dedicated copy button inside the dark block
-- **Deliverable formatting** — CEO wraps emails, captions, ads in ```text blocks; frontend renders with dark background, spacing, and copy affordance
-- **Effort selector** — dropdown in the chat input bar (⚡ Flash / ⚖️ Mid / 🎯 Max), defaults to Flash
-
-### Design System (`globals.css`)
-- Tailwind v4 `@theme` custom tokens for colors, fonts, spacing
-- Flat card system with borders and soft shadows, hover lifts
-- Glass-morphism navigation with backdrop blur
-- Grid background pattern and text gradient utilities
-- Custom scrollbar, keyframe animations (fade-in, slide-up, float), reduced-motion media query support
+If you need the exact frontend structure, inspect the `frontend/` workspace directly.
 
 ## Code Sandbox
 
@@ -367,7 +319,7 @@ Real-time observability streamed to the frontend via WebSocket:
 ## Setup
 
 ### Prerequisites
-- Python 3.12+
+- Python 3.13+
 - Node.js 20+
 - Supabase project (PostgreSQL + Storage)
 - API keys: Tavily, OpenRouter, SerpAPI, e2b
@@ -376,7 +328,7 @@ Real-time observability streamed to the frontend via WebSocket:
 1. Clone the repo
 2. Install Python deps: `pip install -r requirements.txt`
 3. Install frontend deps: `cd frontend && npm install`
-4. Create a `.env` in the project root with: `TAVILY_API_KEY`, `DATABASE_URL` (Supabase), `LLM_API_KEY` (OpenRouter), `SERP_API_KEY`, `SUPABSE_SERVICE_ROLE_KEY`, `E2B_API_KEY`
+4. Create a `.env` in the project root with: `TAVILY_API_KEY`, `DATABASE_URL` (Supabase), `LLM_API_KEY` (OpenRouter), `SERP_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `E2B_API_KEY` (`SUPABSE_SERVICE_ROLE_KEY` is still accepted for legacy env files)
 5. Run Supabase SQL migrations from `schemas/` — create the tables, RPC functions, and HNSW indexes
 6. Start Kafka: `docker compose up -d kafka` (required for chat memory/title persistence)
 7. Start Kafka consumers: `python backend/kafka_jobs/run_consumers.py` (three background processes)
@@ -408,7 +360,7 @@ The stack is containerized and can be deployed to any Docker host or PaaS
 1. **Provision the database**: run the SQL in `schemas/` against a Supabase
    project (tables, RPC functions, HNSW indexes).
 2. **Environment variables** (backend/consumers): `DATABASE_URL`,
-   `LLM_API_KEY`, `TAVILY_API_KEY`, `SERP_API_KEY`, `SUPABSE_SERVICE_ROLE_KEY`,
+   `LLM_API_KEY`, `TAVILY_API_KEY`, `SERP_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`,
    plus `CORS_ORIGINS` (comma-separated allowed browser origins — set to your
    frontend domain, e.g. `https://app.example.com`).
 3. **Build arg** (frontend): `NEXT_PUBLIC_API_URL` must be the public backend
@@ -422,10 +374,8 @@ The stack is containerized and can be deployed to any Docker host or PaaS
 6. **Rate limits** (per client IP, configurable via env):
    `/auth/*` 10/min, `/chat` 30/min (`CHAT_RATE_LIMIT_PER_MINUTE`),
    `/upload` 20/min (`UPLOAD_RATE_LIMIT_PER_MINUTE`).
-
-> ⚠️ **Auth is demo-grade**: there is no JWT/session layer — the client passes
-> `user_id` directly. Argon2id hashing and per-IP rate limiting are in place,
-> but add real authentication before exposing the app to untrusted users.
+7. **CORS defaults**: local docker/dev defaults allow `http://localhost:3000`
+   and `http://127.0.0.1:3000`; override `CORS_ORIGINS` for production.
 
 
 ## Performance Improvements
@@ -499,12 +449,16 @@ After:  "best selling product" → Data Analyst → reads CSV → actual data an
 
 ## Status
 
-Functional end-to-end prerelease (v0.9.9.11). The core chat loop, multi-agent system, RAG pipeline, file management, WebSocket observability, effort-based execution, Kafka async jobs, onboarding flow, and Argon2id password hashing are operational. Known gaps:
+Functional end-to-end production test release (v1.0.0). The core chat loop, multi-agent system, RAG pipeline, file management, WebSocket observability, effort-based execution, Kafka async jobs, onboarding flow, and Argon2id password hashing are operational. Known gaps:
 - Image generation uses OpenRouter `google/gemini-2.5-flash-image`; slow (~30s) and blocks the CEO pipeline
 - No automated test suite — only ad-hoc eval scripts in `evals/`
-- CORS is configured via the `CORS_ORIGINS` env var (defaults to localhost)
+- CORS is configured via the `CORS_ORIGINS` env var (defaults to localhost + 127.0.0.1 in Docker/dev)
 - Supabase free tier REST API adds 3-7s latency per RPC call (embedding serialization overhead)
 - No JWT/session layer — the client passes `user_id` directly (demo-grade auth; rate limiting + Argon2id applied)
+
+## Notes For The Sleepy Reader
+
+If you only skimmed this far: the app is production-test ready, the frontend is a Next.js chat/product shell, the backend is FastAPI with Kafka and Redis, and the main caveat is still demo-grade auth. The rest of the README mostly exists so future-me can remember what past-me was doing.
 
 
 ## Changelog (v0.9.5 → v0.9.11)

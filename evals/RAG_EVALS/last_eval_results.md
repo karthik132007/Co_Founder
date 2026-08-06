@@ -1,8 +1,8 @@
 # RAG Evaluation Report
 
-**Date:** 2026-08-03T15:14:36.676959
+**Date:** 2026-08-06T11:45:15.392239
 
-**Top K:** 3
+**Top K:** 5
 
 **Total Test Cases:** 20
 **Passed:** 19
@@ -10,8 +10,9 @@
 
 ## Metrics
 
-- Average Precision@3: 0.306
-- Average Recall@3: 0.950
+- Average Precision@5: 0.189
+- Average Recall@5: 0.950
+- Average MRR: 0.883
 - Pass Rate: 95.00%
 
 ## Failed Test Cases
@@ -24,12 +25,15 @@
   "returned": [
     4,
     22,
-    23
+    23,
+    8,
+    24
   ],
   "missing": [
     5
   ],
   "precision": 0.0,
-  "recall": 0.0
+  "recall": 0.0,
+  "mrr": 0.0
 }
 
