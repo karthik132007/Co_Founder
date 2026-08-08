@@ -1,0 +1,216 @@
+[
+  {
+    "task_id": "CEO_028",
+    "query": "Prepare a quarterly sales review presentation with charts and key takeaways from our 2025 sales data.",
+    "category": "Sales Analytics",
+    "difficulty": "hard",
+    "mode": "mid",
+    "requires": [
+      "data_analysis_request",
+      "writing_request"
+    ]
+  },
+  {
+    "task_id": "CEO_005",
+    "query": "What is the official email address for compliance queries per our company documents?",
+    "category": "Company Knowledge",
+    "difficulty": "easy",
+    "mode": "flash",
+    "requires": [
+      "knowledge_request"
+    ]
+  },
+  {
+    "task_id": "CEO_020",
+    "query": "What are the top 3 recurring customer complaints mentioned in our testimonials document?",
+    "category": "Customer Insights",
+    "difficulty": "mid",
+    "mode": "mid",
+    "requires": [
+      "knowledge_request"
+    ]
+  },
+  {
+    "task_id": "CEO_050",
+    "query": "Prepare an investor-ready annual report and pitch deck for our 2026 performance: financial highlights, market analysis, growth strategy, and a 3-year roadmap.",
+    "category": "Strategic Planning",
+    "difficulty": "expert",
+    "mode": "mid",
+    "requires": [
+      "data_analysis_request",
+      "research_request",
+      "writing_request",
+      "marketing_request"
+    ]
+  },
+  {
+    "task_id": "CEO_019",
+    "query": "Draft a reply to a negative customer review about delayed shipping, keeping a professional and empathetic tone.",
+    "category": "Content & Writing",
+    "difficulty": "mid",
+    "mode": "mid",
+    "requires": [
+      "writing_request"
+    ]
+  },
+  {
+    "task_id": "CEO_045",
+    "query": "Forecast next quarter's sales based on our 2024-2025 sales trends and current market conditions.",
+    "category": "Sales Analytics",
+    "difficulty": "hard",
+    "mode": "mid",
+    "requires": [
+      "data_analysis_request",
+      "research_request"
+    ]
+  },
+  {
+    "task_id": "CEO_024",
+    "query": "Analyze our customer demographics - which states and regions buy the most from us?",
+    "category": "Sales Analytics",
+    "difficulty": "mid",
+    "mode": "mid",
+    "requires": [
+      "data_analysis_request"
+    ]
+  },
+  {
+    "task_id": "CEO_033",
+    "query": "Develop a complete social media strategy for the next quarter, including competitor research.",
+    "category": "Marketing & Growth",
+    "difficulty": "hard",
+    "mode": "mid",
+    "requires": [
+      "research_request",
+      "marketing_request"
+    ]
+  },
+  {
+    "task_id": "CEO_022",
+    "query": "Analyze seasonality in our sales data - which months are the strongest and weakest overall?",
+    "category": "Sales Analytics",
+    "difficulty": "mid",
+    "mode": "mid",
+    "requires": [
+      "data_analysis_request"
+    ]
+  },
+  {
+    "task_id": "CEO_014",
+    "query": "How can a customer cancel an order and what cancellation fee applies per our shipping policy?",
+    "category": "Policy & Operations",
+    "difficulty": "easy",
+    "mode": "flash",
+    "requires": [
+      "knowledge_request"
+    ]
+  },
+  {
+    "task_id": "CEO_008",
+    "query": "Which product was our best-selling product in 2024 by revenue?",
+    "category": "Sales Analytics",
+    "difficulty": "easy",
+    "mode": "flash",
+    "requires": [
+      "data_analysis_request"
+    ]
+  },
+  {
+    "task_id": "CEO_003",
+    "query": "What is the shelf life of the Herbal Hair Oil according to its product information file?",
+    "category": "Product Knowledge",
+    "difficulty": "easy",
+    "mode": "flash",
+    "requires": [
+      "knowledge_request"
+    ]
+  },
+  {
+    "task_id": "CEO_016",
+    "query": "Write a short product description for the Herbal Hair Oil using its product information file.",
+    "category": "Content & Writing",
+    "difficulty": "mid",
+    "mode": "mid",
+    "requires": [
+      "knowledge_request",
+      "writing_request"
+    ]
+  },
+  {
+    "task_id": "CEO_002",
+    "query": "What is the registered office address of Indian Herbs Pvt. Ltd. per our legal documents?",
+    "category": "Company Knowledge",
+    "difficulty": "easy",
+    "mode": "flash",
+    "requires": [
+      "knowledge_request"
+    ]
+  },
+  {
+    "task_id": "CEO_007",
+    "query": "What were our total sales in Q1 2025?",
+    "category": "Sales Analytics",
+    "difficulty": "easy",
+    "mode": "flash",
+    "requires": [
+      "data_analysis_request"
+    ]
+  },
+  {
+    "task_id": "CEO_039",
+    "query": "Create three packaging design concepts for our Herbal Hair Oil and ask me to choose between them.",
+    "category": "Branding & Design",
+    "difficulty": "hard",
+    "mode": "mid",
+    "requires": [
+      "graphic_design_request",
+      "ask_mcq_for_user"
+    ]
+  },
+  {
+    "task_id": "CEO_023",
+    "query": "Write a LinkedIn post announcing our commitment to sustainability using details from our company documents.",
+    "category": "Content & Writing",
+    "difficulty": "mid",
+    "mode": "mid",
+    "requires": [
+      "knowledge_request",
+      "writing_request"
+    ]
+  },
+  {
+    "task_id": "CEO_009",
+    "query": "How many units of Kumkumadi Tailam were sold in March 2025?",
+    "category": "Sales Analytics",
+    "difficulty": "easy",
+    "mode": "flash",
+    "requires": [
+      "data_analysis_request"
+    ]
+  },
+  {
+    "task_id": "CEO_046",
+    "query": "Create a complete go-to-market plan for launching our Herbal Hair Oil in the US market - including market research, pricing, distribution, marketing campaigns, and a launch timeline. Ask me for the budget before finalizing.",
+    "category": "Strategic Planning",
+    "difficulty": "expert",
+    "mode": "mid",
+    "requires": [
+      "research_request",
+      "data_analysis_request",
+      "marketing_request",
+      "writing_request",
+      "ask_mcq_for_user"
+    ]
+  },
+  {
+    "task_id": "CEO_025",
+    "query": "Create a one-page FAQ for our website based on our product information file and shipping policy.",
+    "category": "Content & Writing",
+    "difficulty": "mid",
+    "mode": "mid",
+    "requires": [
+      "knowledge_request",
+      "writing_request"
+    ]
+  }
+]

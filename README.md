@@ -8,6 +8,7 @@
 - [Overview](#overview)
 - [Architecture](#architecture)
 - [Tech Stack](#tech-stack)
+- [Evals & Benchmarks](#evals--benchmarks)
 - [Agent System](#agent-system)
 - [RAG Engine](#rag-engine)
 - [Backend](#backend)
@@ -39,7 +40,7 @@ This v1.0.0 production test ships the full Dockerized stack, async Kafka persist
 - The CEO agent routes work to Researcher, Writer, CMO, Data Analyst, Graphic Designer, Judge, and memory/title helpers.
 - Chat uses a shared RAG + chat memory system, plus Kafka-backed async persistence for messages, memories, and session titles.
 - `evals/` contains the current evaluation scripts; the latest RAG benchmark hit 95.00% pass rate, 0.950 Average Recall@5, and 0.883 Average MRR.
-- Harness-level benchmark testing is coming soon.
+- **CEO end-to-end eval is live**: 27 runs / 81 judge verdicts across 5 tasks, 6 prompt tweaks, and 2 effort modes — `normal` prompt + `flash` mode currently leads (8.62 overall) (see [Evals & Benchmarks](#evals--benchmarks) and [`docs/eval_report.md`](docs/eval_report.md)).
 
 
 ## Architecture
@@ -67,6 +68,34 @@ This v1.0.0 production test ships the full Dockerized stack, async Kafka persist
 | UI Animation | framer-motion 12.42.0, GSAP 3.15.0, Lenis, Three.js 0.185 (React Three Fiber, drei, postprocessing) |
 | Icons | lucide-react 1.21.0 |
 | Markdown | react-markdown 10.1.0, remark-gfm 4.0.1 |
+
+## Evals & Benchmarks
+
+End-to-end quality benchmarking of the **CEO agent** lives in `evals/e2e/` (`run_ceo_e2e.py` harness, `run_judging.py` judging). Latest run: **27 runs / 81 judge verdicts**. Full write-up: [`docs/eval_report.md`](docs/eval_report.md).
+
+### What was tested
+
+| Factor | Values |
+|---|---|
+| Tasks | 5 — `CEO_008` (easy · sales), `CEO_016` (mid · writing), `CEO_024` (mid · sales), `CEO_033` (hard · marketing), `CEO_045` (hard · sales) |
+| Prompt tweaks | `normal`, `cot_n_shot`, `explicit_planning`, `reflection`, `Verification-first`, `tight_budget` |
+| Effort modes | ⚡ `flash` (6 runs) · ⚖️ `mid` (21 runs) |
+| Judges | 3 independent LLMs per run (DeepSeek v4 flash, Qwen 3.7 flash, GPT-5.6) |
+| Metrics | `tool_call`, `trajectory`, `final_answer`, `constraint_adherence`, `groundedness`, `hallucination`, `overall` (0–10, averaged across judges) |
+
+### What we found
+
+- **`normal` prompt is the best tweak** (overall 8.44) — the reasoning scaffolds (`explicit_planning` 7.76, `cot_n_shot` 7.44, `reflection` 7.23) don't beat the default; `tight_budget` (5.77) and `Verification-first` (5.47) trail.
+- **`flash` scored higher than `mid` (8.62 vs 6.36) at ~3× fewer tokens and ~half the latency** — but all 6 `flash` runs were on the *easy* task (`CEO_008`), so the gap is partly **confounded with task difficulty**; `flash` on harder tasks is untested.
+- **`Verification-first` is the most hallucination-safe (8.93) but the least capable (5.47)** — it blocks unverifiable claims at the cost of task completion.
+- **Groundedness is the weakest metric (6.10)** — judges can't verify claims because tool outputs aren't retained in the recorded trace.
+- **Reliability:** 24/27 runs ok; 2 timeouts + 1 provider error, all on `mid`-effort hard tasks.
+
+### Plots
+
+| Judge scores by tweak & mode | Runtime & token usage |
+|---|---|
+| ![Scores by tweak and mode](docs/answera_scores_eda.png) | ![Runtime and tokens](docs/eda.png) |
 
 ## Agent System
 

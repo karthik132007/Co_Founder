@@ -6,6 +6,20 @@ logger = logging.getLogger(__name__)
 
 api_key = os.getenv("E2B_API_KEY")
 
+# A data-analysis task can require several model/tool turns before it executes
+# code. E2B's implicit lifetime is too short for these longer CEO evals.
+try:
+    SANDBOX_TIMEOUT_SECONDS = max(60, int(os.getenv("E2B_SANDBOX_TIMEOUT_SECONDS", "900")))
+except ValueError:
+    SANDBOX_TIMEOUT_SECONDS = 900
+
+# Cap a single code execution so a hung script can't stall the agent for the
+# full sandbox lifetime (e2b's own default execution timeout is 300s).
+try:
+    CODE_TIMEOUT_SECONDS = max(10, int(os.getenv("E2B_CODE_TIMEOUT_SECONDS", "120")))
+except ValueError:
+    CODE_TIMEOUT_SECONDS = 120
+
 # Lazily-created singleton sandbox. Created on first use, not at import time.
 _sandbox: Sandbox | None = None
 
@@ -13,8 +27,8 @@ _sandbox: Sandbox | None = None
 def get_sandbox() -> Sandbox:
     global _sandbox
     if _sandbox is None:
-        logger.info("Creating new E2B sandbox")
-        _sandbox = Sandbox.create(api_key=api_key)
+        logger.info("Creating new E2B sandbox (timeout=%ds)", SANDBOX_TIMEOUT_SECONDS)
+        _sandbox = Sandbox.create(api_key=api_key, timeout=SANDBOX_TIMEOUT_SECONDS)
         logger.info("E2B sandbox created successfully")
     return _sandbox
 
@@ -34,9 +48,17 @@ def kill_sandbox():
 
 
 def run_python_code(code):
-    logger.info("Running Python code in sandbox (length=%d)", len(code) if code else 0)
+    logger.info(
+        "Running Python code in sandbox (length=%d, timeout=%ds)",
+        len(code) if code else 0,
+        CODE_TIMEOUT_SECONDS,
+    )
     try:
-        execution = get_sandbox().run_code(code=code)
+        execution = get_sandbox().run_code(
+            code=code,
+            timeout=CODE_TIMEOUT_SECONDS,
+            request_timeout=CODE_TIMEOUT_SECONDS + 30,
+        )
         stdout_len = len(execution.logs.stdout) if execution.logs.stdout else 0
         stderr_len = len(execution.logs.stderr) if execution.logs.stderr else 0
         logger.info("Code execution complete: stdout=%d lines, stderr=%d lines, text=%s",
@@ -62,4 +84,3 @@ def upload_file_to_sandbox(file_name: str, content: bytes, path: str = "/home/us
     except Exception as e:
         logger.error("Error uploading file to sandbox: %s", e)
         return None
-

@@ -36,6 +36,16 @@ Depending on the task, you may:
 - Add comments where necessary.
 - Handle common runtime errors gracefully.
 
+## Tool-use efficiency
+- Answer the specific business question; do not perform a generic full EDA.
+- First inspect the data, then consolidate the required calculations into one
+  well-structured code execution whenever possible.
+- Aim for at most three ``run code`` calls. Use one additional call only to
+  correct a genuine runtime error.
+- Do not repeat calculations that have already succeeded.
+- Generate charts only when the request explicitly asks for charts,
+  visualizations, or a presentation.
+
 ## Analysis Guidelines
 - Never assume facts that are not present in the data.
 - Base every conclusion on evidence.
@@ -65,7 +75,7 @@ Return:
 1. Executive summary
 2. Key findings
 3. Supporting statistics
-4. Generated visualizations
+4. Generated visualizations (only when requested)
 5. Business recommendations
 6. Any assumptions made
 
@@ -84,6 +94,11 @@ Explore, analyze, and interpret data. Think like a business analyst. Provide act
 - Clean, modular Python with explicit imports (pandas, numpy, matplotlib, plotly, sklearn, scipy).
 - Handle errors gracefully.
 
+## Tool-use efficiency
+- Answer the exact request, not a generic full EDA.
+- Consolidate calculations into one script and aim for at most three ``run code`` calls.
+- Generate a chart only when the user explicitly requests one.
+
 ## Analysis
 - Never assume facts not in the data. Base conclusions on evidence.
 - Mention limitations when data quality is poor. State assumptions clearly.
@@ -92,5 +107,5 @@ Explore, analyze, and interpret data. Think like a business analyst. Provide act
 Generate informative charts (histograms, scatter, bar, line, heatmaps, etc.) with titles, axis labels, and readable formatting.
 
 ## Output
-Return: Executive summary → Key findings → Statistics → Visualizations → Business recommendations → Assumptions.
+Return: Executive summary → Key findings → Statistics → requested visualizations → Business recommendations → Assumptions.
 """

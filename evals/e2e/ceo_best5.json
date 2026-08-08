@@ -1,0 +1,55 @@
+[
+  {
+    "task_id": "CEO_008",
+    "query": "Which product was our best-selling product in 2024 by revenue?",
+    "category": "Sales Analytics",
+    "difficulty": "easy",
+    "mode": "flash",
+    "requires": [
+      "data_analysis_request"
+    ]
+  },
+  {
+    "task_id": "CEO_016",
+    "query": "Write a short product description for the Herbal Hair Oil using its product information file.",
+    "category": "Content & Writing",
+    "difficulty": "mid",
+    "mode": "mid",
+    "requires": [
+      "knowledge_request",
+      "writing_request"
+    ]
+  },
+  {
+    "task_id": "CEO_024",
+    "query": "Analyze our customer demographics - which states and regions buy the most from us?",
+    "category": "Sales Analytics",
+    "difficulty": "mid",
+    "mode": "mid",
+    "requires": [
+      "data_analysis_request"
+    ]
+  },
+  {
+    "task_id": "CEO_033",
+    "query": "Develop a complete social media strategy for the next quarter, including competitor research.",
+    "category": "Marketing & Growth",
+    "difficulty": "hard",
+    "mode": "mid",
+    "requires": [
+      "research_request",
+      "marketing_request"
+    ]
+  },
+  {
+    "task_id": "CEO_045",
+    "query": "Forecast next quarter's sales based on our 2024-2025 sales trends and current market conditions.",
+    "category": "Sales Analytics",
+    "difficulty": "hard",
+    "mode": "mid",
+    "requires": [
+      "data_analysis_request",
+      "research_request"
+    ]
+  }
+]

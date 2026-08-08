@@ -1,5 +1,6 @@
 import json
 from backend.db.redis_client import get_redis_client
+from redis.exceptions import WatchError
 
 _RESOURCE_TTL = 3600  # 1 hour TTL for session resource state
 
@@ -61,26 +62,44 @@ def get_session_resources(session_id: str) -> dict | None:
 
 
 def consume_resource(session_id: str, resource: str) -> bool:
-    """Try to consume one unit of a resource. Returns True if successful, False if exhausted.
+    """Atomically consume one unit of a resource.
+
+    LangGraph may execute multiple tool calls in parallel inside one agent turn,
+    so a simple read-modify-write can otherwise let a session exceed its limit.
+    Returns False when the budget is exhausted or Redis is unavailable.
 
     resource must be one of: 'external_agents', 'web_searches', 'rag_calls', 'mcqs'
     """
     redis_client = get_redis_client()
-    state = get_session_resources(session_id)
-    if state is None:
-        return False  # No session state — shouldn't happen
+    key = _session_resource_key(session_id)
+    for _ in range(5):
+        pipeline = redis_client.pipeline()
+        try:
+            pipeline.watch(key)
+            raw = pipeline.get(key)
+            if raw is None:
+                return False
+            state = json.loads(raw)
+            current = state["consumed"].get(resource, 0)
+            limit = state["limits"].get(f"max_{resource}")
+            if limit is None:
+                return True
+            if current >= limit:
+                return False
 
-    current = state["consumed"].get(resource, 0)
-    limit = state["limits"].get(f"max_{resource}")
-    if limit is None:
-        return True  # No limit for this resource
-
-    if current >= limit:
-        return False  # Exhausted
-
-    state["consumed"][resource] = current + 1
-    redis_client.setex(_session_resource_key(session_id), _RESOURCE_TTL, json.dumps(state))
-    return True
+            state["consumed"][resource] = current + 1
+            pipeline.multi()
+            pipeline.setex(key, _RESOURCE_TTL, json.dumps(state))
+            pipeline.execute()
+            return True
+        except WatchError:
+            # Another parallel tool updated this session; read the fresh value.
+            continue
+        except Exception:
+            return False
+        finally:
+            pipeline.reset()
+    return False
 
 
 def format_resources_for_prompt(session_id: str) -> str:

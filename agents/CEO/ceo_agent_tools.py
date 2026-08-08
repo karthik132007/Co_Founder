@@ -22,6 +22,25 @@ from agents.CEO.ceo_resources import consume_resource
 
 AGENTS_FILE = Path(__file__).resolve().parents[1] / "agents.json"
 logger = logging.getLogger(__name__)
+
+
+def _resource_exhausted(session_id: str, resource: str) -> bool:
+    """Check a session budget before spawning a specialist that needs it."""
+    if not session_id:
+        return False
+    try:
+        from agents.CEO.ceo_resources import get_session_resources
+
+        state = get_session_resources(session_id)
+        if not state:
+            return False
+        return state.get("consumed", {}).get(resource, 0) >= state.get("limits", {}).get(f"max_{resource}", 0)
+    except Exception:
+        # The tool itself will surface any real backend issue; do not block a
+        # delegation merely because this optional pre-flight check failed.
+        return False
+
+
 def _format_chat_memories(memories: list[dict]) -> str:
     if not memories:
         return "No relevant chat memories found."
@@ -124,8 +143,12 @@ def _build_ceo_tools(company_id: int):
         logger.info("research_request called: task='%s', effort=%s", task, ceo_state._current_effort)
         sid = ceo_state._current_session_id
 
-        if sid and not consume_resource(sid, "web_searches"):
-            return json.dumps({"error": "Web search budget exhausted for this session."})
+        # The Researcher consumes the session's web-search budget. Once it is
+        # empty, spawning another full Researcher would only add LLM latency
+        # before returning the same budget error.
+        if _resource_exhausted(sid, "web_searches"):
+            logger.info("Skipping Researcher: web-search budget exhausted for session_id=%s", sid)
+            return json.dumps({"error": "Web-search budget exhausted for this session."})
 
         if sid:
             event_bus.push(make_subagent_spawn(sid, "Researcher", task, ceo_state._current_effort))

@@ -53,25 +53,28 @@ def get_effort() -> str:
 
 # ── Internal ────────────────────────────────────────────────────────────────
 
-_cached_key: str = ""
-_cached_state: dict[str, Any] | None = None
+# The request key already lives in a ContextVar.  Its cache must as well:
+# module globals would allow concurrent CEO requests to read one another's
+# session state.
+_cached_request_state: contextvars.ContextVar[tuple[str, dict[str, Any]] | None] = (
+    contextvars.ContextVar("ceo_cached_request_state", default=None)
+)
 
 
 def _read_state() -> dict[str, Any] | None:
     """Read the current request's state from Redis (cached per-request)."""
-    global _cached_key, _cached_state
     key = _request_key.get()
     if not key:
         return None
-    # Cache hit: same request key as last read
-    if key == _cached_key and _cached_state is not None:
-        return _cached_state
+    cached = _cached_request_state.get()
+    if cached and cached[0] == key:
+        return cached[1]
     try:
         raw = get_redis_client().get(f"ceo_req:{key}")
         if raw:
-            _cached_key = key
-            _cached_state = json.loads(raw)
-            return _cached_state
+            state = json.loads(raw)
+            _cached_request_state.set((key, state))
+            return state
     except Exception:
         pass
     return None

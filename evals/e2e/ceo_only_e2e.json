@@ -1,0 +1,402 @@
+[
+    {
+        "task_id": "CEO_001",
+        "query": "What is our GST registration number according to our company legal information document?",
+        "category": "Company Knowledge",
+        "difficulty": "easy",
+        "mode": "flash",
+        "requires": ["knowledge_request"]
+    },
+    {
+        "task_id": "CEO_002",
+        "query": "What is the registered office address of Indian Herbs Pvt. Ltd. per our legal documents?",
+        "category": "Company Knowledge",
+        "difficulty": "easy",
+        "mode": "flash",
+        "requires": ["knowledge_request"]
+    },
+    {
+        "task_id": "CEO_003",
+        "query": "What is the shelf life of the Herbal Hair Oil according to its product information file?",
+        "category": "Product Knowledge",
+        "difficulty": "easy",
+        "mode": "flash",
+        "requires": ["knowledge_request"]
+    },
+    {
+        "task_id": "CEO_004",
+        "query": "What is the return window for products purchased on our website per our shipping and returns policy?",
+        "category": "Policy & Operations",
+        "difficulty": "easy",
+        "mode": "flash",
+        "requires": ["knowledge_request"]
+    },
+    {
+        "task_id": "CEO_005",
+        "query": "What is the official email address for compliance queries per our company documents?",
+        "category": "Company Knowledge",
+        "difficulty": "easy",
+        "mode": "flash",
+        "requires": ["knowledge_request"]
+    },
+    {
+        "task_id": "CEO_006",
+        "query": "Which director is responsible for finance per our company legal document?",
+        "category": "Company Knowledge",
+        "difficulty": "easy",
+        "mode": "flash",
+        "requires": ["knowledge_request"]
+    },
+    {
+        "task_id": "CEO_007",
+        "query": "What were our total sales in Q1 2025?",
+        "category": "Sales Analytics",
+        "difficulty": "easy",
+        "mode": "flash",
+        "requires": ["data_analysis_request"]
+    },
+    {
+        "task_id": "CEO_008",
+        "query": "Which product was our best-selling product in 2024 by revenue?",
+        "category": "Sales Analytics",
+        "difficulty": "easy",
+        "mode": "flash",
+        "requires": ["data_analysis_request"]
+    },
+    {
+        "task_id": "CEO_009",
+        "query": "How many units of Kumkumadi Tailam were sold in March 2025?",
+        "category": "Sales Analytics",
+        "difficulty": "easy",
+        "mode": "flash",
+        "requires": ["data_analysis_request"]
+    },
+    {
+        "task_id": "CEO_010",
+        "query": "What is today's date?",
+        "category": "Direct / No Tool",
+        "difficulty": "easy",
+        "mode": "flash",
+        "requires": []
+    },
+    {
+        "task_id": "CEO_011",
+        "query": "Which specialist agents are available to help me, and what does each one do?",
+        "category": "Direct / No Tool",
+        "difficulty": "easy",
+        "mode": "flash",
+        "requires": ["view_all_agents"]
+    },
+    {
+        "task_id": "CEO_012",
+        "query": "What are the business hours listed in our company legal document?",
+        "category": "Company Knowledge",
+        "difficulty": "easy",
+        "mode": "flash",
+        "requires": ["knowledge_request"]
+    },
+    {
+        "task_id": "CEO_013",
+        "query": "Which sales channel (website, Amazon, Flipkart, distributor, retail store) generated the highest revenue in 2025?",
+        "category": "Sales Analytics",
+        "difficulty": "easy",
+        "mode": "flash",
+        "requires": ["data_analysis_request"]
+    },
+    {
+        "task_id": "CEO_014",
+        "query": "How can a customer cancel an order and what cancellation fee applies per our shipping policy?",
+        "category": "Policy & Operations",
+        "difficulty": "easy",
+        "mode": "flash",
+        "requires": ["knowledge_request"]
+    },
+    {
+        "task_id": "CEO_015",
+        "query": "What was Priya S.'s experience with Kummudai Tailem according to our testimonials document?",
+        "category": "Customer Insights",
+        "difficulty": "easy",
+        "mode": "flash",
+        "requires": ["knowledge_request"]
+    },
+    {
+        "task_id": "CEO_016",
+        "query": "Write a short product description for the Herbal Hair Oil using its product information file.",
+        "category": "Content & Writing",
+        "difficulty": "mid",
+        "mode": "mid",
+        "requires": ["knowledge_request", "writing_request"]
+    },
+    {
+        "task_id": "CEO_017",
+        "query": "Summarize the key customer feedback and the most common compliments from our testimonials document.",
+        "category": "Customer Insights",
+        "difficulty": "mid",
+        "mode": "mid",
+        "requires": ["knowledge_request"]
+    },
+    {
+        "task_id": "CEO_018",
+        "query": "Compare the 2025 sales performance of Kumkumadi Tailam vs. Ayurvedic Body Oil by revenue and units sold.",
+        "category": "Sales Analytics",
+        "difficulty": "mid",
+        "mode": "mid",
+        "requires": ["data_analysis_request"]
+    },
+    {
+        "task_id": "CEO_019",
+        "query": "Draft a reply to a negative customer review about delayed shipping, keeping a professional and empathetic tone.",
+        "category": "Content & Writing",
+        "difficulty": "mid",
+        "mode": "mid",
+        "requires": ["writing_request"]
+    },
+    {
+        "task_id": "CEO_020",
+        "query": "What are the top 3 recurring customer complaints mentioned in our testimonials document?",
+        "category": "Customer Insights",
+        "difficulty": "mid",
+        "mode": "mid",
+        "requires": ["knowledge_request"]
+    },
+    {
+        "task_id": "CEO_021",
+        "query": "Generate 5 blog post ideas based on our product range and the wellness industry.",
+        "category": "Content & Writing",
+        "difficulty": "mid",
+        "mode": "mid",
+        "requires": ["knowledge_request", "writing_request"]
+    },
+    {
+        "task_id": "CEO_022",
+        "query": "Analyze seasonality in our sales data - which months are the strongest and weakest overall?",
+        "category": "Sales Analytics",
+        "difficulty": "mid",
+        "mode": "mid",
+        "requires": ["data_analysis_request"]
+    },
+    {
+        "task_id": "CEO_023",
+        "query": "Write a LinkedIn post announcing our commitment to sustainability using details from our company documents.",
+        "category": "Content & Writing",
+        "difficulty": "mid",
+        "mode": "mid",
+        "requires": ["knowledge_request", "writing_request"]
+    },
+    {
+        "task_id": "CEO_024",
+        "query": "Analyze our customer demographics - which states and regions buy the most from us?",
+        "category": "Sales Analytics",
+        "difficulty": "mid",
+        "mode": "mid",
+        "requires": ["data_analysis_request"]
+    },
+    {
+        "task_id": "CEO_025",
+        "query": "Create a one-page FAQ for our website based on our product information file and shipping policy.",
+        "category": "Content & Writing",
+        "difficulty": "mid",
+        "mode": "mid",
+        "requires": ["knowledge_request", "writing_request"]
+    },
+    {
+        "task_id": "CEO_026",
+        "query": "Create a full-year marketing plan for 2027 including competitor research, sales data analysis, and a content calendar draft.",
+        "category": "Strategic Planning",
+        "difficulty": "hard",
+        "mode": "max",
+        "requires": ["research_request", "data_analysis_request", "marketing_request", "writing_request"]
+    },
+    {
+        "task_id": "CEO_027",
+        "query": "Research the top 5 competitors in the Ayurvedic skincare market and propose a differentiation strategy for our brand.",
+        "category": "Market & Competitor Research",
+        "difficulty": "hard",
+        "mode": "max",
+        "requires": ["research_request", "marketing_request"]
+    },
+    {
+        "task_id": "CEO_028",
+        "query": "Prepare a quarterly sales review presentation with charts and key takeaways from our 2025 sales data.",
+        "category": "Sales Analytics",
+        "difficulty": "hard",
+        "mode": "max",
+        "requires": ["data_analysis_request", "writing_request"]
+    },
+    {
+        "task_id": "CEO_029",
+        "query": "Conduct a SWOT analysis of our company based on internal sales data and external market research.",
+        "category": "Strategic Planning",
+        "difficulty": "hard",
+        "mode": "max",
+        "requires": ["data_analysis_request", "research_request", "writing_request"]
+    },
+    {
+        "task_id": "CEO_030",
+        "query": "Design a Q1 promotional campaign strategy using our sales data and competitor pricing insights.",
+        "category": "Marketing & Growth",
+        "difficulty": "hard",
+        "mode": "max",
+        "requires": ["data_analysis_request", "research_request", "marketing_request"]
+    },
+    {
+        "task_id": "CEO_031",
+        "query": "Draft a press release about the launch of our new Herbal Hair Oil using our product information file.",
+        "category": "Content & Writing",
+        "difficulty": "hard",
+        "mode": "max",
+        "requires": ["knowledge_request", "writing_request"]
+    },
+    {
+        "task_id": "CEO_032",
+        "query": "Propose a new product line based on market gaps and our existing manufacturing capabilities described in our company documents.",
+        "category": "Strategic Planning",
+        "difficulty": "hard",
+        "mode": "max",
+        "requires": ["research_request", "knowledge_request", "writing_request"]
+    },
+    {
+        "task_id": "CEO_033",
+        "query": "Develop a complete social media strategy for the next quarter, including competitor research.",
+        "category": "Marketing & Growth",
+        "difficulty": "hard",
+        "mode": "max",
+        "requires": ["research_request", "marketing_request"]
+    },
+    {
+        "task_id": "CEO_034",
+        "query": "Analyze the ROI of our sales channels by comparing channel-wise revenue and profitability from our sales data.",
+        "category": "Sales Analytics",
+        "difficulty": "hard",
+        "mode": "max",
+        "requires": ["data_analysis_request"]
+    },
+    {
+        "task_id": "CEO_035",
+        "query": "Research the latest trends in Ayurvedic skincare and summarize which ones we should adopt.",
+        "category": "Market & Competitor Research",
+        "difficulty": "hard",
+        "mode": "max",
+        "requires": ["research_request"]
+    },
+    {
+        "task_id": "CEO_036",
+        "query": "Revise our website homepage copy for SEO based on competitor keyword analysis and our product strengths.",
+        "category": "Content & Writing",
+        "difficulty": "hard",
+        "mode": "max",
+        "requires": ["research_request", "writing_request"]
+    },
+    {
+        "task_id": "CEO_037",
+        "query": "Create a customer journey map from our sales data, highlighting drop-off points and upsell opportunities.",
+        "category": "Strategic Planning",
+        "difficulty": "hard",
+        "mode": "max",
+        "requires": ["data_analysis_request", "writing_request"]
+    },
+    {
+        "task_id": "CEO_038",
+        "query": "Analyze the profitability of each product and category, and recommend which ones to prioritize next year.",
+        "category": "Sales Analytics",
+        "difficulty": "hard",
+        "mode": "max",
+        "requires": ["data_analysis_request", "marketing_request"]
+    },
+    {
+        "task_id": "CEO_039",
+        "query": "Create three packaging design concepts for our Herbal Hair Oil and ask me to choose between them.",
+        "category": "Branding & Design",
+        "difficulty": "hard",
+        "mode": "max",
+        "requires": ["graphic_design_request", "ask_mcq_for_user"]
+    },
+    {
+        "task_id": "CEO_040",
+        "query": "Prepare a market entry brief for exporting to the UAE including regulations, demand, and pricing.",
+        "category": "Market & Competitor Research",
+        "difficulty": "hard",
+        "mode": "max",
+        "requires": ["research_request", "marketing_request"]
+    },
+    {
+        "task_id": "CEO_041",
+        "query": "Overhaul our pricing strategy based on competitive analysis and our cost data, with recommendations per product tier.",
+        "category": "Strategic Planning",
+        "difficulty": "hard",
+        "mode": "max",
+        "requires": ["research_request", "data_analysis_request", "marketing_request"]
+    },
+    {
+        "task_id": "CEO_042",
+        "query": "Create an email marketing campaign series for the festive season using our product information file.",
+        "category": "Marketing & Growth",
+        "difficulty": "hard",
+        "mode": "max",
+        "requires": ["knowledge_request", "writing_request", "marketing_request"]
+    },
+    {
+        "task_id": "CEO_043",
+        "query": "Write a white paper on the efficacy of our herbal oils using clinical research and our testimonials document.",
+        "category": "Content & Writing",
+        "difficulty": "hard",
+        "mode": "max",
+        "requires": ["research_request", "knowledge_request", "writing_request"]
+    },
+    {
+        "task_id": "CEO_044",
+        "query": "Analyze our underperforming regions and propose a plan to improve sales there using our sales data.",
+        "category": "Sales Analytics",
+        "difficulty": "hard",
+        "mode": "max",
+        "requires": ["data_analysis_request", "marketing_request"]
+    },
+    {
+        "task_id": "CEO_045",
+        "query": "Forecast next quarter's sales based on our 2024-2025 sales trends and current market conditions.",
+        "category": "Sales Analytics",
+        "difficulty": "hard",
+        "mode": "max",
+        "requires": ["data_analysis_request", "research_request"]
+    },
+    {
+        "task_id": "CEO_046",
+        "query": "Create a complete go-to-market plan for launching our Herbal Hair Oil in the US market - including market research, pricing, distribution, marketing campaigns, and a launch timeline. Ask me for the budget before finalizing.",
+        "category": "Strategic Planning",
+        "difficulty": "expert",
+        "mode": "max",
+        "requires": ["research_request", "data_analysis_request", "marketing_request", "writing_request", "ask_mcq_for_user"]
+    },
+    {
+        "task_id": "CEO_047",
+        "query": "Run a full business review for 2026: analyze our sales and profitability, assess our market position vs competitors, run a SWOT analysis, and produce a prioritized growth roadmap.",
+        "category": "Strategic Planning",
+        "difficulty": "expert",
+        "mode": "max",
+        "requires": ["data_analysis_request", "research_request", "marketing_request", "writing_request"]
+    },
+    {
+        "task_id": "CEO_048",
+        "query": "Develop an export expansion strategy for the UK and Singapore markets covering compliance, logistics, pricing, and a phased rollout plan.",
+        "category": "Strategic Planning",
+        "difficulty": "expert",
+        "mode": "max",
+        "requires": ["research_request", "data_analysis_request", "marketing_request", "writing_request"]
+    },
+    {
+        "task_id": "CEO_049",
+        "query": "Plan a complete rebrand: analyze our brand perception from the testimonials, propose a new color palette and logo direction, rewrite our brand messaging, and create a launch plan.",
+        "category": "Branding & Design",
+        "difficulty": "expert",
+        "mode": "max",
+        "requires": ["knowledge_request", "graphic_design_request", "writing_request", "marketing_request"]
+    },
+    {
+        "task_id": "CEO_050",
+        "query": "Prepare an investor-ready annual report and pitch deck for our 2026 performance: financial highlights, market analysis, growth strategy, and a 3-year roadmap.",
+        "category": "Strategic Planning",
+        "difficulty": "expert",
+        "mode": "max",
+        "requires": ["data_analysis_request", "research_request", "writing_request", "marketing_request"]
+    }
+]

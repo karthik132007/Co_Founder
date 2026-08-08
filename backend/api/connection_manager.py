@@ -122,6 +122,7 @@ class SessionEventBus:
     def __init__(self) -> None:
         self._queues: dict[str, list[asyncio.Queue[ObservabilityEvent | None]]] = {}
         self._loop: asyncio.AbstractEventLoop | None = None
+        self._warned_no_event_loop = False
 
     # ------------------------------------------------------------------
     # setup
@@ -171,7 +172,13 @@ class SessionEventBus:
         silently dropped.
         """
         if self._loop is None:
-            logger.warning("EventBus: push() called but no event loop set — dropping event type=%s", event.type)
+            # CLI/eval processes intentionally have no WebSocket event loop.
+            # Keep one visible diagnostic without flooding long test runs.
+            if not self._warned_no_event_loop:
+                logger.warning("EventBus: no event loop set; dropping CLI observability events")
+                self._warned_no_event_loop = True
+            else:
+                logger.debug("EventBus: no event loop set; dropping event type=%s", event.type)
             return
 
         queues = self._queues.get(event.session_id)

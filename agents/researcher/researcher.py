@@ -12,6 +12,10 @@ from agents.judge.llm_as_judge import judge_output_to_researcher
 logger = logging.getLogger(__name__)
 
 
+class WebSearchBudgetExhausted(Exception):
+    """Raised to end a research run once its CEO session budget is spent."""
+
+
 def _extract_content(response):
     content = response["messages"][-1].content
     return content
@@ -44,7 +48,10 @@ def _build_researcher_agent(effort: str = "flash", session_id: str = ""):
         """Search the web for a given query and return a list of results."""
         if session_id and not consume_resource(session_id, "web_searches"):
             logger.warning("Web search budget exhausted for session_id=%s", session_id)
-            return [{"error": "Web search budget exhausted — synthesize from what you already have."}]
+            # Returning an error ToolMessage makes some models repeatedly try
+            # search_web.  End this research pass instead of wasting model
+            # turns after the shared CEO budget is exhausted.
+            raise WebSearchBudgetExhausted("Web search budget exhausted")
         logger.info("search_web called: query='%s', max_results=%d", query, max_results)
         client = _get_tavily_client()
         response = client.search(query=query, max_results=max_results, timeout=20)
@@ -109,6 +116,9 @@ def spawn_researcher(prompt_from_CEO: str, max_reflections: int = 1, pass_score:
             draft = _run_research_agent(agent, reflection_prompt)
         logger.info("Research task completed successfully")
         return draft
+    except WebSearchBudgetExhausted:
+        logger.info("Research task stopped because the CEO web-search budget is exhausted")
+        return "Research stopped: the session web-search budget was exhausted."
     except Exception as e:
         logger.error("Research task failed: %s", e, exc_info=True)
         return f"Research task failed!, cause: {e}"

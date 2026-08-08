@@ -11,6 +11,10 @@ logger = logging.getLogger(__name__)
 
 dotenv.load_dotenv()
 
+
+class WebSearchBudgetExhausted(Exception):
+    """Stop a CMO run when its shared CEO web budget is spent."""
+
 # Keep non-search tools from the shared module
 from agents.marketing.cmo_tools import extract_content_from_webpage, get_current_date
 
@@ -28,7 +32,7 @@ def _get_cmo_agent(company_id, effort: str = "flash", session_id: str = ""):
         """Search google trends, news, shopping trends, shopping news"""
         if session_id and not consume_resource(session_id, "web_searches"):
             logger.warning("Web search budget exhausted for CMO session_id=%s", session_id)
-            return {"error": "Web search budget exhausted — synthesize from what you already have."}
+            raise WebSearchBudgetExhausted("Web search budget exhausted")
         logger.info("search_current_market_trends called: query='%s'", query)
         trends = search_google_trends(query)
         news = search_google_news(query)
@@ -46,7 +50,7 @@ def _get_cmo_agent(company_id, effort: str = "flash", session_id: str = ""):
         """Search the web for a given query and return a list of results."""
         if session_id and not consume_resource(session_id, "web_searches"):
             logger.warning("Web search budget exhausted for CMO session_id=%s", session_id)
-            return [{"error": "Web search budget exhausted — synthesize from what you already have."}]
+            raise WebSearchBudgetExhausted("Web search budget exhausted")
         logger.info("search_web called: query='%s', max_results=%d", query, max_results)
         client = _get_tavily_client()
         response = client.search(query=query, max_results=max_results, timeout=20)
@@ -79,15 +83,19 @@ def spawn_cmo(company_id: int, message: str, effort: str = "flash", session_id: 
     logger.info("spawn_cmo called: company_id=%d, message='%.100s', effort=%s, session_id=%s",
                 company_id, message, effort, session_id[:8] if session_id else "none")
     cmo_agent = _get_cmo_agent(company_id, effort=effort, session_id=session_id)
-    result = cmo_agent.invoke(
-        {
-            "messages": [
-                {
-                    "role": "user",
-                    "content": message,
-                }
-            ]
-        }
-    )
+    try:
+        result = cmo_agent.invoke(
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": message,
+                    }
+                ]
+            }
+        )
+    except WebSearchBudgetExhausted:
+        logger.info("CMO task stopped because the CEO web-search budget is exhausted")
+        return "Marketing research stopped: the session web-search budget was exhausted."
     logger.info("CMO agent completed for company_id=%d", company_id)
     return result
