@@ -1,0 +1,420 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Co_Founder — Multi-Agent Design",
+    "output": "multi-agent-design.html",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1280,
+      980
+    ],
+    "repository": {
+      "url": "https://github.com/karthik132007/Co_Founder",
+      "revision": "e682bbfd65e271b3e93796c949a2de58f3865dd7"
+    },
+    "views": [
+      {
+        "id": "delegation",
+        "label": "CEO delegation",
+        "focus": [
+          "ceo",
+          "researcher",
+          "writer",
+          "cmo",
+          "analyst",
+          "designer",
+          "judge"
+        ],
+        "note": "The CEO orchestrator fans work out to six specialist agents."
+      },
+      {
+        "id": "shared-services",
+        "label": "Shared services",
+        "focus": [
+          "router",
+          "rag",
+          "openrouter"
+        ],
+        "note": "Model routing and the RAG + chat memory backbone feed every agent via OpenRouter."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "ceo",
+      "type": "backend",
+      "label": "CEO Agent",
+      "sublabel": "orchestrator · effort flash/mid/max",
+      "pos": [
+        545,
+        110
+      ],
+      "size": [
+        200,
+        90
+      ],
+      "sources": [
+        {
+          "path": "agents/CEO/CEO.py"
+        },
+        {
+          "path": "agents/CEO/ceo_agent_tools.py"
+        }
+      ]
+    },
+    {
+      "id": "researcher",
+      "type": "backend",
+      "label": "Researcher",
+      "sublabel": "web research",
+      "pos": [
+        100,
+        460
+      ],
+      "size": [
+        140,
+        60
+      ],
+      "sources": [
+        {
+          "path": "agents/researcher/researcher.py"
+        }
+      ]
+    },
+    {
+      "id": "writer",
+      "type": "backend",
+      "label": "Writer",
+      "sublabel": "content drafting",
+      "pos": [
+        290,
+        460
+      ],
+      "size": [
+        140,
+        60
+      ],
+      "sources": [
+        {
+          "path": "agents/util_agents/writer/writer.py"
+        }
+      ]
+    },
+    {
+      "id": "cmo",
+      "type": "backend",
+      "label": "CMO · Marketing",
+      "sublabel": "market & trends",
+      "pos": [
+        480,
+        460
+      ],
+      "size": [
+        140,
+        60
+      ],
+      "sources": [
+        {
+          "path": "agents/marketing/cmo.py"
+        }
+      ]
+    },
+    {
+      "id": "analyst",
+      "type": "backend",
+      "label": "Data Analyst",
+      "sublabel": "code + data",
+      "pos": [
+        670,
+        460
+      ],
+      "size": [
+        140,
+        60
+      ],
+      "sources": [
+        {
+          "path": "agents/data_analyst/data_agent.py"
+        }
+      ]
+    },
+    {
+      "id": "designer",
+      "type": "backend",
+      "label": "Graphic Designer",
+      "sublabel": "image generation",
+      "pos": [
+        860,
+        460
+      ],
+      "size": [
+        140,
+        60
+      ],
+      "sources": [
+        {
+          "path": "agents/graphic_design/graphic_designer.py"
+        }
+      ]
+    },
+    {
+      "id": "judge",
+      "type": "backend",
+      "label": "Judge",
+      "sublabel": "LLM-as-judge",
+      "pos": [
+        1050,
+        460
+      ],
+      "size": [
+        140,
+        60
+      ],
+      "sources": [
+        {
+          "path": "agents/judge/llm_as_judge.py"
+        }
+      ]
+    },
+    {
+      "id": "router",
+      "type": "backend",
+      "label": "Model Router",
+      "sublabel": "choose_llm per task",
+      "pos": [
+        280,
+        720
+      ],
+      "size": [
+        150,
+        66
+      ],
+      "sources": [
+        {
+          "path": "agents/helpers/choose_llm.py"
+        },
+        {
+          "path": "agents/helpers/CreateLLM.py"
+        }
+      ]
+    },
+    {
+      "id": "rag",
+      "type": "backend",
+      "label": "RAG + Chat Memory",
+      "sublabel": "pgvector + memory recall",
+      "pos": [
+        640,
+        720
+      ],
+      "size": [
+        160,
+        66
+      ],
+      "sources": [
+        {
+          "path": "RAG_Engine/rag.py"
+        },
+        {
+          "path": "RAG_Engine/chat_memory.py"
+        }
+      ]
+    },
+    {
+      "id": "openrouter",
+      "type": "external",
+      "label": "OpenRouter",
+      "sublabel": "LLM gateway",
+      "tag": "DeepSeek · GLM · Gemma",
+      "pos": [
+        640,
+        880
+      ],
+      "size": [
+        150,
+        66
+      ],
+      "sources": [
+        {
+          "path": "agents/helpers/CreateLLM.py"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Core Orchestrator",
+      "wraps": [
+        "ceo"
+      ],
+      "pad": 18
+    },
+    {
+      "kind": "region",
+      "label": "Specialist Agents",
+      "wraps": [
+        "researcher",
+        "writer",
+        "cmo",
+        "analyst",
+        "designer",
+        "judge"
+      ],
+      "pad": 20
+    },
+    {
+      "kind": "region",
+      "label": "Shared Services",
+      "wraps": [
+        "router",
+        "rag"
+      ],
+      "pad": 20
+    },
+    {
+      "kind": "region",
+      "label": "External SaaS",
+      "wraps": [
+        "openrouter"
+      ],
+      "pad": 20
+    }
+  ],
+  "connections": [
+    {
+      "id": "ceo-researcher",
+      "from": "ceo",
+      "to": "researcher",
+      "label": "delegate",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        170,
+        430
+      ]
+    },
+    {
+      "id": "ceo-writer",
+      "from": "ceo",
+      "to": "writer",
+      "label": "delegate",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        360,
+        430
+      ]
+    },
+    {
+      "id": "ceo-cmo",
+      "from": "ceo",
+      "to": "cmo",
+      "label": "delegate",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        550,
+        430
+      ]
+    },
+    {
+      "id": "ceo-analyst",
+      "from": "ceo",
+      "to": "analyst",
+      "label": "delegate",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        740,
+        430
+      ]
+    },
+    {
+      "id": "ceo-designer",
+      "from": "ceo",
+      "to": "designer",
+      "label": "delegate",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        930,
+        430
+      ]
+    },
+    {
+      "id": "ceo-judge",
+      "from": "ceo",
+      "to": "judge",
+      "label": "delegate",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        1120,
+        430
+      ]
+    },
+    {
+      "id": "router-openrouter",
+      "from": "router",
+      "to": "openrouter",
+      "label": "LLM inference",
+      "variant": "emphasis"
+    },
+    {
+      "id": "rag-openrouter",
+      "from": "rag",
+      "to": "openrouter",
+      "label": "embeddings",
+      "fromSide": "bottom",
+      "toSide": "top"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Orchestration",
+      "items": [
+        "CEO delegates via LangChain tools (research, writing, marketing, data, design, judging)",
+        "effort tiers — flash / mid / max — gate reflection depth and model choice",
+        "per-session resource budgets cap web searches, delegates, and MCQs",
+        "CEO & specialists route every model call through the Model Router"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Specialist roles",
+      "items": [
+        "Researcher — budget-aware Tavily web search",
+        "Writer — content drafting · CMO — SerpAPI market data (Trends/News/Shopping)",
+        "Data Analyst — E2B code sandbox · Graphic Designer — image generation",
+        "Judge — LLM-as-judge quality gate on deliverables"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Shared services",
+      "items": [
+        "Model Router (choose_llm) picks a model per task + effort",
+        "RAG + chat memory: pgvector semantic/keyword search + memory recall",
+        "Observability stream: tool calls, subagent spawns, and LLM tokens → WebSocket"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Trust & external deps",
+      "items": [
+        "All agents call OpenRouter (DeepSeek, GLM, Gemma, GPT-OSS, text-embedding-3-small)",
+        "Tavily · SerpAPI · E2B reached with .env API keys",
+        "Supabase + Redis power RAG, chat memory, and session state"
+      ]
+    }
+  ]
+}

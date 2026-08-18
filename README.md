@@ -45,7 +45,7 @@ This v1.0.0 production test ships the full Dockerized stack, async Kafka persist
 
 ## Architecture
 
-![System Architecture](docs/sys_arch2.png)
+![System Architecture](docs/co_founder-runtime.webp)
 
 ## Tech Stack
 

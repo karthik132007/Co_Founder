@@ -1,0 +1,554 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Co_Founder — Runtime Architecture",
+    "output": "co-founder-runtime-architecture.html",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1280,
+      1000
+    ],
+    "repository": {
+      "url": "https://github.com/karthik132007/Co_Founder",
+      "revision": "e682bbfd65e271b3e93796c949a2de58f3865dd7"
+    },
+    "views": [
+      {
+        "id": "primary-path",
+        "label": "Primary runtime path",
+        "focus": [
+          "founder",
+          "webapp",
+          "fastapi",
+          "ceo",
+          "openrouter",
+          "specialists",
+          "rag"
+        ],
+        "note": "Follow a founder message from the browser through CEO orchestration to a reply."
+      },
+      {
+        "id": "async-persistence",
+        "label": "Async persistence",
+        "focus": [
+          "fastapi",
+          "kafka",
+          "supabase",
+          "redis",
+          "rag"
+        ],
+        "note": "Kafka-backed background jobs for titles, chat memory, and message persistence."
+      },
+      {
+        "id": "external-services",
+        "label": "External services",
+        "focus": [
+          "openrouter",
+          "tavily",
+          "e2b",
+          "specialists"
+        ],
+        "note": "The SaaS providers the agents depend on, all reached with .env API keys."
+      }
+    ],
+    "animation": "trace"
+  },
+  "components": [
+    {
+      "id": "founder",
+      "type": "external",
+      "label": "Founder",
+      "sublabel": "Browser",
+      "pos": [
+        30,
+        400
+      ],
+      "size": [
+        110,
+        60
+      ]
+    },
+    {
+      "id": "webapp",
+      "type": "frontend",
+      "label": "Web App",
+      "sublabel": "Next.js 16 · :3000",
+      "tag": "Chat UI + Agent Timeline",
+      "pos": [
+        230,
+        400
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "sources": [
+        {
+          "path": "frontend/src/lib/api.ts"
+        },
+        {
+          "path": "frontend/src/components/Chat.tsx"
+        }
+      ]
+    },
+    {
+      "id": "fastapi",
+      "type": "backend",
+      "label": "FastAPI Backend",
+      "sublabel": "uvicorn · :8000",
+      "tag": "REST + WebSocket",
+      "pos": [
+        450,
+        400
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "sources": [
+        {
+          "path": "backend/app.py"
+        },
+        {
+          "path": "backend/api/chat.py"
+        }
+      ]
+    },
+    {
+      "id": "ceo",
+      "type": "backend",
+      "label": "CEO Agent",
+      "sublabel": "LangChain orchestrator",
+      "tag": "effort: flash · mid · max",
+      "pos": [
+        660,
+        400
+      ],
+      "size": [
+        140,
+        64
+      ],
+      "sources": [
+        {
+          "path": "agents/CEO/CEO.py"
+        }
+      ]
+    },
+    {
+      "id": "specialists",
+      "type": "backend",
+      "label": "Specialist Agents",
+      "sublabel": "6 roles · spawned via CEO tools",
+      "pos": [
+        880,
+        400
+      ],
+      "size": [
+        160,
+        64
+      ],
+      "sources": [
+        {
+          "path": "agents/CEO/ceo_agent_tools.py"
+        }
+      ]
+    },
+    {
+      "id": "rag",
+      "type": "backend",
+      "label": "RAG Engine",
+      "sublabel": "pgvector + chat memory",
+      "tag": "embeddings via OpenRouter",
+      "pos": [
+        660,
+        660
+      ],
+      "size": [
+        140,
+        64
+      ],
+      "sources": [
+        {
+          "path": "RAG_Engine/rag.py"
+        },
+        {
+          "path": "RAG_Engine/chat_memory.py"
+        }
+      ]
+    },
+    {
+      "id": "redis",
+      "type": "database",
+      "label": "Redis",
+      "sublabel": "cache · session state",
+      "tag": "embeddings · CEO resources",
+      "pos": [
+        660,
+        290
+      ],
+      "size": [
+        140,
+        64
+      ],
+      "sources": [
+        {
+          "path": "backend/db/redis_client.py"
+        }
+      ]
+    },
+    {
+      "id": "supabase",
+      "type": "database",
+      "label": "Supabase",
+      "sublabel": "Postgres + pgvector + Storage",
+      "tag": "companies · sessions · files",
+      "pos": [
+        880,
+        660
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "sources": [
+        {
+          "path": "backend/utils.py"
+        },
+        {
+          "path": "backend/db/database.py"
+        }
+      ]
+    },
+    {
+      "id": "kafka",
+      "type": "messagebus",
+      "label": "Kafka",
+      "sublabel": "broker + 3 consumers",
+      "tag": "titles · memory · messages",
+      "pos": [
+        620,
+        860
+      ],
+      "size": [
+        140,
+        64
+      ],
+      "sources": [
+        {
+          "path": "backend/kafka_jobs/producers/producer.py"
+        }
+      ]
+    },
+    {
+      "id": "openrouter",
+      "type": "external",
+      "label": "OpenRouter",
+      "sublabel": "LLM gateway",
+      "tag": "DeepSeek · GLM · Gemma",
+      "pos": [
+        900,
+        100
+      ],
+      "size": [
+        140,
+        60
+      ],
+      "sources": [
+        {
+          "path": "agents/helpers/choose_llm.py"
+        }
+      ]
+    },
+    {
+      "id": "tavily",
+      "type": "external",
+      "label": "Tavily",
+      "sublabel": "web search API",
+      "pos": [
+        1080,
+        100
+      ],
+      "size": [
+        130,
+        60
+      ],
+      "sources": [
+        {
+          "path": "agents/researcher/researcher.py"
+        }
+      ]
+    },
+    {
+      "id": "e2b",
+      "type": "external",
+      "label": "E2B",
+      "sublabel": "code sandbox",
+      "tag": "data analysis",
+      "pos": [
+        1080,
+        175
+      ],
+      "size": [
+        130,
+        60
+      ],
+      "sources": [
+        {
+          "path": "e2b_sandbox/codig_env.py"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Local Docker Compose Stack",
+      "wraps": [
+        "webapp",
+        "fastapi",
+        "ceo",
+        "specialists",
+        "rag",
+        "redis",
+        "kafka"
+      ],
+      "pad": 26
+    },
+    {
+      "kind": "security-group",
+      "label": "Secrets Trust Zone — .env API keys",
+      "wraps": [
+        "fastapi",
+        "ceo",
+        "specialists",
+        "rag"
+      ],
+      "pad": 16
+    },
+    {
+      "kind": "region",
+      "label": "External SaaS — API-key access",
+      "wraps": [
+        "openrouter",
+        "tavily",
+        "e2b"
+      ],
+      "pad": 24
+    },
+    {
+      "kind": "region",
+      "label": "Supabase Cloud",
+      "wraps": [
+        "supabase"
+      ],
+      "pad": 24
+    }
+  ],
+  "connections": [
+    {
+      "id": "founder-webapp",
+      "from": "founder",
+      "to": "webapp",
+      "label": "HTTPS",
+      "variant": "emphasis"
+    },
+    {
+      "id": "webapp-fastapi",
+      "from": "webapp",
+      "to": "fastapi",
+      "label": "REST /chat · WS /chat/ws",
+      "variant": "emphasis",
+      "labelAt": [
+        415,
+        500
+      ]
+    },
+    {
+      "id": "fastapi-ceo",
+      "from": "fastapi",
+      "to": "ceo",
+      "label": "talk_to_ceo()",
+      "variant": "emphasis",
+      "labelAt": [
+        630,
+        500
+      ]
+    },
+    {
+      "id": "ceo-openrouter",
+      "from": "ceo",
+      "to": "openrouter",
+      "label": "LLM inference",
+      "variant": "emphasis",
+      "labelAt": [
+        850,
+        280
+      ]
+    },
+    {
+      "id": "ceo-specialists",
+      "from": "ceo",
+      "to": "specialists",
+      "label": "delegate via tools",
+      "variant": "emphasis",
+      "labelAt": [
+        840,
+        500
+      ]
+    },
+    {
+      "id": "specialists-tavily",
+      "from": "specialists",
+      "to": "tavily",
+      "label": "web search",
+      "labelAt": [
+        1060,
+        300
+      ]
+    },
+    {
+      "id": "specialists-e2b",
+      "from": "specialists",
+      "to": "e2b",
+      "label": "code execution",
+      "fromSide": "bottom",
+      "toSide": "bottom",
+      "via": [
+        [
+          960,
+          500
+        ],
+        [
+          1145,
+          500
+        ]
+      ],
+      "labelAt": [
+        1050,
+        500
+      ]
+    },
+    {
+      "id": "fastapi-kafka",
+      "from": "fastapi",
+      "to": "kafka",
+      "label": "queue async jobs",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "via": [
+        [
+          525,
+          810
+        ],
+        [
+          690,
+          810
+        ]
+      ],
+      "labelAt": [
+        525,
+        630
+      ]
+    },
+    {
+      "id": "ceo-rag",
+      "from": "ceo",
+      "to": "rag",
+      "label": "memory & knowledge lookup",
+      "labelAt": [
+        730,
+        560
+      ]
+    },
+    {
+      "id": "ceo-redis",
+      "from": "ceo",
+      "to": "redis",
+      "label": "cache / session state",
+      "labelAt": [
+        680,
+        377
+      ]
+    },
+    {
+      "id": "rag-supabase",
+      "from": "rag",
+      "to": "supabase",
+      "label": "pgvector",
+      "labelAt": [
+        840,
+        692
+      ]
+    },
+    {
+      "id": "kafka-supabase",
+      "from": "kafka",
+      "to": "supabase",
+      "label": "consumers persist",
+      "variant": "dashed",
+      "fromSide": "right",
+      "toSide": "bottom",
+      "via": [
+        [
+          955,
+          892
+        ]
+      ],
+      "labelAt": [
+        857.5,
+        892
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Primary runtime path",
+      "items": [
+        "POST /chat is synchronous: FastAPI → CEO agent → reply",
+        "WS /chat/ws streams tool calls, subagent spawns, and LLM tokens live",
+        "effort tiers — flash / mid / max — control reflection depth and models"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Specialist line-up",
+      "items": [
+        "Researcher (budget-aware Tavily web search)",
+        "Writer · CMO (SerpAPI market data) · Data Analyst (E2B code)",
+        "Graphic Designer (image generation) · Judge (LLM-as-judge)",
+        "Each specialist routes its own model calls via OpenRouter (choose_llm)"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Persistence & async",
+      "items": [
+        "FastAPI persists sessions & messages synchronously to Supabase (insert_to_sql)",
+        "Supabase: companies, sessions, messages, files, pgvector embeddings",
+        "Redis: company cache, session state, embedding cache (TTL 1h), CEO resources",
+        "Kafka topics: session_title_creation · chat_memory · add_message_to_session — drained by three consumer containers"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "External dependencies",
+      "items": [
+        "OpenRouter: DeepSeek, GLM, Gemma, GPT-OSS + text-embedding-3-small",
+        "Tavily Search API · SerpAPI (Google Trends / News / Shopping)",
+        "E2B code-interpreter sandbox · Supabase Storage (S3-compatible)"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Trust boundaries & security",
+      "items": [
+        "API keys from root .env — never baked into images",
+        "CORS restricted to configured origins; rate limits on /auth, /chat, /upload",
+        "Argon2id password hashing; Supabase service-role key used server-side only"
+      ]
+    }
+  ]
+}

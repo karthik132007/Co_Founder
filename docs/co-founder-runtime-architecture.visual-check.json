@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "visual-check",
+  "status": "skipped",
+  "visualReview": "pending",
+  "artifact": {
+    "path": "/home/electron/Documents/GitHub/Co_Founder/docs/co-founder-runtime-architecture.html",
+    "sha256": "4839a8647121417d640cdfd55bd3f1d6ee16f8e1a47ec5714e1e1d75e5613b61",
+    "bytes": 651272
+  },
+  "state": {
+    "detail": "read",
+    "motion": "still"
+  },
+  "chrome": {
+    "status": "unavailable",
+    "executable": null
+  },
+  "containment": {
+    "status": "skipped",
+    "viewports": []
+  },
+  "captures": {
+    "status": "skipped",
+    "screenshots": [],
+    "contactSheet": null
+  },
+  "sidecars": {
+    "receipt": "co-founder-runtime-architecture.visual-check.json",
+    "contactSheet": "co-founder-runtime-architecture.visual-check.html"
+  },
+  "error": "Chrome or Chromium is unavailable. Set ARCHIFY_CHROME to its executable path."
+}
