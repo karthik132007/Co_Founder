@@ -208,3 +208,32 @@ def get_chat_sessions(company_id: int) -> List[Dict[str, Any]]:
             logger.info("Redis write failed for chat_sessions company_id=%d", company_id)
 
     return sessions
+
+
+# ── Cache invalidation ─────────────────────────────────────────────────────
+# Writes go through backend.db.insert_to_sql / delete_from_sql, which call
+# these so the Redis-cached session lists / message lists never go stale
+# (previously a freshly created chat session stayed invisible for up to 2 min).
+
+def invalidate_chat_sessions(company_id: int) -> None:
+    """Drop the cached chat-session list for a company after a session write."""
+    redis_client = _get_redis()
+    if not redis_client:
+        return
+    try:
+        redis_client.delete(f"chat_sessions:{company_id}")
+        logger.info("Invalidated chat_sessions cache for company_id=%d", company_id)
+    except Exception:
+        logger.info("Redis invalidation failed for chat_sessions company_id=%d", company_id)
+
+
+def invalidate_session_msgs(session_id: str) -> None:
+    """Drop the cached message list for a session after a message write."""
+    redis_client = _get_redis()
+    if not redis_client:
+        return
+    try:
+        redis_client.delete(f"session_msgs:{session_id}")
+        logger.info("Invalidated session_msgs cache for session_id=%s", session_id[:8])
+    except Exception:
+        logger.info("Redis invalidation failed for session_msgs session_id=%s", session_id[:8])

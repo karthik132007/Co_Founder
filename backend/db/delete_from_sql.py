@@ -5,6 +5,7 @@ Replaces SQLAlchemy direct PostgreSQL connections which require IPv6.
 import logging
 
 from backend.utils import get_supabase_client
+from backend.db.get_from_sql import invalidate_chat_sessions, invalidate_session_msgs
 
 logger = logging.getLogger(__name__)
 
@@ -42,5 +43,8 @@ def delete_chat_session(session_id: str, company_id: int) -> bool:
     _client.table("chat_messages").delete().eq("session_id", session_id).execute()
     # Delete the session itself
     _client.table("chat_sessions").delete().eq("session_id", session_id).execute()
+    # Both the session list and the message list are now stale.
+    invalidate_chat_sessions(company_id)
+    invalidate_session_msgs(session_id)
     logger.info("Chat session %s deleted from database", session_id)
     return True

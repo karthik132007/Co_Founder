@@ -8,6 +8,7 @@ from postgrest.exceptions import APIError
 
 from backend.utils import get_supabase_client
 from backend.security import hash_password, verify_password
+from backend.db.get_from_sql import invalidate_chat_sessions, invalidate_session_msgs
 from typing import Optional, Dict, Any, cast
 
 logger = logging.getLogger(__name__)
@@ -291,6 +292,8 @@ def create_chat_session(session_id: str, company_id: int, title: Optional[str] =
     response = _client.table("chat_sessions").insert(payload).execute()
     if response.data:
         row = response.data[0]
+        # New session → the cached session list for this company is now stale.
+        invalidate_chat_sessions(company_id)
         logger.info("Chat session created — session_id=%s, company_id=%s", row["session_id"], row["company_id"])
         return _ChatSessionResult(
             session_id=row["session_id"],
@@ -348,6 +351,8 @@ def update_chat_session_title(session_id: str, title: str) -> Optional[_ChatSess
     )
     if response.data:
         row = response.data[0]
+        # Title changed → the cached session list for this company is stale.
+        invalidate_chat_sessions(row["company_id"])
         logger.info("Chat session title updated — session_id=%s, title=%s", session_id, title)
         return _ChatSessionResult(
             session_id=row["session_id"],
@@ -379,6 +384,8 @@ def add_message_to_session(session_id: str, role: str, message: str) -> _ChatMes
     response = _client.table("chat_messages").insert(payload).execute()
     if response.data:
         row = response.data[0]
+        # New message → the cached message list for this session is stale.
+        invalidate_session_msgs(session_id)
         return _ChatMessageResult(
             id=row["id"],
             session_id=row["session_id"],

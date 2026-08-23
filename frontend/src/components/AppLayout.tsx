@@ -52,8 +52,10 @@ export default function AppLayout({ children }: Props) {
 
   useEffect(() => {
     if (!session) { router.replace("/auth"); return; }
+    // Reload on route change too: creating a new chat navigates to
+    // /{sessionId} and the sidebar would otherwise never show the new session.
     loadSessions();
-  }, [session, router, loadSessions]);
+  }, [session, router, loadSessions, pathname]);
 
   if (!session) {
     return <main className="min-h-screen flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" style={{ color: ACCENT }} /></main>;

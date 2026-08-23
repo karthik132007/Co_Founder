@@ -394,7 +394,9 @@ The stack is containerized and can be deployed to any Docker host or PaaS
    frontend domain, e.g. `https://app.example.com`).
 3. **Build arg** (frontend): `NEXT_PUBLIC_API_URL` must be the public backend
    URL (e.g. `https://api.example.com`). The WebSocket endpoint is derived from
-   it automatically.
+   it automatically. **The backend routes have no `/api` prefix** — if you use a
+   `/api` suffix it only works when the reverse proxy strips it. Changing this
+   value requires rebuilding the frontend image (`docker compose build frontend`).
 4. **Kafka + Redis**: either run the bundled containers or point
    `KAFKA_BOOTSTRAP_SERVERS` / `REDIS_URL` at managed instances.
 5. **Reverse proxy / TLS**: put nginx or the PaaS router in front. The backend
