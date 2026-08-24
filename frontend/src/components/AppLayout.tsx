@@ -99,10 +99,10 @@ export default function AppLayout({ children }: Props) {
           <div className="flex items-center justify-between gap-2 w-full">
             <Link href="/dashboard" className="flex min-w-0 items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-[#fafafa] border border-[#e5e7eb] flex items-center justify-center overflow-hidden shrink-0">
-                <Image src="/logo.png" alt="Cofounder.ai" width={24} height={24} className="w-6 h-6 object-contain" />
+                <Image src="/logo.png" alt="Co-Founder AI" width={24} height={24} className="w-6 h-6 object-contain" />
               </div>
               <span className={`font-semibold text-[15px] tracking-tight truncate ${sidebarCollapsed ? "lg:hidden" : ""}`}>
-                Cofounder<span style={{ color: ACCENT }}>.ai</span>
+                Co-Founder<span style={{ color: ACCENT }}> AI</span>
               </span>
             </Link>
             <button onClick={() => setSidebarCollapsed(v => !v)}

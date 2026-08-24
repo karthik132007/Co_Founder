@@ -122,6 +122,14 @@
   border: 1px solid var(--color-border-strong);
 }
 
+.nav-shell {
+  background: color-mix(in srgb, var(--color-bg-soft) 85%, transparent);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+}
+
 .hairline {
   border-color: var(--color-border);
 }
@@ -275,6 +283,13 @@
   height: 36px;
   border: 1px solid var(--color-border-strong);
   transition: width 0.25s ease, height 0.25s ease, opacity 0.25s ease;
+}
+
+.cursor-dot.cursor-invert {
+  background: #ffffff;
+}
+.cursor-ring.cursor-invert {
+  border-color: rgba(255, 255, 255, 0.55);
 }
 
 /* ─────────────────────────────────────────────

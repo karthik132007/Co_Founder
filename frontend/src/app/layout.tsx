@@ -10,11 +10,11 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Co-Founder AI — Build Companies. Not Just Products.",
+  title: "Co-Founder AI — Agentify your business",
   description:
     "An autonomous AI operating system for founders that thinks, researches, plans, builds, markets, and scales companies.",
   openGraph: {
-    title: "Co-Founder AI",
+    title: "Co-Founder AI — Agentify your business",
     description:
       "An autonomous AI operating system for founders that thinks, researches, plans, builds, markets, and scales companies.",
     type: "website",

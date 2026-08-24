@@ -25,22 +25,21 @@ export function Nav() {
   return (
     <header
       className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 ${
-        scrolled ? "py-3" : "py-6"
+        scrolled ? "py-2" : "py-4"
       }`}
     >
       <div className="mx-auto max-w-7xl px-6">
-        <div
-          className={`flex items-center justify-between rounded-full px-5 py-3 transition-all duration-500 ${
-            scrolled ? "glass-strong" : ""
-          }`}
-        >
+        <div className="nav-shell flex items-center justify-between rounded-full px-5 py-2 transition-all duration-500">
           <a href="#top" className="flex items-center gap-2.5" data-cursor="hover">
             <span className="relative flex h-2.5 w-2.5">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--color-accent)] opacity-60" />
               <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[var(--color-accent)]" />
             </span>
             <span className="text-sm font-medium tracking-tight">
-              Co-Founder<span className="text-[var(--color-text-muted)]">.ai</span>
+              Co-Founder<span className="text-[var(--color-text-muted)]"> AI</span>
+            </span>
+            <span className="hidden lg:inline-flex font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-dim)]">
+              · Agentify your business
             </span>
           </a>
 

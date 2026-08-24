@@ -30,6 +30,7 @@ export function Cursor() {
     const onOver = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       const interactive = target.closest("a, button, [data-cursor='hover']");
+      const invert = target.closest("[data-cursor-invert]");
       if (ring.current) {
         if (interactive) {
           ring.current.style.width = "64px";
@@ -41,6 +42,8 @@ export function Cursor() {
           ring.current.style.opacity = "0.6";
         }
       }
+      if (dot.current) dot.current.classList.toggle("cursor-invert", !!invert);
+      if (ring.current) ring.current.classList.toggle("cursor-invert", !!invert);
     };
 
     const tick = () => {

@@ -44,7 +44,7 @@ export function Hero() {
       {/* content */}
       <div className="relative z-10 flex h-full flex-col items-center justify-center px-6 text-center">
         <div className="hero-eyebrow landing-eyebrow mb-8">
-          Multi-Agent AI Platform
+          Agentify your business
         </div>
 
         <h1 className="landing-display text-[clamp(2.8rem,9vw,8.5rem)]">

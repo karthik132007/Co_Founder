@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { Brain, BadgeCheck, BarChart3, MessageSquare, Zap, Rocket } from "lucide-react";
 import { RevealHeading } from "./RevealHeading";
 import { Tilt } from "./Tilt";
 import { SectionBackground } from "./SectionBackground";
@@ -12,33 +13,45 @@ if (typeof window !== "undefined") gsap.registerPlugin(ScrollTrigger);
 const FEATURES = [
   {
     n: "01",
-    title: "Shared RAG memory",
-    desc: "Every agent reads from a unified knowledge layer — semantic + keyword fusion over your documents and chat memories. Nothing gets re-explained.",
+    icon: Brain,
+    title: "Remembers everything",
+    tag: "Never re-explain your business.",
+    color: "#4f46e5",
   },
   {
     n: "02",
-    title: "Judge reflection loop",
-    desc: "Agent output is scored 1–10 by a dedicated Judge. Below threshold, the agent revises with the critique — effort-based, so flash skips and max iterates twice.",
+    icon: BadgeCheck,
+    title: "Checks its own work",
+    tag: "Polished before you see it.",
+    color: "#10b981",
   },
   {
     n: "03",
-    title: "Sandboxed execution",
-    desc: "The Data Analyst runs Python, Pandas, and Matplotlib inside a secure e2b sandbox — real analysis, real charts, no hallucinated numbers.",
+    icon: BarChart3,
+    title: "Does the real math",
+    tag: "Numbers you can trust.",
+    color: "#0ea5e9",
   },
   {
     n: "04",
-    title: "MCQ clarifications",
-    desc: "The CEO asks at most two multiple-choice questions per task to nail down ambiguity, then executes. No endless back-and-forth.",
+    icon: MessageSquare,
+    title: "Asks only when it matters",
+    tag: "A quick question, then done.",
+    color: "#f59e0b",
   },
   {
     n: "05",
-    title: "Effort-based models",
-    desc: "Flash, mid, or max effort picks the right LLM per task — DeepSeek, GLM, GPT-OSS, Gemma, or MIMO — balancing speed, cost, and quality.",
+    icon: Zap,
+    title: "Fast when you need it",
+    tag: "Speed, balanced for you.",
+    color: "#8b5cf6",
   },
   {
     n: "06",
-    title: "Real deliverables",
-    desc: "Strategies, marketing campaigns, financial analysis, brand imagery, and written content. Output you can ship, not bullet points to interpret.",
+    icon: Rocket,
+    title: "Ready to launch",
+    tag: "Work you can ship today.",
+    color: "#f43f5e",
   },
 ];
 
@@ -69,9 +82,14 @@ export function Features() {
         <div className="mb-20 max-w-3xl">
           <div className="landing-eyebrow mb-6">03 — Capabilities</div>
           <RevealHeading
-            text="What it handles."
+            text="What you can do."
             className="landing-display text-[clamp(2.2rem,6vw,5rem)]"
           />
+          <p className="mt-8 max-w-xl text-[var(--color-text-muted)] text-lg leading-relaxed">
+            No tech skills needed. From a single chat, your AI team handles
+            strategy, research, writing, marketing, analysis, and design — and
+            hands back work you can actually use.
+          </p>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -83,23 +101,31 @@ export function Features() {
               >
                 {/* hover glow */}
                 <div className="pointer-events-none absolute -inset-px opacity-0 transition-opacity duration-500 group-hover:opacity-100"
-                  style={{ background: "radial-gradient(60% 60% at 50% 0%, var(--color-accent-glow), transparent 70%)" }}
+                  style={{ background: `radial-gradient(60% 60% at 50% 0%, ${f.color}33, transparent 70%)` }}
                 />
                 <div className="relative flex h-full flex-col">
-                  <span className="font-mono text-xs text-[var(--color-text-dim)]">
-                    {f.n}
-                  </span>
-                  <h3 className="mt-6 text-2xl font-medium tracking-tight">
-                    {f.title}
-                  </h3>
-                  <p className="mt-4 text-[var(--color-text-muted)] leading-relaxed">
-                    {f.desc}
-                  </p>
-                  <div className="mt-auto pt-8">
-                    <span className="link-underline text-sm text-[var(--color-text)]">
-                      Learn more
+                  <div className="flex items-start justify-between">
+                    {/* icon visual */}
+                    <div
+                      className="flex h-14 w-14 items-center justify-center rounded-2xl border transition-transform duration-500 group-hover:-rotate-6 group-hover:scale-110"
+                      style={{
+                        background: `linear-gradient(135deg, ${f.color}2e, ${f.color}0f)`,
+                        borderColor: `${f.color}45`,
+                        boxShadow: `0 10px 34px ${f.color}30`,
+                      }}
+                    >
+                      <f.icon className="h-7 w-7" style={{ color: f.color }} strokeWidth={1.75} />
+                    </div>
+                    <span className="font-mono text-xs text-[var(--color-text-dim)]">
+                      {f.n}
                     </span>
                   </div>
+                  <h3 className="mt-8 text-2xl font-medium tracking-tight">
+                    {f.title}
+                  </h3>
+                  <p className="mt-3 text-sm text-[var(--color-text-muted)] leading-relaxed">
+                    {f.tag}
+                  </p>
                 </div>
               </article>
             </Tilt>
