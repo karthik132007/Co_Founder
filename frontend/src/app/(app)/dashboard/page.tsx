@@ -61,7 +61,7 @@ export default function DashboardPage() {
       ) : (
         <div className="space-y-6">
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
-            <h2 className="text-2xl font-semibold tracking-tight text-[#0a0a0a]">Welcome back, <span className="text-gradient">{company?.company_name ?? session.user.email.split("@")[0]}</span></h2>
+            <h2 className="text-2xl font-semibold tracking-tight text-[#0a0a0a]">Welcome back, <span className="text-gradient">{company?.company_name ?? session.user.name ?? session.user.email.split("@")[0]}</span></h2>
             <p className="mt-1 text-sm text-[#6b7280]">{company ? `${company.industry} · ${company.tone} tone` : "Here's what your AI team is up to."}</p>
           </motion.div>
 

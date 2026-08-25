@@ -11,8 +11,8 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { clearSession, getSession } from "@/lib/session";
-import { fetchChatSessions, deleteChatSession, type ChatSession } from "@/lib/api";
+import { clearSession, getSession, parseSessionUser, saveSession } from "@/lib/session";
+import { fetchChatSessions, deleteChatSession, fetchMe, logoutUser, type ChatSession } from "@/lib/api";
 
 const ACCENT = "#4f46e5";
 
@@ -31,7 +31,15 @@ export default function AppLayout({ children }: Props) {
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [deletingSession, setDeletingSession] = useState<string | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
   const userId = session?.user?.id;
+
+  // Only redirect once the page has hydrated. During SSR/hydration the server
+  // snapshot is always null, so without this guard a signed-in user could be
+  // briefly seen as logged out and bounced to /auth.
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
 
   const navItems = [
     { label: "Overview", icon: LayoutDashboard, href: "/dashboard" },
@@ -51,17 +59,55 @@ export default function AppLayout({ children }: Props) {
   }, [userId]);
 
   useEffect(() => {
-    if (!session) { router.replace("/auth"); return; }
+    if (!hydrated) return;
+    if (!session) {
+      // No local session — try cookie-based auto-login (backend /auth/me)
+      // before bouncing to the login page. Covers refresh/deep-link after a
+      // cookie was set at login.
+      let cancelled = false;
+      (async () => {
+        const me = await fetchMe();
+        if (cancelled) return;
+        if (!me) {
+          router.replace("/auth");
+          return;
+        }
+        const user = parseSessionUser(me);
+        if (!user) {
+          router.replace("/auth");
+          return;
+        }
+        saveSession(user, { onboardingComplete: me.onboarding_complete === true });
+        // The session store has no subscription — reload re-mounts the tree
+        // with the freshly saved session so all guards behave consistently.
+        window.location.reload();
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }
+    // Users who haven't completed onboarding can't use the app yet — send
+    // them to the onboarding flow instead of broken company-less pages.
+    if (!session.onboardingComplete) {
+      router.replace("/onboarding");
+      return;
+    }
     // Reload on route change too: creating a new chat navigates to
     // /{sessionId} and the sidebar would otherwise never show the new session.
     loadSessions();
-  }, [session, router, loadSessions, pathname]);
+  }, [hydrated, session, router, loadSessions, pathname]);
 
   if (!session) {
     return <main className="min-h-screen flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" style={{ color: ACCENT }} /></main>;
   }
 
-  const handleLogout = () => { clearSession(); router.replace("/auth"); };
+  const handleLogout = async () => {
+    // Clear the backend session cookie too, so the next visit isn't
+    // auto-logged-in.
+    await logoutUser();
+    clearSession();
+    router.replace("/auth");
+  };
   const handleNewChat = () => router.push("/chat");
 
   const handleDeleteSession = async (sessionId: string, e: React.MouseEvent) => {

@@ -17,6 +17,44 @@ export async function readApiError(response: Response, fallback: string) {
   }
 }
 
+/* ── Session (backend httpOnly cookie) ── */
+
+export type MeResponse = {
+  id: number;
+  email: string;
+  name?: string;
+  onboarding_complete: boolean;
+};
+
+/**
+ * Restore the current user from the backend session cookie, or null if none.
+ * The cookie itself is managed entirely by the backend (httpOnly) — this only
+ * asks it who we are.
+ */
+export async function fetchMe(): Promise<MeResponse | null> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/me`, {
+      credentials: "include",
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as MeResponse;
+  } catch {
+    return null;
+  }
+}
+
+/** Best-effort server-side logout (clears the backend session cookie). */
+export async function logoutUser(): Promise<void> {
+  try {
+    await fetch(`${API_BASE_URL}/auth/logout`, {
+      method: "POST",
+      credentials: "include",
+    });
+  } catch {
+    // The local session is cleared by the caller regardless.
+  }
+}
+
 /* ── Dashboard ── */
 
 export type CompanyInfo = {

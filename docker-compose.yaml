@@ -155,6 +155,10 @@ services:
         # production builds (e.g. https://api.example.com). The WebSocket is
         # derived from this same URL.
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+        # Google OAuth (Supabase) — public values inlined at build time.
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}
+        NEXT_PUBLIC_AUTH_REDIRECT_URL: ${NEXT_PUBLIC_AUTH_REDIRECT_URL:-}
     container_name: frontend
     ports:
       - "3000:3000"

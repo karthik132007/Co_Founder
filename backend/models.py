@@ -2,7 +2,8 @@ import logging
 
 from pydantic import BaseModel, EmailStr, Field
 from .db.database import Base
-from sqlalchemy import Column, BigInteger, Text, ForeignKey, DateTime
+from sqlalchemy import Column, BigInteger, Text, ForeignKey, DateTime, func
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from typing import Optional
 from datetime import datetime
@@ -23,7 +24,13 @@ class User(Base):
 
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     email = Column(Text, unique=True, nullable=False)
-    password = Column(Text, nullable=False)
+    # NULL for Google (OAuth) users — they have no password.
+    password = Column(Text, nullable=True)
+    name = Column(Text, nullable=True)
+    auth_provider = Column(Text, nullable=False, server_default="email")
+    # Supabase Auth UUID linking Google users to their Supabase identity.
+    supabase_user_id = Column(UUID(as_uuid=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
     # relationship to companies
     companies = relationship("Company", back_populates="user", passive_deletes=True)
@@ -42,6 +49,16 @@ class LoginRequest(BaseModel):
     password: str = Field(min_length=1, max_length=128)
 
 
+class GoogleLoginRequest(BaseModel):
+    """Payload for Google OAuth sign-in — the Supabase access token (JWT).
+
+    The backend NEVER trusts email/name/user-id fields from the client; it
+    verifies this token against Supabase Auth and uses the authenticated
+    identity returned by Supabase.
+    """
+    access_token: str = Field(min_length=1, max_length=8192)
+
+
 class Company(Base):
     __tablename__ = "companies"
 
@@ -57,6 +74,7 @@ class Company(Base):
 
 
 class CompanyCreate(BaseModel):
+    name: Optional[str] = None
     company_name: str
     small_description: str
     industry: str

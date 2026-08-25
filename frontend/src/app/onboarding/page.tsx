@@ -12,6 +12,7 @@ import { getSession, setOnboardingComplete, type CofounderSession } from "@/lib/
 const ACCENT = "#4f46e5";
 
 type OnboardingForm = {
+  fullName: string;
   companyName: string;
   smallDescription: string;
   industry: string;
@@ -26,6 +27,12 @@ type Step = {
 };
 
 const steps: Step[] = [
+  {
+    key: "fullName",
+    label: "Your name",
+    title: "What should we call you?",
+    helper: "This will be saved to your profile.",
+  },
   {
     key: "companyName",
     label: "Company name",
@@ -53,6 +60,7 @@ const steps: Step[] = [
 ];
 
 const initialForm: OnboardingForm = {
+  fullName: "",
   companyName: "",
   smallDescription: "",
   industry: "",
@@ -83,6 +91,7 @@ export default function OnboardingPage() {
   const [stepIndex, setStepIndex] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [hydrated, setHydrated] = useState(false);
 
   const currentStep = steps[stepIndex];
   const descriptionWords = useMemo(
@@ -91,7 +100,13 @@ export default function OnboardingPage() {
   );
   const isLastStep = stepIndex === steps.length - 1;
 
+  // Avoid redirecting during SSR/hydration, where the session snapshot is null.
   useEffect(() => {
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
     if (!session) {
       router.replace("/auth");
       return;
@@ -99,7 +114,7 @@ export default function OnboardingPage() {
     if (session.onboardingComplete) {
       router.replace("/dashboard");
     }
-  }, [router, session]);
+  }, [hydrated, router, session]);
 
   const updateField = (key: keyof OnboardingForm, value: string) => {
     setForm((current) => ({ ...current, [key]: value }));
@@ -131,6 +146,7 @@ export default function OnboardingPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          name: form.fullName.trim(),
           company_name: form.companyName.trim(),
           small_description: form.smallDescription.trim(),
           industry: form.industry.trim(),
@@ -375,7 +391,13 @@ export default function OnboardingPage() {
                     onChange={(e) => updateField(currentStep.key, e.target.value)}
                     required
                     className="input px-3.5 py-2.5 text-sm"
-                    placeholder={currentStep.key === "companyName" ? "Acme AI" : "SaaS"}
+                    placeholder={
+                      currentStep.key === "fullName"
+                        ? "Jane Doe"
+                        : currentStep.key === "companyName"
+                          ? "Acme AI"
+                          : "SaaS"
+                    }
                   />
                 )}
               </motion.div>

@@ -4,7 +4,7 @@ from typing import Optional
 from fastapi import APIRouter, Path
 from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel
-from backend.db.insert_to_sql import create_company
+from backend.db.insert_to_sql import create_company, update_user_name
 from backend.models import CompanyCreate
 
 from backend.db.get_from_sql import (
@@ -34,6 +34,11 @@ def onboarding(company: CompanyCreate):
     if len(company.small_description.split()) > 500:
         logger.warning("Small description too long (%d words) for company=%s", len(company.small_description.split()), company.company_name)
         raise HTTPException(status_code=422, detail="Small description must be 500 words or less")
+
+    if company.name is not None and company.name.strip():
+        updated_name = update_user_name(user_id=company.user_id, name=company.name)
+        if not updated_name:
+            logger.warning("Could not update user name during onboarding — user_id=%s", company.user_id)
 
     created = create_company(
         company_name=company.company_name,

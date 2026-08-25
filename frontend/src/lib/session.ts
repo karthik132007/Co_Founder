@@ -6,6 +6,7 @@ let cachedSession: CofounderSession | null = null;
 export type SessionUser = {
   id: number;
   email: string;
+  name?: string;
 };
 
 export type CofounderSession = {
@@ -29,7 +30,8 @@ function isSessionUser(value: unknown): value is SessionUser {
     Number.isFinite(user.id) &&
     user.id > 0 &&
     typeof user.email === "string" &&
-    user.email.includes("@")
+    user.email.includes("@") &&
+    (user.name === undefined || typeof user.name === "string")
   );
 }
 
@@ -60,9 +62,14 @@ export function parseSessionUser(value: unknown): SessionUser | null {
     typeof user.email === "string" &&
     user.email.includes("@")
   ) {
+    const name =
+      typeof (user as { name?: unknown }).name === "string"
+        ? ((user as { name?: unknown }).name as string).trim()
+        : undefined;
     return {
       id,
       email: user.email,
+      ...(name ? { name } : {}),
     };
   }
 

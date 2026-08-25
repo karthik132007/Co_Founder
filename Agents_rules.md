@@ -1,6 +1,6 @@
 # Agent Rules
 
-These rules define how agents in the AI Co-Founder system should cooperate. They reflect the current architecture: **Agent Registry v2.0.0**, **System v0.9.9**. A CEO agent coordinates user interaction, delegates work to specialist agents, and merges specialist outputs into the final response.
+These rules define how agents in the AI Co-Founder system should cooperate. They reflect the current architecture: **Agent Registry v2.0.0**, **System v0.9.14**. A CEO agent coordinates user interaction, delegates work to specialist agents, and merges specialist outputs into the final response.
 
 ## 1. CEO Agent Owns User Context
 

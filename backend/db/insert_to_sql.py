@@ -25,11 +25,29 @@ class UserAlreadyExistsError(Exception):
     """Raised when a user with the given email already exists."""
 
 
+class GoogleEmailConflictError(Exception):
+    """Raised when a Google email matches an existing email/password account.
+
+    We never auto-merge the two identities — the user must sign in with their
+    email/password instead. This prevents a Google account from silently
+    taking over an existing email account.
+    """
+
+
 class _UserResult:
     """Lightweight object matching the shape callers expect from SQLAlchemy User objects."""
     def __init__(self, id: int, email: str):
         self.id = id
         self.email = email
+
+
+class _GoogleUserResult:
+    """Lightweight result for Google (Supabase) sign-in lookups/creates."""
+    def __init__(self, id: int, email: str, name: Optional[str] = None, is_new: bool = False):
+        self.id = id
+        self.email = email
+        self.name = name
+        self.is_new = is_new
 
 
 class _CompanyResult:
@@ -121,6 +139,18 @@ def get_user_by_email(email: str) -> Optional[_UserResult]:
     return None
 
 
+def get_user_by_id(user_id: int) -> Optional[Dict[str, Any]]:
+    """Return a users row (id, email, name) by id, or None if not found."""
+    response = (
+        _client.table("users")
+        .select("id", "email", "name")
+        .eq("id", user_id)
+        .execute()
+    )
+    rows = response.data or []
+    return cast(Dict[str, Any], rows[0]) if rows else None
+
+
 def authenticate_user(email: str, password: str) -> Optional[_UserResult]:
     """Authenticate credentials; return user-like object if valid, else None."""
     response = _client.table("users").select("*").eq("email", email).execute()
@@ -160,6 +190,156 @@ def authenticate_user(email: str, password: str) -> Optional[_UserResult]:
     return result
 
 
+# ── Google (Supabase Auth) users ────────────────────────────────────────────
+
+def _to_google_user_result(row: Dict[str, Any], is_new: bool = False) -> Optional[_GoogleUserResult]:
+    """Build a _GoogleUserResult from a users row, guarding against a NULL/missing id."""
+    row_id = row.get("id")
+    if row_id is None:
+        logger.error("User row returned without an id — email=%s", row.get("email"))
+        return None
+    return _GoogleUserResult(
+        id=int(row_id),
+        email=str(row.get("email") or ""),
+        name=str(row.get("name") or "") or None,
+        is_new=is_new,
+    )
+
+
+def _lookup_google_user_by_supabase_id(supabase_user_id: str) -> Optional[Dict[str, Any]]:
+    """Fetch a users row by its Supabase Auth UUID, if any."""
+    response = (
+        _client.table("users")
+        .select("*")
+        .eq("supabase_user_id", supabase_user_id)
+        .execute()
+    )
+    rows = response.data or []
+    return cast(Dict[str, Any], rows[0]) if rows else None
+
+
+def get_user_by_supabase_user_id(supabase_user_id: str) -> Optional[_GoogleUserResult]:
+    """Return the app user linked to a Supabase Auth UUID, or None."""
+    row = _lookup_google_user_by_supabase_id(supabase_user_id)
+    if not row:
+        return None
+    return _to_google_user_result(row)
+
+
+def find_or_create_google_user(
+    supabase_user_id: str,
+    email: str,
+    name: Optional[str] = None,
+) -> _GoogleUserResult:
+    """Find or create the `public.users` row backing a Supabase (Google) user.
+
+    Matching order (never trusts the client — the caller must pass a
+    Supabase-verified identity):
+      1. By `supabase_user_id` — the canonical link for Google users.
+      2. By email, only when the existing row is itself a Google user
+         (auth_provider = 'google').
+    If an existing EMAIL/password account uses the same address, we refuse
+    with GoogleEmailConflictError instead of silently merging identities.
+
+    Raises:
+        GoogleEmailConflictError — email belongs to an email/password account.
+    """
+    # 1. Canonical lookup by Supabase Auth UUID.
+    row = _lookup_google_user_by_supabase_id(supabase_user_id)
+    if row:
+        result = _to_google_user_result(row)
+        if result is None:
+            raise RuntimeError(f"Google user row missing id — supabase_user_id={supabase_user_id}")
+        if row.get("auth_provider") != "google":
+            # Defensive: a row carrying supabase_user_id should be a Google user.
+            logger.warning(
+                "supabase_user_id=%s belongs to auth_provider=%s (email=%s) — logging in anyway",
+                supabase_user_id, row.get("auth_provider"), result.email,
+            )
+        if name and not row.get("name"):
+            # Backfill a missing display name from Supabase metadata so the
+            # profile stays complete even if the account predates name capture.
+            try:
+                _client.table("users").update({"name": name}).eq("id", result.id).execute()
+                result.name = name
+                logger.info("Backfilled name for Google user — id=%s", result.id)
+            except Exception:
+                logger.warning("Failed to backfill name for Google user id=%s", result.id)
+        logger.info("Google user found by supabase_user_id — id=%s, email=%s", result.id, result.email)
+        return result
+
+    # 2. Fallback: match by email, but ONLY against Google-backed rows so an
+    #    email/password account is never hijacked by a Google identity.
+    existing_by_email = get_user_by_email(email)
+    if existing_by_email:
+        email_row = (
+            _client.table("users")
+            .select("id", "email", "name", "auth_provider")
+            .eq("email", email)
+            .execute()
+        )
+        email_rows = email_row.data or []
+        provider = str((email_rows[0] or {}).get("auth_provider") or "email") if email_rows else "email"
+        if provider != "google":
+            logger.warning(
+                "Google sign-in blocked: email=%s belongs to an email/password account (auth_provider=%s)",
+                email, provider,
+            )
+            raise GoogleEmailConflictError(email)
+
+        # Existing Google row without supabase_user_id (legacy) — link it now.
+        response = (
+            _client.table("users")
+            .update({"supabase_user_id": supabase_user_id})
+            .eq("email", email)
+            .execute()
+        )
+        updated = response.data or []
+        if updated:
+            row = cast(Dict[str, Any], updated[0])
+            result = _to_google_user_result(row)
+            if result:
+                logger.info(
+                    "Linked supabase_user_id to existing Google user — id=%s, email=%s",
+                    result.id, result.email,
+                )
+                return result
+
+    # 3. Not found — create a new Google user (password NULL, provider 'google').
+    payload: Dict[str, Any] = {
+        "email": email,
+        "password": None,
+        "auth_provider": "google",
+        "supabase_user_id": supabase_user_id,
+    }
+    if name:
+        payload["name"] = name
+    # created_at defaults to now() in the DB.
+
+    try:
+        response = _client.table("users").insert(payload).execute()
+    except APIError as exc:
+        # Unique violation (23505): someone else created the same email between
+        # our lookups and this insert. Re-resolve instead of failing.
+        if exc.code == "23505":
+            logger.info("Google user insert race for email=%s — re-resolving", email)
+            return find_or_create_google_user(supabase_user_id, email, name)
+        logger.exception("Failed to insert Google user with email=%s", email)
+        raise
+
+    response_data = response.data or []
+    if not response_data:
+        logger.error("Failed to create Google user with email=%s — no data returned", email)
+        raise RuntimeError(f"Failed to create Google user with email={email}")
+
+    row = cast(Dict[str, Any], response_data[0])
+    result = _to_google_user_result(row, is_new=True)
+    if result is None:
+        raise RuntimeError(f"Failed to create Google user with email={email} — missing id")
+    logger.info("Google user created — id=%s, email=%s", result.id, result.email)
+    return result
+
+
 def create_company(
     company_name: str,
     small_description: str,
@@ -184,6 +364,22 @@ def create_company(
         return _CompanyResult(id=row["id"], company_name=row["company_name"])
     logger.error("Failed to create company — name=%s, user_id=%s", company_name, user_id)
     return None
+
+
+def update_user_name(user_id: int, name: str) -> bool:
+    """Update a user's display name. Returns True if updated."""
+    cleaned_name = name.strip()
+    if not cleaned_name:
+        logger.warning("update_user_name called with empty name for user_id=%s", user_id)
+        return False
+
+    response = _client.table("users").update({"name": cleaned_name}).eq("id", user_id).execute()
+    if response.data:
+        logger.info("User name updated — user_id=%s", user_id)
+        return True
+
+    logger.warning("User name update returned no rows — user_id=%s", user_id)
+    return False
 
 
 def add_meta_to_file(

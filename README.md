@@ -1,4 +1,4 @@
-# Co_Founder — v0.9.13 (Production Test)
+# Co_Founder — v0.9.14 (Production Test)
 
 > **📘 For complete system context and understanding, please refer to [`Agents_rules.md`](Agents_rules.md) before contributing or making changes.**
 
@@ -32,7 +32,7 @@ See the LICENSE file for details.
 
 AI Co-Founder is a multi-agent AI platform that replaces a human founding team with a CEO orchestrator agent and specialized sub-agents. Founders describe their business idea through a conversational chat interface, and the agents collaboratively handle strategy, market research, content writing, data analysis, and knowledge management via a shared RAG + chat memory backbone.
 
-This v1.0.0 production test ships the full Dockerized stack, async Kafka persistence, effort-based agent routing, WebSocket observability, Argon2id password hashing, and env-driven CORS/rate limiting. The app is usable end-to-end.
+This v0.9.14 production test ships the full Dockerized stack, async Kafka persistence, effort-based agent routing, WebSocket observability, Argon2id password hashing, Google OAuth + cookie session auth, and env-driven CORS/rate limiting. The app is usable end-to-end.
 
 ## TL;DR For The Lazy
 
@@ -242,6 +242,7 @@ Co_Founder/
 |---|---|---|
 | POST | `/auth/signup` | Create user (plaintext password) |
 | POST | `/auth/login` | Authenticate user (returns id + email) |
+| POST | `/auth/google` | Google OAuth sign-in — verifies a Supabase access token, finds/creates the app user, returns id + email + `is_new` |
 | POST | `/user/onboarding` | Create company profile (name, description, industry, tone) |
 | GET | `/user/dashboard` | Fetch company + dashboard details |
 | POST | `/upload` | Upload file (PDF, image, CSV, Excel, JSON, Parquet) |
@@ -279,6 +280,20 @@ POST /chat
 - On success, user metadata (id, email) is returned — `company_id` is not included
 - Client stores in `localStorage` and sends `user_id` as a query/form parameter
 - No JWT, no HTTP-only cookies, no session expiry
+
+#### Google OAuth (Supabase Auth)
+- Frontend uses `@supabase/supabase-js` (PKCE flow): `signInWithOAuth({ provider: "google" })` → Google → Supabase Auth → redirect back to `/auth/callback`
+- `/auth/callback` sends ONLY the Supabase access token to `POST /auth/google`
+- The backend verifies the token with Supabase Auth (`auth.get_user(jwt)`) and uses the **verified** identity (never a client-supplied email/name). It then finds or creates the matching `public.users` row:
+  - Existing row with `auth_provider = 'google'` → login (matched by `supabase_user_id`, falling back to email)
+  - New identity → create row with `password = NULL`, `name` from Google metadata, `auth_provider = 'google'`, `supabase_user_id = <Supabase UUID>`
+  - Email already used by an email/password account → `409` (no silent account merge)
+- Returns the same shape as `/auth/login` (`{id, email, message}`) plus `is_new`; the frontend then saves the session and redirects to `/chat`
+- Required env vars:
+  - Frontend (`NEXT_PUBLIC_*`, inlined at build time, read from the **repo-root `.env`** via `frontend/scripts/run-next.js` — no separate `frontend/.env.local` needed): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, optional `NEXT_PUBLIC_AUTH_REDIRECT_URL`
+  - Backend (root `.env`, already used by the REST layer): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
+  - Configure the OAuth redirect URL in Supabase → Authentication → URL Configuration (e.g. `http://localhost:3000/auth/callback`)
+- Database: `public.users` gains `supabase_user_id uuid` (nullable, unique) — see `schemas/migrations/add_supabase_user_id.sql`
 
 #### Password Hashing
 - Passwords are **hashed with Argon2id** (`pwdlib[argon2]`, `backend/security.py`) — plaintext is never stored; legacy plaintext rows are transparently rehashed on login (best-effort)
@@ -358,11 +373,11 @@ Real-time observability streamed to the frontend via WebSocket:
 2. Install Python deps: `pip install -r requirements.txt`
 3. Install frontend deps: `cd frontend && npm install`
 4. Create a `.env` in the project root with: `TAVILY_API_KEY`, `DATABASE_URL` (Supabase), `LLM_API_KEY` (OpenRouter), `SERP_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `E2B_API_KEY` (`SUPABSE_SERVICE_ROLE_KEY` is still accepted for legacy env files)
-5. Run Supabase SQL migrations from `schemas/` — create the tables, RPC functions, and HNSW indexes
+5. Run Supabase SQL migrations from `schemas/` — create the tables, RPC functions, and HNSW indexes. For Google login also run `schemas/migrations/add_supabase_user_id.sql` (idempotent).
 6. Start Kafka: `docker compose up -d kafka` (required for chat memory/title persistence)
 7. Start Kafka consumers: `python backend/kafka_jobs/run_consumers.py` (three background processes)
 8. Start backend: `uvicorn backend.app:app --reload` (default: `http://localhost:8000`)
-9. Start frontend: `cd frontend && npm run dev` (default: `http://localhost:3000`)
+9. Start frontend: `cd frontend && npm run dev` (default: `http://localhost:3000`). The frontend loads `NEXT_PUBLIC_*` variables from the **repo-root `.env`** automatically (via `frontend/scripts/run-next.js`), so no separate `frontend/.env.local` is needed for Google login.
 
 ### Docker (full stack)
 
@@ -480,11 +495,11 @@ After:  "best selling product" → Data Analyst → reads CSV → actual data an
 
 ## Status
 
-Functional end-to-end production test release (v1.0.0). The core chat loop, multi-agent system, RAG pipeline, file management, WebSocket observability, effort-based execution, Kafka async jobs, onboarding flow, and Argon2id password hashing are operational. Known gaps:
+Functional end-to-end production test release (v0.9.14). The core chat loop, multi-agent system, RAG pipeline, file management, WebSocket observability, effort-based execution, Kafka async jobs, onboarding flow, Argon2id password hashing, Google OAuth, and cookie-based session auth are operational. Known gaps:
 - Image generation uses OpenRouter `google/gemini-2.5-flash-image`; slow (~30s) and blocks the CEO pipeline
 - Supabase free tier REST API adds 3-7s latency per RPC call (embedding serialization overhead)
-- No JWT/session layer — the client passes `user_id` directly (demo-grade auth; rate limiting + Argon2id applied)
+- The session cookie restores login on the next visit, but protected endpoints still trust the `user_id` query param (no per-request JWT verification)
 
 ## Notes For The Sleepy Reader
 
-If you only skimmed this far: the app is production-test ready, the frontend is a Next.js chat/product shell, the backend is FastAPI with Kafka and Redis, and the main caveat is still demo-grade auth. The rest of the README mostly exists so future-me can remember what past-me was doing.
+If you only skimmed this far: the app is production-test ready, the frontend is a Next.js chat/product shell, the backend is FastAPI with Kafka and Redis, login is email/password or Google with a browser session cookie, and the main caveat is that protected endpoints still trust the `user_id` query param. The rest of the README mostly exists so future-me can remember what past-me was doing.

@@ -6,6 +6,11 @@
 #   NEXT_PUBLIC_API_URL   e.g. http://localhost:8000
 # The browser also reaches the backend WebSocket at /chat/ws derived from the
 # same base URL, so no separate WS var is needed.
+#
+# Google OAuth (Supabase) — public values, inlined at build time:
+#   NEXT_PUBLIC_SUPABASE_URL        e.g. https://<project-ref>.supabase.co
+#   NEXT_PUBLIC_SUPABASE_ANON_KEY   Supabase "anon public" key
+#   NEXT_PUBLIC_AUTH_REDIRECT_URL   optional fixed /auth/callback URL override
 # ─────────────────────────────────────────────────────────────────────────────
 FROM node:22-alpine AS deps
 WORKDIR /app
@@ -20,6 +25,15 @@ COPY . .
 
 ARG NEXT_PUBLIC_API_URL=http://localhost:8000
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
+ARG NEXT_PUBLIC_SUPABASE_URL
+ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
+
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+ARG NEXT_PUBLIC_AUTH_REDIRECT_URL
+ENV NEXT_PUBLIC_AUTH_REDIRECT_URL=$NEXT_PUBLIC_AUTH_REDIRECT_URL
 
 RUN npm run build
 

@@ -1,4 +1,34 @@
 
+## Changelog (v0.9.13 → v0.9.14)
+
+### Signup & Onboarding
+- **Email validation + confirm password**: signup form now validates email format (must contain `@` and a domain) and requires a matching confirm-password field; only the final password is sent to the backend
+- **Onboarding asks for the user's name**: new "Your name" step, saved to `users.name` via the onboarding endpoint
+
+### Google OAuth (Supabase PKCE)
+- Full Google sign-in flow: `signInWithGoogle()` → `/auth/callback` → `POST /auth/google` (Supabase access token verified server-side)
+- New Google accounts go to `/onboarding`; returning accounts go straight to `/dashboard`
+- Google users: `password NULL`, `auth_provider='google'`, linked via `supabase_user_id`
+- Missing `users.name` is backfilled from Supabase metadata on subsequent logins
+
+### Onboarding Completion Tracking
+- `/auth/login` and `/auth/google` now return `onboarding_complete` (true when the user has a company), so "signed up but never onboarded" users are always redirected back to `/onboarding`
+- App layout + onboarding hydration guards prevent spurious redirects to `/auth`; the auth page auto-redirects already-signed-in users
+
+### Backend Session Cookie
+- `httpOnly` `cofounder_session` cookie (HMAC-signed, expiring token) set on login/signup/Google
+- `GET /auth/me` restores the session from the cookie; `POST /auth/logout` clears it
+- Next visit auto-redirects to the dashboard without re-entering credentials
+- Env: `SESSION_SECRET`, `SESSION_COOKIE_SECURE`, `SESSION_MAX_AGE_DAYS`
+
+### Database
+- Applied `schemas/migrations/add_supabase_user_id.sql` (adds `users.supabase_user_id` + unique constraint)
+
+### Bug Fixes
+- Google OAuth callback no longer always lands users on `/chat`
+- Fixed stray backtick corruption on the auth callback page
+- Clearer error messages for OAuth / backend-unreachable failures
+
 ## Changelog (v0.9.5 → v0.9.11)
 
 ### Kafka Async Job Pipeline
