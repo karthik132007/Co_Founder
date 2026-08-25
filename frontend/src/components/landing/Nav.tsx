@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { ScrambleText } from "./ScrambleText";
 import { Magnetic } from "./Magnetic";
@@ -31,10 +32,7 @@ export function Nav() {
       <div className="mx-auto max-w-7xl px-6">
         <div className="nav-shell flex items-center justify-between rounded-full px-5 py-2 transition-all duration-500">
           <a href="#top" className="flex items-center gap-2.5" data-cursor="hover">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--color-accent)] opacity-60" />
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[var(--color-accent)]" />
-            </span>
+            <Image src="/icon.png" alt="Co-Founder AI" width={20} height={20} className="w-5 h-5 object-contain" />
             <span className="text-sm font-medium tracking-tight">
               Co-Founder<span className="text-[var(--color-text-muted)]"> AI</span>
             </span>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Image from "next/image";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Magnetic } from "./Magnetic";
@@ -120,10 +121,7 @@ export function CTA() {
         <div className="mx-auto max-w-7xl px-6 py-8 flex flex-col items-center justify-between gap-6 text-sm md:flex-row md:gap-6">
           <div className="flex flex-col items-center gap-1 md:items-start">
             <div className="flex items-center gap-2.5 text-white">
-              <span
-                className="node-dot"
-                style={{ background: "#7c8cff", boxShadow: "0 0 12px rgba(124, 140, 255, 0.55)" }}
-              />
+              <Image src="/icon.png" alt="Co-Founder AI" width={20} height={20} className="w-5 h-5 object-contain" />
               <span>Co-Founder AI</span>
             </div>
             <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-white/40">

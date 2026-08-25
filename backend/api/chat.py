@@ -131,6 +131,10 @@ def chat_with_user(
         )
 
     try:
+        # Signal the event bus that a fresh query is starting.  This clears
+        # any stale buffered events from a previous query so the trace the
+        # user sees corresponds exactly to THIS request.
+        event_bus.begin_query(session_id)
         reply = chat(company_id, ceo_message, history, effort=effort, session_id=session_id)
     finally:
         # Signal the WebSocket drain loop that no more events are coming.

@@ -88,11 +88,23 @@ export interface ObservabilityState {
   streamEnded: boolean;
   /** Number of connection retries */
   retryCount: number;
+  /** Accumulated LLM tokens for the current query (answer phase).
+   *  Cleared when a tool call starts so "thinking" text isn't shown. */
+  streamingText: string;
+  /** True while the LLM is emitting tokens right now. */
+  llmActive: boolean;
   /** Snapshot current runs (for attaching to a completed message) */
   snapshotRuns: () => ToolRun[];
+  /** Clear runs + streaming text WITHOUT touching the WebSocket.
+   *  Used by the trace panel's "clear" button. */
+  resetRuns: () => void;
   /** Reset runs for a new query (does NOT reconnect the WebSocket).
    *  Pass the sessionId if it was just generated and React hasn't re-rendered yet. */
   startQuery: (overrideSessionId?: string) => void;
+  /** Ensure the WebSocket is connected for the session, resolving once OPEN.
+   *  The chat flow awaits this BEFORE firing POST /chat so the agent trace
+   *  starts immediately and no events are missed. Returns false on timeout. */
+  waitForConnection: (overrideSessionId?: string, timeoutMs?: number) => Promise<boolean>;
 }
 
 /* ─────────────────────────────────────────────
@@ -122,6 +134,8 @@ export function useObservability(
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("disconnected");
   const [streamEnded, setStreamEnded] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [streamingText, setStreamingText] = useState("");
+  const [llmActive, setLlmActive] = useState(false);
 
   const wsRef = useRef<WebSocket | null>(null);
   const runsRef = useRef<ToolRun[]>([]);
@@ -130,6 +144,7 @@ export function useObservability(
   const retryCountRef = useRef(0);
   const sessionRef = useRef(sessionId);
   sessionRef.current = sessionId;
+  const streamingTextRef = useRef("");
   // Tracks which session ID the WS was last opened for
   const connectedSessionRef = useRef<string | null>(null);
 
@@ -153,10 +168,34 @@ export function useObservability(
     return runsRef.current.map((r) => ({ ...r, subagent: r.subagent ? { ...r.subagent } : null }));
   }, []);
 
+  // ── resetRuns: clear runs + streaming state (WS untouched) ──
+  const resetRuns = useCallback(() => {
+    runsRef.current = [];
+    eventsRef.current = [];
+    setRuns([]);
+    setEvents([]);
+    streamingTextRef.current = "";
+    setStreamingText("");
+    setLlmActive(false);
+    setStreamEnded(false);
+  }, []);
+
   // ── Internal: create & wire up a WebSocket ──
   const _openSocket = useCallback((overrideSessionId?: string) => {
     const sid = overrideSessionId ?? sessionRef.current;
     if (!sid) return;
+
+    // Reuse an existing socket that's already open (or connecting) for the
+    // SAME session — avoids tearing down / duplicating connections when
+    // startQuery + waitForConnection are both called for one query.
+    const existing = wsRef.current;
+    if (
+      existing &&
+      connectedSessionRef.current === sid &&
+      (existing.readyState === WebSocket.OPEN || existing.readyState === WebSocket.CONNECTING)
+    ) {
+      return;
+    }
 
     // Close previous socket if any
     cancelledRef.current = true;
@@ -181,6 +220,18 @@ export function useObservability(
         addEvent(ev);
 
         switch (ev.type) {
+          case "llm_token": {
+            // Append streamed token text. On the next tool_start we reset it
+            // so any "thinking"/planning tokens don't show as the answer.
+            const token = String(ev.data.token ?? "");
+            if (token) {
+              streamingTextRef.current += token;
+              setStreamingText(streamingTextRef.current);
+              setLlmActive(true);
+            }
+            break;
+          }
+
           case "tool_start": {
             const backendRunId = String(ev.data.tool_run_id ?? "");
             const run: ToolRun = {
@@ -198,6 +249,10 @@ export function useObservability(
               status: "running",
             };
             updateRun((prev) => [...prev, run]);
+            // A tool call starts a new phase — drop any planning tokens that
+            // streamed before it so they never appear as the final answer.
+            streamingTextRef.current = "";
+            setStreamingText("");
             break;
           }
 
@@ -306,6 +361,7 @@ export function useObservability(
 
           case "session_end":
             setStreamEnded(true);
+            setLlmActive(false);
             break;
         }
       } catch {
@@ -344,6 +400,9 @@ export function useObservability(
     setRuns([]);
     setEvents([]);
     setStreamEnded(false);
+    streamingTextRef.current = "";
+    setStreamingText("");
+    setLlmActive(false);
 
     const sid = overrideSessionId ?? sessionRef.current;
     if (!sid) return;
@@ -351,6 +410,50 @@ export function useObservability(
       _openSocket(overrideSessionId);
     }
   }, [_openSocket]);
+
+  // ── waitForConnection: block until the WS is OPEN for the session ──
+  // The chat flow awaits this before POST /chat so the agent trace starts
+  // immediately (events pushed before the WS upgrade finished were the root
+  // cause of the invisible trace in production — now also buffered server-side).
+  const waitForConnection = useCallback(
+    (overrideSessionId?: string, timeoutMs = 8000): Promise<boolean> => {
+      return new Promise((resolve) => {
+        const sid = overrideSessionId ?? sessionRef.current;
+        if (!sid) {
+          resolve(false);
+          return;
+        }
+        const existing = wsRef.current;
+        if (
+          existing?.readyState === WebSocket.OPEN &&
+          connectedSessionRef.current === sid
+        ) {
+          resolve(true);
+          return;
+        }
+        _openSocket(overrideSessionId);
+        const started = Date.now();
+        const timer = window.setInterval(() => {
+          const ws = wsRef.current;
+          if (ws?.readyState === WebSocket.OPEN) {
+            window.clearInterval(timer);
+            resolve(true);
+            return;
+          }
+          if (Date.now() - started >= timeoutMs) {
+            window.clearInterval(timer);
+            resolve(false);
+            return;
+          }
+          // Socket failed — retry opening (idempotent for same session).
+          if (!ws || ws.readyState === WebSocket.CLOSED) {
+            _openSocket(overrideSessionId);
+          }
+        }, 60);
+      });
+    },
+    [_openSocket],
+  );
 
   // ── Close WS when switching to a DIFFERENT session (not null→new, not same) ──
   useEffect(() => {
@@ -379,5 +482,17 @@ export function useObservability(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return { events, runs, connectionStatus, streamEnded, retryCount, snapshotRuns, startQuery };
+  return {
+    events,
+    runs,
+    connectionStatus,
+    streamEnded,
+    retryCount,
+    streamingText,
+    llmActive,
+    snapshotRuns,
+    resetRuns,
+    startQuery,
+    waitForConnection,
+  };
 }

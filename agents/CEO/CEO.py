@@ -3,6 +3,7 @@ The main CEO agent that interacts with the user and delegates work to specialist
 """
 import json
 import logging
+import time
 from agents.CEO import ceo_state
 from pathlib import Path
 
@@ -91,6 +92,93 @@ def _get_ceo_agent(company_id: int, effort: str = "flash"):
     return ceo_agent
 
 
+# ── Streaming invocation ──────────────────────────────────────────────────
+# We use LangChain's ``agent.stream()`` (LangGraph) instead of ``invoke()`` so
+# the CEO's LLM output is streamed to the WebSocket in real time.  With
+# ``stream_mode=["messages", "updates"]``:
+#   * "messages"  → (message_chunk, metadata) — token-level deltas we batch
+#                   into ``llm_token`` events for the frontend.
+#   * "updates"   → {node: {messages: [...]}} — per-node new messages, which
+#                   we accumulate to reconstruct the full final result
+#                   (tool messages included, needed for image payloads).
+# Tool lifecycle events (tool_start/tool_end/subagent_*) still fire through
+# the ObservabilityCallback, so the trace panel gets them live.
+
+_TOKEN_BATCH_SIZE = 24        # push a WS event every N streamed tokens
+_TOKEN_FLUSH_SECONDS = 0.06   # or at least every ~60ms
+
+
+def _invoke_agent(agent, messages: list[dict], session_id: str = "", invoke_config: dict | None = None):
+    """Run the CEO agent, streaming tool events + LLM tokens to the WS.
+
+    Returns the full result dict (``{"messages": [...]}``) like ``invoke``,
+    reconstructed from the stream so the rest of ``talk_to_ceo`` is unchanged.
+    """
+    from langchain_core.messages import AIMessageChunk
+    from backend.api.connection_manager import event_bus
+    from backend.api.observability_events import make_llm_token
+
+    # No observability target (evals / CLI) — plain invoke keeps behavior
+    # identical and avoids the overhead of reconstructing state from a stream.
+    if not session_id:
+        return agent.invoke(
+            {"messages": messages},
+            config=invoke_config if invoke_config else None,
+        )
+
+    final_messages: list = []
+    token_buffer: list[str] = []
+    last_flush = time.time()
+
+    def flush_tokens() -> None:
+        nonlocal token_buffer, last_flush
+        if not token_buffer:
+            return
+        text = "".join(token_buffer)
+        token_buffer = []
+        last_flush = time.time()
+        event_bus.push(make_llm_token(session_id, text, agent="CEO"))
+
+    config = dict(invoke_config or {})
+    try:
+        for mode, data in agent.stream(
+            {"messages": messages},
+            config=config,
+            stream_mode=["messages", "updates"],
+        ):
+            if mode == "messages":
+                chunk, _meta = data
+                if isinstance(chunk, AIMessageChunk) and chunk.content:
+                    token_buffer.append(str(chunk.content))
+                    if len(token_buffer) >= _TOKEN_BATCH_SIZE or (time.time() - last_flush) >= _TOKEN_FLUSH_SECONDS:
+                        flush_tokens()
+            elif mode == "updates":
+                # Each update carries the messages produced by that node;
+                # accumulating them in order reconstructs the final state.
+                for _node, state in data.items():
+                    node_messages = state.get("messages") or []
+                    if node_messages:
+                        final_messages.extend(node_messages)
+    except Exception:
+        logger.exception("Agent stream failed for session_id=%s", session_id)
+        # Flush whatever tokens we have so the UI isn't left hanging, then
+        # fall back to a plain invoke so the user still gets an answer.
+        flush_tokens()
+        return agent.invoke(
+            {"messages": messages},
+            config=config,
+        )
+    finally:
+        flush_tokens()
+
+    if not final_messages:
+        # Defensive: stream produced no updates (shouldn't happen) — fall back.
+        logger.warning("Agent stream produced no updates for session_id=%s — falling back to invoke", session_id)
+        return agent.invoke({"messages": messages}, config=config)
+
+    return {"messages": final_messages}
+
+
 
 def talk_to_ceo(company_id: int, message: str, history: list[dict] | None = None, effort: str = "flash", session_id: str = ""):
     """Talk to the CEO agent.
@@ -154,11 +242,11 @@ def talk_to_ceo(company_id: int, message: str, history: list[dict] | None = None
         from agents.helpers.observability import ObservabilityCallback
         invoke_config["callbacks"] = [ObservabilityCallback(session_id)]
 
-    result = ceo_agent.invoke(
-        {
-            "messages": messages
-        },
-        config=invoke_config if invoke_config else None,
+    result = _invoke_agent(
+        ceo_agent,
+        messages,
+        session_id=session_id,
+        invoke_config=invoke_config,
     )
     # Check tool outputs for image_generated payload (from graphic_design_request)
     image_payload = _find_image_generated_payload(result)

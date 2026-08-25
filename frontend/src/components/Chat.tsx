@@ -20,7 +20,7 @@ import type { Clarification } from "@/lib/api";
 import type { SessionUser } from "@/lib/session";
 import { useObservability } from "@/lib/observability";
 import type { ToolRun } from "@/lib/observability";
-import AgentTraceInline from "@/components/AgentTimeline";
+import AgentTracePanel from "@/components/AgentTracePanel";
 
 const ACCENT = "#4f46e5";
 
@@ -414,11 +414,27 @@ export default function Chat({
   const [chatTitle, setChatTitle] = useState<string | null>(initialTitle);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [effort, setEffort] = useState<Effort>("flash");
+  const [traceOpen, setTraceOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // WebSocket observability — one persistent connection per session
-  const { runs, snapshotRuns, startQuery } = useObservability(sessionId);
+  const {
+    runs,
+    snapshotRuns,
+    resetRuns,
+    startQuery,
+    waitForConnection,
+    streamingText,
+    llmActive,
+    connectionStatus,
+    retryCount,
+  } = useObservability(sessionId);
+
+  const clearTrace = useCallback(() => {
+    resetRuns();
+    setTraceOpen(false);
+  }, [resetRuns]);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -516,6 +532,7 @@ export default function Chat({
     async (text: string) => {
       setSending(true);
       setError("");
+      setTraceOpen(true); // surface the trace immediately on send
 
       // Pre-generate session ID so the WebSocket can connect before the API call
       let sid = sessionId;
@@ -526,6 +543,11 @@ export default function Chat({
 
       // Reset trace for this new query + ensure WS is connected
       startQuery(sid);
+
+      // BLOCK the POST until the WebSocket is OPEN. The backend buffers
+      // events too, but awaiting here guarantees the trace starts at t=0
+      // instead of racing the HTTP round-trip.
+      await waitForConnection(sid);
 
       try {
         const response = await sendChatMessage(
@@ -586,7 +608,7 @@ export default function Chat({
         inputRef.current?.focus();
       }
     },
-    [user.id, sessionId, onSessionCreated, effort, snapshotRuns, startQuery],
+    [user.id, sessionId, onSessionCreated, effort, snapshotRuns, startQuery, waitForConnection],
   );
 
   const handleSend = useCallback(async () => {
@@ -778,11 +800,6 @@ export default function Chat({
                   >
                     {formatTime(msg.timestamp)}
                   </span>
-
-                  {/* Inline agent trace for this assistant message */}
-                  {msg.role === "assistant" && msg.traceRuns && msg.traceRuns.length > 0 && (
-                    <AgentTraceInline runs={msg.traceRuns} />
-                  )}
                 </div>
 
                 {msg.role === "user" && (
@@ -822,24 +839,35 @@ export default function Chat({
             )}
           </AnimatePresence>
 
-          {/* Live agent trace while CEO is processing */}
-          {sending && (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex gap-3"
-            >
-              <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
-                style={{ background: ACCENT }}
+          {/* Live streaming response while CEO is processing */}
+          <AnimatePresence>
+            {sending && llmActive && streamingText.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="flex gap-3"
               >
-                <Sparkles className="w-4 h-4 text-white" />
-              </div>
-              <div className="min-w-0 max-w-[85%] py-1.5 flex-1">
-                <AgentTraceInline runs={runs} isStreaming />
-              </div>
-            </motion.div>
-          )}
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+                  style={{ background: ACCENT }}
+                >
+                  <Sparkles className="w-4 h-4 text-white" />
+                </div>
+                <div className="min-w-0 max-w-[85%] py-1.5 flex-1">
+                  <div className="rounded-[20px] rounded-tl-[4px] border border-[#e5e7eb] bg-white px-4 py-3 shadow-sm">
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap break-words text-[#374151]">
+                      {streamingText}
+                      <span
+                        className="ml-0.5 inline-block h-3.5 w-[2px] animate-pulse rounded-full align-middle"
+                        style={{ background: ACCENT }}
+                      />
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Error */}
           <AnimatePresence>
@@ -893,6 +921,18 @@ export default function Chat({
             disabled={sending}
             className="flex-1 bg-transparent text-[15px] text-[#0a0a0a] placeholder-[#9ca3af] outline-none py-1.5 disabled:opacity-50"
             autoFocus
+          />
+          {/* Agent trace dropdown — sits beside the chat bar */}
+          <AgentTracePanel
+            runs={runs}
+            streamingText={streamingText}
+            llmActive={llmActive}
+            isStreaming={sending}
+            connectionStatus={connectionStatus}
+            retryCount={retryCount}
+            open={traceOpen}
+            onToggle={() => setTraceOpen((v) => !v)}
+            onClear={clearTrace}
           />
           <button
             onClick={handleSend}

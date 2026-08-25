@@ -149,7 +149,7 @@ export default function AuthPage() {
 
         <Link href="/" className="flex items-center gap-2.5 relative z-10">
           <div className="w-8 h-8 rounded-lg bg-white/10 border border-white/15 flex items-center justify-center overflow-hidden">
-            <Image src="/logo.png" alt="Co-Founder AI" width={24} height={24} className="w-6 h-6 object-contain" />
+            <Image src="/icon.png" alt="Co-Founder AI" width={24} height={24} className="w-6 h-6 object-contain" />
           </div>
           <span className="font-semibold text-[15px] tracking-tight text-white">
             Co-Founder<span style={{ color: "#8b85ff" }}> AI</span>
@@ -226,7 +226,7 @@ export default function AuthPage() {
           {/* Mobile logo */}
           <Link href="/" className="flex items-center justify-center gap-2.5 mb-10 lg:hidden">
             <div className="w-9 h-9 rounded-lg bg-white border border-[#e5e7eb] flex items-center justify-center overflow-hidden">
-              <Image src="/logo.png" alt="Co-Founder AI" width={26} height={26} className="w-7 h-7 object-contain" />
+              <Image src="/icon.png" alt="Co-Founder AI" width={26} height={26} className="w-7 h-7 object-contain" />
             </div>
             <span className="font-semibold text-lg tracking-tight text-[#0a0a0a]">
               Co-Founder<span style={{ color: ACCENT }}> AI</span>

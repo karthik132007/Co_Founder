@@ -1,73 +1,41 @@
-# Co_Founder — v0.9.14 (Production Test)
+# Co_Founder — v0.9.15 (Production Test)
 
 > **📘 For complete system context and understanding, please refer to [`Agents_rules.md`](Agents_rules.md) before contributing or making changes.**
-
 
 ## Contents
 - [TL;DR For The Lazy](#tldr-for-the-lazy)
 - [Overview](#overview)
 - [Architecture](#architecture)
-- [Tech Stack](#tech-stack)
 - [Evals & Benchmarks](#evals--benchmarks)
+- [Performance Improvements](#performance-improvements)
+- [Tech Stack](#tech-stack)
 - [Agent System](#agent-system)
 - [RAG Engine](#rag-engine)
 - [Backend](#backend)
+- [Frontend](#frontend)
 - [Code Sandbox](#code-sandbox)
 - [Prompt System & Tool Registry](#prompt-system--tool-registry)
 - [Logging & Observability](#logging--observability)
-- [Setup](#setup)
-- [Performance Improvements](#performance-improvements)
 - [Status](#status)
-- [Contributing](#contributing)
-
-## License
-
-Copyright (C) 2026 Karthikeya Kumar
-
-This project is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0).
-
-See the LICENSE file for details.
-
-## Overview
-
-AI Co-Founder is a multi-agent AI platform that replaces a human founding team with a CEO orchestrator agent and specialized sub-agents. Founders describe their business idea through a conversational chat interface, and the agents collaboratively handle strategy, market research, content writing, data analysis, and knowledge management via a shared RAG + chat memory backbone.
-
-This v0.9.14 production test ships the full Dockerized stack, async Kafka persistence, effort-based agent routing, WebSocket observability, Argon2id password hashing, Google OAuth + cookie session auth, and env-driven CORS/rate limiting. The app is usable end-to-end.
 
 ## TL;DR For The Lazy
 
 - This is a Dockerized multi-agent AI co-founder website, not a tiny demo.
 - The CEO agent routes work to Researcher, Writer, CMO, Data Analyst, Graphic Designer, Judge, and memory/title helpers.
 - Chat uses a shared RAG + chat memory system, plus Kafka-backed async persistence for messages, memories, and session titles.
+- **v0.9.15 — trace fixed + streaming**: `SessionEventBus` now buffers events and replays them when the WebSocket connects (no more invisible trace in prod); the CEO streams via `agent.stream()` — tokens batched (~24 / 60ms) as `llm_token` events with a live answer and an `AgentTracePanel` popover beside the chat bar.
 - `evals/` contains the current evaluation scripts; the latest RAG benchmark hit 95.00% pass rate, 0.950 Average Recall@5, and 0.883 Average MRR.
 - **CEO end-to-end eval is live**: 27 runs / 81 judge verdicts across 5 tasks, 6 prompt tweaks, and 2 effort modes — `normal` prompt + `flash` mode currently leads (8.62 overall) (see [Evals & Benchmarks](#evals--benchmarks) and [`docs/eval_report.md`](docs/eval_report.md)).
 
+## Overview
+
+AI Co-Founder is a multi-agent AI platform that replaces a human founding team with a CEO orchestrator agent and specialized sub-agents. Founders describe their business idea through a conversational chat interface, and the agents collaboratively handle strategy, market research, content writing, data analysis, and knowledge management via a shared RAG + chat memory backbone.
+
+This v0.9.15 production test ships the full Dockerized stack, async Kafka persistence, effort-based agent routing, **buffered WebSocket observability with real-time LLM streaming**, Argon2id password hashing, Google OAuth + cookie session auth, and env-driven CORS/rate limiting. The app is usable end-to-end. The v0.9.15 highlight is a production fix for the invisible agent trace (race between `POST /chat` threadpool and WebSocket upgrade) plus token-by-token answer streaming via `agent.stream()`.
 
 ## Architecture
 
 ![System Architecture](docs/co_founder-runtime.webp)
-
-## Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Orchestration | Python 3.13+, LangChain (`create_agent` factory) |
-| Backend | FastAPI, Uvicorn |
-| Caching | Redis (company data, user→company mapping, sessions, messages, embeddings, CEO state, session resources) |
-| Message Bus | Apache Kafka (KRaft, Confluent 7.8.9) + `confluent_kafka` (fire-and-forget background jobs) |
-| Vector Search | Supabase pgvector (cosine similarity + keyword fusion) |
-| LLM Provider | OpenRouter (DeepSeek, GLM, GPT-OSS 120b/20b, Gemma, Morph, text-embedding-3-small) |
-| Web Search | Tavily Search API |
-| Market Data | SerpAPI (Google Trends, Google News, Google Shopping) |
-| Code Sandbox | e2b (e2b-code-interpreter) |
-| PDF Extraction | PyMuPDF (fitz) |
-| OCR | Vision LLM (Gemma 4 26B via OpenRouter) |
-| Database | Supabase PostgreSQL + pgvector (HNSW indexes) |
-| Storage | Supabase Storage (S3-compatible) |
-| Frontend | Next.js 16.2.9, React 19.2.4, Tailwind CSS v4 |
-| UI Animation | framer-motion 12.42.0, GSAP 3.15.0, Lenis, Three.js 0.185 (React Three Fiber, drei, postprocessing) |
-| Icons | lucide-react 1.21.0 |
-| Markdown | react-markdown 10.1.0, remark-gfm 4.0.1 |
 
 ## Evals & Benchmarks
 
@@ -97,6 +65,97 @@ End-to-end quality benchmarking of the **CEO agent** lives in `evals/e2e/` (`run
 |---|---|
 | ![Scores by tweak and mode](docs/answera_scores_eda.png) | ![Runtime and tokens](docs/eda.png) |
 
+## Performance Improvements
+
+### Effort-Based Execution
+
+Every chat request accepts an `effort` parameter (⚡ Flash / ⚖️ Mid / 🎯 Max) that controls the entire agent pipeline:
+
+| Aspect | ⚡ Flash | ⚖️ Mid | 🎯 Max |
+|--------|---------|--------|-------|
+| CEO model | DeepSeek | GLM (tool-use) | GLM (tool-use) |
+| Researcher reflections | 0 | 1 | 2 |
+| Writer reflections | 0 | 1 | 2 |
+| Writing/Creative model | DeepSeek | DeepSeek | GPT_OSS 120b |
+| Classification model | MIMO 20b | MIMO 20b | MIMO 20b |
+| Chat memory generation | ✅ async via Kafka | ✅ async via Kafka | ✅ async via Kafka |
+| Title generation | ✅ async via Kafka | ✅ async via Kafka | ✅ async via Kafka |
+| Expected latency | ~30-60s | ~2-4min | ~5-7min |
+
+**Frontend**: Dropdown selector in the chat input bar — no text input needed. Defaults to Flash for fastest responses.
+
+**Model selection** is handled by `get_best_llm(tasks, effort)` in `agents/helpers/choose_llm.py`. Each effort level maps task combinations to the optimal OpenRouter model based on actual model capabilities.
+
+### Model Selection Strategy
+
+| Model | Role | Best For |
+|-------|------|----------|
+| `deepseek/deepseek-v4-flash` | Default + Flash | Very fast, 1M context, excellent perf |
+| `z-ai/glm-4.5-air` | Max tool-use agents | Strong tool-use, agents & coding |
+| `openai/gpt-oss-120b` | Max writing/creative | High-end reasoning, best quality |
+| `openai/gpt-oss-20b` | Classification | Small reasoning model |
+| `google/gemma-4-26b-a4b-it` | OCR | General reasoning, multimodal, MoE |
+| `morph/morph-v3-fast` | Reserved | File-editing engine — not a general LLM |
+| `qwen/qwen3-coder-next` | Reserved | Defined in `choose_llm.py`, not yet routed |
+| `bytedance-seed/seedream-4.5` | Reserved | Image generation, not yet routed |
+
+### Redis & Agent Caching (v0.8.1, extended v0.9.5)
+
+| Cache | Key Pattern | TTL | Location |
+|-------|------------|-----|----------|
+| Company data | `company:{id}` | 1h | `backend/db/get_from_sql.py` |
+| User→Company mapping | `user:{id}` | 24h | `backend/db/get_from_sql.py` |
+| Chat sessions list | `chat_sessions:{id}` | 2min | `backend/db/get_from_sql.py` |
+| Session messages | `session_msgs:{id}` | 30s | `backend/db/get_from_sql.py` |
+| Embeddings | `embedding:{sha256}` | 1h | `RAG_Engine/embeddings.py` |
+| CEO agent instance | In-memory `(company_id, effort)` | ∞ | `agents/CEO/CEO.py` |
+| **CEO request state** | `ceo_req:{uuid}` | 5min | `agents/CEO/ceo_state.py` ✨ |
+| **Session resources** | `session_resources:{id}` | 1h | `agents/CEO/ceo_resources.py` |
+
+### Measured Impact
+
+| Metric | Before | After | Improvement |
+|--------|--------|-------|-------------|
+| Dashboard page (typical) | ~3-4s | ~1s | **~70% ⬆** |
+| Dashboard page (worst Supabase) | ~15s | ~2s | **~87% ⬆** |
+| Session messages (repeat view) | 1-8s | ~0ms | **~100% ⬆** |
+| `get_company_id(user)` | 0.5-1s DB | ~0ms Redis | **100% ⬆** |
+| `get_chat_sessions(company)` | ~1s DB | ~0ms Redis | **100% ⬆** |
+| Embedding generation (repeat) | ~500ms API | ~0ms Redis | **100% ⬆** |
+| CEO agent rebuild (repeat) | ~2s | 0ms memory | **100% ⬆** |
+| Startup (all agents) | 3-6s/worker | 3-6s/worker | *(lazy-load pending)* |
+
+### Agent Routing Fix
+
+"What is my best selling product of all time" was misrouted to Researcher (web search) instead of Data Analyst (CSV analysis on uploaded files). Added an explicit **AGENT ROUTING GUIDE** in the CEO system prompt with per-agent "USE FOR" examples, anti-patterns, and priority-ordered routing rules.
+
+```
+Before: "best selling product" → Researcher → web search → no results
+After:  "best selling product" → Data Analyst → reads CSV → actual data answer
+```
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Orchestration | Python 3.13+, LangChain (`create_agent` factory) |
+| Backend | FastAPI, Uvicorn |
+| Caching | Redis (company data, user→company mapping, sessions, messages, embeddings, CEO state, session resources) |
+| Message Bus | Apache Kafka (KRaft, Confluent 7.8.9) + `confluent_kafka` (fire-and-forget background jobs) |
+| Vector Search | Supabase pgvector (cosine similarity + keyword fusion) |
+| LLM Provider | OpenRouter (DeepSeek, GLM, GPT-OSS 120b/20b, Gemma, Morph, text-embedding-3-small) |
+| Web Search | Tavily Search API |
+| Market Data | SerpAPI (Google Trends, Google News, Google Shopping) |
+| Code Sandbox | e2b (e2b-code-interpreter) |
+| PDF Extraction | PyMuPDF (fitz) |
+| OCR | Vision LLM (Gemma 4 26B via OpenRouter) |
+| Database | Supabase PostgreSQL + pgvector (HNSW indexes) |
+| Storage | Supabase Storage (S3-compatible) |
+| Frontend | Next.js 16.2.9, React 19.2.4, Tailwind CSS v4 |
+| UI Animation | framer-motion 12.42.0, GSAP 3.15.0, Lenis, Three.js 0.185 (React Three Fiber, drei, postprocessing) |
+| Icons | lucide-react 1.21.0 |
+| Markdown | react-markdown 10.1.0, remark-gfm 4.0.1 |
+
 ## Agent System
 
 ### CEO Orchestrator
@@ -104,6 +163,7 @@ The CEO (`agents/CEO/CEO.py`) is a LangChain agent built with the stock `create_
 - **System prompt**: A detailed persona describing the CEO's role, decision-making style, and constraint rules (flash effort swaps in a dedicated compact prompt, `get_ceo_system_prompt_flash`)
 - **Tool registry**: 8 tools that the CEO dynamically selects via LLM reasoning (all defined in `agents/CEO/ceo_agent_tools.py`)
 - **LLM backend**: OpenRouter with effort-based model selection via `get_best_llm(tasks, effort)` — picks DeepSeek, GLM, GPT-OSS, Gemma, or MIMO based on task type and effort level (flash/mid/max)
+- **Streaming (v0.9.15)**: `_invoke_agent()` (`agents/CEO/CEO.py:111`) uses `agent.stream(stream_mode=["messages","updates"])` when a `session_id` is present — batches `AIMessageChunk` deltas into `llm_token` WS events (24 tokens / 60ms) and reconstructs the final `{"messages": [...]}` from `updates` so MCQ/image flows stay compatible. Falls back to `invoke()` on stream error or when called without a session (evals/CLI).
 
 **CEO tool registry** (8 tools):
 
@@ -199,7 +259,7 @@ Co_Founder/
 ├── requirements.txt
 ├── agents/                  # Agent implementations (repo root)
 │   ├── agents.json          # Central agent registry (10 agents)
-│   ├── CEO/                 # CEO orchestrator (CEO.py, ceo_prompts.py, ceo_agent_tools.py, ceo_resources.py, ceo_state.py)
+│   ├── CEO/                 # CEO orchestrator (CEO.py with _invoke_agent streaming, ceo_prompts.py, ceo_agent_tools.py, ceo_resources.py, ceo_state.py)
 │   ├── researcher/          # Web research agent
 │   ├── marketing/           # CMO marketing agent
 │   ├── data_analyst/        # Data analysis + e2b sandbox
@@ -216,8 +276,8 @@ Co_Founder/
 │   │   ├── chat.py          # POST /chat, session CRUD, WS /chat/ws, MCQ guard
 │   │   ├── user.py          # /user/onboarding, /user/dashboard, /user/files
 │   │   ├── drive.py         # POST /upload, DELETE /file/{id}
-│   │   ├── connection_manager.py    # ConnectionManager + SessionEventBus (WS traces)
-│   │   └── observability_events.py  # Agent trace event types/factories
+│   │   ├── connection_manager.py    # ConnectionManager + SessionEventBus (buffered replay, WS traces)
+│   │   └── observability_events.py  # Agent trace event types/factories (incl. llm_token)
 │   ├── kafka_jobs/          # Async Kafka pipeline (producers + consumers)
 │   │   ├── producers/producer.py   # queue_session_message, queue_chat_memory, queue_title_creation
 │   │   ├── consumers/               # add_message_to_session_job, chat_memory_job, session_title_creation_job
@@ -252,7 +312,7 @@ Co_Founder/
 | GET | `/chat/sessions` | List user's chat sessions |
 | GET | `/chat/sessions/{session_id}` | Get messages for a session |
 | DELETE | `/chat/sessions/{session_id}` | Delete chat session |
-| WS | `/chat/ws?session_id=` | Real-time agent trace events (tool_start/end, subagent spawn/end, heartbeats) |
+| WS | `/chat/ws?session_id=` | Real-time agent trace events (`tool_start/end`, `subagent_spawn/end`, `llm_token` streaming, `heartbeat`, `session_start/end`) — buffered replay ensures no lost events in prod |
 
 ### Async Kafka Pipeline
 
@@ -302,7 +362,12 @@ POST /chat
 
 ## Frontend
 
-Frontend is a Next.js app with the main user flows in `frontend/src/app/` and shared chat/agent UI in `frontend/src/components/`. The important bits are the chat experience, onboarding, dashboard, drive, and observability views; the component-level breakdown is intentionally omitted here so the README stays readable.
+Frontend is a Next.js app with the main user flows in `frontend/src/app/` and shared chat/agent UI in `frontend/src/components/`. The important bits are the chat experience, onboarding, dashboard, drive, and observability views.
+
+**v0.9.15 — chat trace & streaming:**
+- `frontend/src/components/Chat.tsx:422` — chat container owns the session, effort selector, message list, and the **live streaming answer bubble** (`streamingText` + `llmActive` from `useObservability`). `sendToBackend` pre-generates the `sessionId`, calls `startQuery(sid)` + `await waitForConnection(sid)` *before* `POST /chat`, then snapshots `runs` via `snapshotRuns()` for the response. Typing indicator and streaming bubble render under `sending`.
+- `frontend/src/components/AgentTracePanel.tsx:57` — trace dropdown anchored **beside the chat bar** (right-aligned popover above the input). Auto-opens on send, displays connection badge, live tool calls with `TraceRow` (`frontend/src/components/AgentTimeline.tsx:51`), subagent durations, streaming response preview, and a clear button. Closes on outside click. Replaces the old inline `AgentTraceInline` that rendered under each assistant message.
+- `frontend/src/lib/observability.ts:129` — `useObservability(sessionId)` manages the persistent WS (`/chat/ws`), groups raw events into `ToolRun`s (keyed by `tool_run_id`), handles `llm_token` accumulation (cleared on next `tool_start`), auto-reconnect with exponential backoff, and per-session isolation.
 
 If you need the exact frontend structure, inspect the `frontend/` workspace directly.
 
@@ -350,156 +415,45 @@ Each agent prompt is defined as a module-level constant (e.g., `RESEARCHER_SYSTE
 - All agents and tools use `logger.info()` / `logger.debug()` / `logger.error()` with consistent format: `[timestamp] [LEVEL] module: message`
 - Log file location: `logs.log` in project root
 
-### WebSocket Agent Trace 
+### WebSocket Agent Trace (v0.9.15 — buffered + real-time LLM streaming)
 
-Real-time observability streamed to the frontend via WebSocket:
+Real-time observability streamed to the frontend via WebSocket (`WS /chat/ws?session_id=` in `backend/app.py`).
 
-- **Backend**: `SessionEventBus` (fan-out queue per drain loop) + `ObservabilityCallback` (LangGraph callback) in `backend/api/connection_manager.py` / `observability_events.py` pushes `tool_start`, `tool_end`, `tool_error`, `subagent_spawn`, `subagent_end`, `subagent_error`, `session_start`, `session_end`, `heartbeat` events
-- **Frontend**: `useObservability` hook (`frontend/src/lib/observability.ts`) maintains persistent WS connection; `AgentTraceInline` renders collapsible trace below each assistant message
-- **Per-query isolation**: Trace resets at each new query; completed trace snapshotted and attached to the message; trace survives page reload (stored in message state)
-- **Live streaming**: Trace appears immediately when user sends query, populates in real-time as tool calls execute
-- **Connection**: Single persistent WS per session — backend `while True` loop keeps it alive across queries
+**Backend — `SessionEventBus` (`backend/api/connection_manager.py:107`)**
+- **Buffered replay** (prod fix): events pushed before the browser's WebSocket finishes upgrading are kept in a per-session replay buffer (`_buffers`, bounded to 1500 entries) and replayed into the next `drain()` loop. `event_bus.begin_query(session_id)` (`backend/api/chat.py:134`) clears stale buffers at the start of each query so the trace maps 1:1 to the current request.
+- **Missed sentinel handling**: `send_sentinel()` records a `_pending_sentinel` flag when no drain loop is listening; a late-connecting `drain()` replays the buffer then immediately ends instead of blocking forever.
+- **Fan-out**: each `drain()` call owns its own `asyncio.Queue`; events are fanned out to all active drains. Queues are cleaned up on exit; offsets are not involved (in-memory only).
+- **Event types** (`backend/api/observability_events.py:24`): `tool_start` / `tool_end` / `tool_error`, `subagent_spawn` / `subagent_end` / `subagent_error`, **`llm_token`** / `llm_start` / `llm_end`, `session_start` / `session_end`, `heartbeat`, `error`.
 
-## Setup
+**Agent streaming — `agents/CEO/CEO.py:94`**
+- `talk_to_ceo` now calls `_invoke_agent()` which uses LangChain `agent.stream(..., stream_mode=["messages","updates"])` instead of `invoke()`.
+- `messages` channel → `AIMessageChunk` token deltas batched at ~24 tokens / 60ms (`_TOKEN_BATCH_SIZE` / `_TOKEN_FLUSH_SECONDS`) and pushed as `llm_token` events via `event_bus.push(make_llm_token(...))`.
+- `updates` channel → `{node: {messages: [...]}}` accumulated to reconstruct the full `{"messages": [...]}` result so MCQ (`clarification_request`) and `image_generated` flows are unchanged. Stream failures flush buffered tokens and fall back to `agent.invoke()`; eval/CLI calls with no `session_id` bypass streaming entirely.
 
-### Prerequisites
-- Python 3.13+
-- Node.js 20+
-- Supabase project (PostgreSQL + Storage)
-- API keys: Tavily, OpenRouter, SerpAPI, e2b
+**Frontend — `useObservability` (`frontend/src/lib/observability.ts:129`) + `AgentTracePanel` (`frontend/src/components/AgentTracePanel.tsx:1`)**
+- `useObservability` maintains one persistent WS per session (`wsUrl` → `API_BASE_URL` + `/chat/ws`). State: `runs` (grouped `ToolRun`s), `streamingText` / `llmActive` (live answer), `connectionStatus` (`disconnected`/`connecting`/`connected`), `streamEnded`, `retryCount`.
+- **Guaranteed connect before chat**: `Chat.tsx:544` calls `await waitForConnection(sid)` (polls up to 8s, auto-reopens) *before* `POST /chat` — combined with the server-side buffer this eliminates the "invisible trace" race. `startQuery(sid)` resets `runs`/`streamingText` per query without tearing down the WS.
+- **Token handling**: `llm_token` appends to `streamingText`; the next `tool_start` clears it so planning/"thinking" tokens never appear as the final answer. `session_end` clears `llmActive`.
+- **`AgentTracePanel`**: dropdown anchored beside the chat bar (right-aligned popover above the input, `AgentTracePanel.tsx:121`). Auto-opens on send, shows connection badge (Live/Connected/Connecting/Offline), live tool calls via `TraceRow` (`AgentTimeline.tsx:51`), subagent durations, expandable inputs/outputs, live streaming response block, and a clear button (`resetRuns`). The old inline `AgentTraceInline` under each message was removed — per-message `traceRuns` snapshot is still taken via `snapshotRuns()` but no longer rendered inline.
+- **Resilience**: `onclose` exponential backoff (up to 5 retries); session switch tears down the old WS; `resetRuns` clears display without touching the socket.
 
-### Installation
-1. Clone the repo
-2. Install Python deps: `pip install -r requirements.txt`
-3. Install frontend deps: `cd frontend && npm install`
-4. Create a `.env` in the project root with: `TAVILY_API_KEY`, `DATABASE_URL` (Supabase), `LLM_API_KEY` (OpenRouter), `SERP_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `E2B_API_KEY` (`SUPABSE_SERVICE_ROLE_KEY` is still accepted for legacy env files)
-5. Run Supabase SQL migrations from `schemas/` — create the tables, RPC functions, and HNSW indexes. For Google login also run `schemas/migrations/add_supabase_user_id.sql` (idempotent).
-6. Start Kafka: `docker compose up -d kafka` (required for chat memory/title persistence)
-7. Start Kafka consumers: `python backend/kafka_jobs/run_consumers.py` (three background processes)
-8. Start backend: `uvicorn backend.app:app --reload` (default: `http://localhost:8000`)
-9. Start frontend: `cd frontend && npm run dev` (default: `http://localhost:3000`). The frontend loads `NEXT_PUBLIC_*` variables from the **repo-root `.env`** automatically (via `frontend/scripts/run-next.js`), so no separate `frontend/.env.local` is needed for Google login.
-
-### Docker (full stack)
-
-The whole stack — Kafka, Redis, FastAPI backend, Kafka consumers, and the Next.js
-frontend — can be run with a single command:
-
-```bash
-./start_docker.sh          # build + run in foreground
-./start_docker.sh -d       # build + run in the background
-# or directly:
-docker compose up --build
-```
-
-- Images: `Dockerfile` (Python backend + consumers) and `frontend/Dockerfile` (Next.js, `output: "standalone"`).
-- Secrets come from the root `.env` file (`env_file`) — they are never baked into images. Docker-specific endpoints (`KAFKA_BOOTSTRAP_SERVERS=kafka:29092`, `REDIS_URL=redis://redis:6379/0`) are injected by `docker-compose.yaml`.
-- Ports: frontend `:3000`, backend `:8000`, Kafka `:9092` (host), Redis `:6379`.
-- The backend/consumers wait for Kafka & Redis to become healthy before starting.
-
-### Deployment
-
-The stack is containerized and can be deployed to any Docker host or PaaS
-(Railway, Render, Fly.io, GCP/AWS) that supports Docker.
-
-1. **Provision the database**: run the SQL in `schemas/` against a Supabase
-   project (tables, RPC functions, HNSW indexes).
-2. **Environment variables** (backend/consumers): `DATABASE_URL`,
-   `LLM_API_KEY`, `TAVILY_API_KEY`, `SERP_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`,
-   plus `CORS_ORIGINS` (comma-separated allowed browser origins — set to your
-   frontend domain, e.g. `https://app.example.com`).
-3. **Build arg** (frontend): `NEXT_PUBLIC_API_URL` must be the public backend
-   URL (e.g. `https://api.example.com`). The WebSocket endpoint is derived from
-   it automatically. **The backend routes have no `/api` prefix** — if you use a
-   `/api` suffix it only works when the reverse proxy strips it. Changing this
-   value requires rebuilding the frontend image (`docker compose build frontend`).
-4. **Kafka + Redis**: either run the bundled containers or point
-   `KAFKA_BOOTSTRAP_SERVERS` / `REDIS_URL` at managed instances.
-5. **Reverse proxy / TLS**: put nginx or the PaaS router in front. The backend
-   honours `X-Forwarded-For` for rate limiting, so forward proxy headers.
-   Health endpoints: backend `/health`, frontend `/`.
-6. **Rate limits** (per client IP, configurable via env):
-   `/auth/*` 10/min, `/chat` 30/min (`CHAT_RATE_LIMIT_PER_MINUTE`),
-   `/upload` 20/min (`UPLOAD_RATE_LIMIT_PER_MINUTE`).
-7. **CORS defaults**: local docker/dev defaults allow `http://localhost:3000`
-   and `http://127.0.0.1:3000`; override `CORS_ORIGINS` for production.
-
-
-## Performance Improvements
-
-### Effort-Based Execution
-
-Every chat request accepts an `effort` parameter (⚡ Flash / ⚖️ Mid / 🎯 Max) that controls the entire agent pipeline:
-
-| Aspect | ⚡ Flash | ⚖️ Mid | 🎯 Max |
-|--------|---------|--------|-------|
-| CEO model | DeepSeek | GLM (tool-use) | GLM (tool-use) |
-| Researcher reflections | 0 | 1 | 2 |
-| Writer reflections | 0 | 1 | 2 |
-| Writing/Creative model | DeepSeek | DeepSeek | GPT_OSS 120b |
-| Classification model | MIMO 20b | MIMO 20b | MIMO 20b |
-| Chat memory generation | ✅ async via Kafka | ✅ async via Kafka | ✅ async via Kafka |
-| Title generation | ✅ async via Kafka | ✅ async via Kafka | ✅ async via Kafka |
-| Expected latency | ~30-60s | ~2-4min | ~5-7min |
-
-**Frontend**: Dropdown selector in the chat input bar — no text input needed. Defaults to Flash for fastest responses.
-
-**Model selection** is handled by `get_best_llm(tasks, effort)` in `agents/helpers/choose_llm.py`. Each effort level maps task combinations to the optimal OpenRouter model based on actual model capabilities.
-
-### Model Selection Strategy
-
-| Model | Role | Best For |
-|-------|------|----------|
-| `deepseek/deepseek-v4-flash` | Default + Flash | Very fast, 1M context, excellent perf |
-| `z-ai/glm-4.5-air` | Max tool-use agents | Strong tool-use, agents & coding |
-| `openai/gpt-oss-120b` | Max writing/creative | High-end reasoning, best quality |
-| `openai/gpt-oss-20b` | Classification | Small reasoning model |
-| `google/gemma-4-26b-a4b-it` | OCR | General reasoning, multimodal, MoE |
-| `morph/morph-v3-fast` | Reserved | File-editing engine — not a general LLM |
-| `qwen/qwen3-coder-next` | Reserved | Defined in `choose_llm.py`, not yet routed |
-| `bytedance-seed/seedream-4.5` | Reserved | Image generation, not yet routed |
-
-### Redis & Agent Caching (v0.8.1, extended v0.9.5)
-
-| Cache | Key Pattern | TTL | Location |
-|-------|------------|-----|----------|
-| Company data | `company:{id}` | 1h | `backend/db/get_from_sql.py` |
-| User→Company mapping | `user:{id}` | 24h | `backend/db/get_from_sql.py` |
-| Chat sessions list | `chat_sessions:{id}` | 2min | `backend/db/get_from_sql.py` |
-| Session messages | `session_msgs:{id}` | 30s | `backend/db/get_from_sql.py` |
-| Embeddings | `embedding:{sha256}` | 1h | `RAG_Engine/embeddings.py` |
-| CEO agent instance | In-memory `(company_id, effort)` | ∞ | `agents/CEO/CEO.py` |
-| **CEO request state** | `ceo_req:{uuid}` | 5min | `agents/CEO/ceo_state.py` ✨ |
-| **Session resources** | `session_resources:{id}` | 1h | `agents/CEO/ceo_resources.py` |
-
-### Measured Impact
-
-| Metric | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| Dashboard page (typical) | ~3-4s | ~1s | **~70% ⬆** |
-| Dashboard page (worst Supabase) | ~15s | ~2s | **~87% ⬆** |
-| Session messages (repeat view) | 1-8s | ~0ms | **~100% ⬆** |
-| `get_company_id(user)` | 0.5-1s DB | ~0ms Redis | **100% ⬆** |
-| `get_chat_sessions(company)` | ~1s DB | ~0ms Redis | **100% ⬆** |
-| Embedding generation (repeat) | ~500ms API | ~0ms Redis | **100% ⬆** |
-| CEO agent rebuild (repeat) | ~2s | 0ms memory | **100% ⬆** |
-| Startup (all agents) | 3-6s/worker | 3-6s/worker | *(lazy-load pending)* |
-
-### Agent Routing Fix
-
-"What is my best selling product of all time" was misrouted to Researcher (web search) instead of Data Analyst (CSV analysis on uploaded files). Added an explicit **AGENT ROUTING GUIDE** in the CEO system prompt with per-agent "USE FOR" examples, anti-patterns, and priority-ordered routing rules.
-
-```
-Before: "best selling product" → Researcher → web search → no results
-After:  "best selling product" → Data Analyst → reads CSV → actual data answer
-```
+**Per-query isolation**: trace resets at each new query (`begin_query` server-side + `startQuery` client-side); `snapshotRuns()` captures the current `runs` snapshot for optional message attachment. Trace survives page reload via persisted message state.
 
 ## Status
 
-Functional end-to-end production test release (v0.9.14). The core chat loop, multi-agent system, RAG pipeline, file management, WebSocket observability, effort-based execution, Kafka async jobs, onboarding flow, Argon2id password hashing, Google OAuth, and cookie-based session auth are operational. Known gaps:
+Functional end-to-end production test release (v0.9.15). The core chat loop, multi-agent system, RAG pipeline, file management, **buffered WebSocket observability with live LLM streaming**, effort-based execution, Kafka async jobs, onboarding flow, Argon2id password hashing, Google OAuth, and cookie-based session auth are operational. v0.9.15 fixes the production-only invisible trace and adds token-by-token answer streaming. Known gaps:
 - Image generation uses OpenRouter `google/gemini-2.5-flash-image`; slow (~30s) and blocks the CEO pipeline
 - Supabase free tier REST API adds 3-7s latency per RPC call (embedding serialization overhead)
 - The session cookie restores login on the next visit, but protected endpoints still trust the `user_id` query param (no per-request JWT verification)
 
+## License
+
+Copyright (C) 2026 Karthikeya Kumar
+
+This project is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0).
+
+See the LICENSE file for details.
+
 ## Notes For The Sleepy Reader
 
-If you only skimmed this far: the app is production-test ready, the frontend is a Next.js chat/product shell, the backend is FastAPI with Kafka and Redis, login is email/password or Google with a browser session cookie, and the main caveat is that protected endpoints still trust the `user_id` query param. The rest of the README mostly exists so future-me can remember what past-me was doing.
+If you only skimmed this far: the app is production-test ready (v0.9.15), the frontend is a Next.js chat/product shell, the backend is FastAPI with Kafka and Redis, login is email/password or Google with a browser session cookie, the agent trace now reliably streams in production (buffered EventBus + `agent.stream()` tokens + `AgentTracePanel` popover), and the main caveat is that protected endpoints still trust the `user_id` query param. The rest of the README mostly exists so future-me can remember what past-me was doing.

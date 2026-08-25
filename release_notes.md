@@ -1,4 +1,13 @@
 
+## Changelog (v0.9.14 → v0.9.15)
+
+### Agent Trace — fixed in production + real-time LLM streaming
+- **Root cause of the invisible trace fixed**: the agent (running in the `POST /chat` threadpool) could emit events before the browser's WebSocket finished upgrading, so the event bus silently dropped them. The `SessionEventBus` now buffers events per session and replays them into a drain loop when it connects, so nothing is lost — even if the WS connects late or reconnects mid-query. The frontend also awaits the WebSocket connection before firing the chat POST, so the trace starts at t=0.
+- **Handles missed sentinels**: if a query ends before the WS connects, a late-connecting drain loop now ends immediately (after replaying the buffer) instead of blocking forever.
+- **Real-time LLM streaming via `agent.stream`**: `talk_to_ceo` now uses LangChain's `agent.stream()` (`stream_mode=["messages","updates"]`) instead of `invoke()`. LLM tokens are batched (~24 tokens / 60ms) and pushed to the WebSocket as `llm_token` events; the full result is reconstructed from the stream so MCQ / image-generation flows are unchanged.
+- **Live streaming answer in the chat**: the assistant message now appears token-by-token in real time while the CEO agent responds (planning/"thinking" tokens are discarded when a tool call starts).
+- **Agent Trace dropdown beside the chat bar**: a new `AgentTracePanel` sits in the input bar and opens as a right-aligned popover above it. It auto-opens on send, shows connection status, live tool calls, subagents with durations, expandable inputs/outputs, the streaming response, and a clear button. The old inline trace in the message flow was removed.
+
 ## Changelog (v0.9.13 → v0.9.14)
 
 ### Signup & Onboarding

@@ -23,7 +23,7 @@ export type AgentTraceInlineProps = {
   isStreaming?: boolean;
 };
 
-const SUBAGENT_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+export const SUBAGENT_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   Researcher: Search,
   Writer: PenLine,
   CMO: Megaphone,
@@ -31,7 +31,7 @@ const SUBAGENT_ICONS: Record<string, React.ComponentType<{ className?: string }>
   GraphicDesigner: Palette,
 };
 
-const SUBAGENT_COLORS: Record<string, string> = {
+export const SUBAGENT_COLORS: Record<string, string> = {
   Researcher: "#3b82f6",
   Writer: "#8b5cf6",
   CMO: "#f59e0b",
@@ -39,17 +39,17 @@ const SUBAGENT_COLORS: Record<string, string> = {
   GraphicDesigner: "#ec4899",
 };
 
-function subagentIcon(name: string) { return SUBAGENT_ICONS[name] ?? Bot; }
-function subagentColor(name: string) { return SUBAGENT_COLORS[name] ?? "#6b7280"; }
+export function subagentIcon(name: string) { return SUBAGENT_ICONS[name] ?? Bot; }
+export function subagentColor(name: string) { return SUBAGENT_COLORS[name] ?? "#6b7280"; }
 
-function formatDuration(ms: number | null): string {
+export function formatDuration(ms: number | null): string {
   if (ms === null) return "";
   if (ms < 1000) return Math.round(ms) + "ms";
   if (ms < 60000) return (ms / 1000).toFixed(1) + "s";
   return (ms / 60000).toFixed(1) + "m";
 }
 
-function TraceRow({ run }: { run: ToolRun }) {
+export function TraceRow({ run }: { run: ToolRun }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
