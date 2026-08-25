@@ -32,6 +32,11 @@ services:
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
+      # Keep the JVM lean for small VMs (2GB RAM): the Confluent default heap
+      # is up to 1GB+, which alone can starve the rest of the stack. 512MB is
+      # plenty for a single-node dev/prod broker.
+      KAFKA_HEAP_OPTS: "-Xms256M -Xmx512M"
+
       # Internal listener (containers → kafka:29092) + host listener
       # (host → localhost:9092). Both are PLAINTEXT, just different ports so
       # the advertised address matches however the client connects.

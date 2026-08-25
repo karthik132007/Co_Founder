@@ -26,6 +26,12 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Low-memory-friendly build: disable telemetry and let Node grow its heap
+# (using swap) instead of being OOM-killed while compiling all routes on
+# small VMs (1GB RAM). Tune --max-old-space-size to the machine's RAM+swap.
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_OPTIONS=--max-old-space-size=2048
+
 ARG NEXT_PUBLIC_API_URL=http://localhost:8000
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
