@@ -66,7 +66,7 @@ export function Hero() {
 
         <div className="mt-10 flex flex-col sm:flex-row items-center gap-4">
           <Magnetic strength={0.5}>
-            <a href="#cta" className="hero-cta btn-magnetic is-solid" data-cursor="hover">
+            <a href="/auth" className="hero-cta btn-magnetic is-solid" data-cursor="hover">
               <span className="btn-bg" />
               <span className="btn-glow" />
               Begin the build

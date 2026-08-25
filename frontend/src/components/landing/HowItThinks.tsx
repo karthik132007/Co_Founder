@@ -1,250 +1,299 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { RevealHeading } from "./RevealHeading";
+import { motion } from "framer-motion";
+import {
+  MessageCircle,
+  Brain,
+  Search,
+  BarChart3,
+  Palette,
+  Sparkles,
+  ArrowRight,
+  ArrowDown,
+  Copy,
+} from "lucide-react";
 import { SectionBackground } from "./SectionBackground";
+import { RevealHeading } from "./RevealHeading";
+import { HowDemo } from "./HowDemo";
 
 if (typeof window !== "undefined") gsap.registerPlugin(ScrollTrigger);
 
-/**
- * How Co-Founder thinks — a horizontal pinned scroll.
- *
- * The section pins for the duration of the track width, and a row of agent
- * cards slides left as the user scrolls. A progress line draws beneath the
- * cards and each card scales/fades in sequence. This avoids the previous
- * pin+sticky conflict that caused janky scrolling.
- *
- * Agents reflect the real system: CEO orchestrator delegates to specialized
- * sub-agents, each with a Judge reflection loop, then synthesizes output.
- */
-
-type Agent = {
+type Step = {
   id: string;
-  index: string;
-  label: string;
-  role: string;
+  n: string;
+  eyebrow: string;
+  title: string;
+  titleAccent: string;
   desc: string;
-  tool: string;
+  proof: string;
   accent: string;
+  Icon: React.ComponentType<any>;
+  chips: string[];
+  workers?: { label: string; sub: string; Icon: React.ComponentType<any>; color: string }[];
 };
 
-const AGENTS: Agent[] = [
+const STEPS: Step[] = [
   {
-    id: "ceo",
-    index: "01",
-    label: "CEO Orchestrator",
-    role: "Strategic brain",
-    desc: "Receives your idea, plans the next actions, and delegates to sub-agents via tool calls. Synthesizes every result into a coherent response.",
-    tool: "10+ tools · effort-based LLM selection",
+    id: "talk",
+    n: "01",
+    eyebrow: "You talk",
+    title: "Just say it like",
+    titleAccent: "you’d to a cofounder.",
+    desc: "No forms. No prompt tricks. One sentence or a dropped file is enough — it listens.",
+    proof: "“Launch a D2C skincare line for men 28–35 in India”",
     accent: "#7c8cff",
+    Icon: MessageCircle,
+    chips: ["Chat", "Drop files", "No setup"],
   },
   {
-    id: "researcher",
-    index: "02",
-    label: "Researcher",
-    role: "Market intelligence",
-    desc: "Runs live web search to map competitors, surface industry trends, and ground every decision in evidence — not vibes.",
-    tool: "Tavily web search · Judge-refined",
+    id: "knows",
+    n: "02",
+    eyebrow: "It remembers",
+    title: "It already knows",
+    titleAccent: "your business.",
+    desc: "Decks, sheets, past chats, your tone — kept forever. You never start from zero.",
+    proof: "Never re-explain your brand again.",
     accent: "#b388ff",
+    Icon: Brain,
+    chips: ["Brand tone", "Past chats", "Your files"],
   },
   {
-    id: "writer",
-    index: "03",
-    label: "Writer",
-    role: "Narrative & copy",
-    desc: "Generates positioning, content, and pitch narrative. Temperature 0.7 for creative work, revised through the Judge loop.",
-    tool: "Direct LLM · Judge-refined",
+    id: "builds",
+    n: "03",
+    eyebrow: "Team builds",
+    title: "A whole team",
+    titleAccent: "moves at once.",
+    desc: "One brain plans. Three specialists build in parallel — what’s real, what your numbers say, what to ship.",
+    proof: "Seconds, not weeks.",
     accent: "#6ee7b7",
+    Icon: Sparkles,
+    chips: [],
+    workers: [
+      { label: "Market", sub: "What’s really selling", Icon: Search, color: "#7c8cff" },
+      { label: "Numbers", sub: "What your data says", Icon: BarChart3, color: "#6ee7b7" },
+      { label: "Create", sub: "Copy + visuals", Icon: Palette, color: "#fbbf24" },
+    ],
   },
   {
-    id: "cmo",
-    index: "04",
-    label: "CMO Marketing",
-    role: "Growth engine",
-    desc: "Builds campaigns, content calendars, and growth strategies from real search trends, news, and shopping signals.",
-    tool: "SerpAPI trends + news + shopping",
+    id: "ship",
+    n: "04",
+    eyebrow: "You ship",
+    title: "Get work you can",
+    titleAccent: "actually ship.",
+    desc: "Not advice. Ready-to-copy text, real charts, on-brand images — hit publish.",
+    proof: "From idea → shippable in seconds.",
     accent: "#fbbf24",
-  },
-  {
-    id: "data",
-    index: "05",
-    label: "Data Analyst",
-    role: "Evidence & numbers",
-    desc: "Executes Python, Pandas, and Matplotlib inside a secure e2b sandbox to analyze your data and produce charts.",
-    tool: "e2b code sandbox · direct execution",
-    accent: "#60a5fa",
-  },
-  {
-    id: "design",
-    index: "06",
-    label: "Graphic Designer",
-    role: "Brand & visuals",
-    desc: "Generates brand imagery and color palettes from a dedicated image model, tuned to your company tone.",
-    tool: "Gemini image model · palette tools",
-    accent: "#f472b6",
-  },
-  {
-    id: "judge",
-    index: "07",
-    label: "Judge",
-    role: "Quality reflection",
-    desc: "Scores agent output 1–10. Below threshold, the agent revises with the critique — effort-based: flash 0, mid 1, max 2 reflections.",
-    tool: "LLM-as-Judge · GPT-OSS-120B",
-    accent: "#a78bfa",
+    Icon: Copy,
+    chips: ["Copy-ready", "Charts", "Brand images"],
   },
 ];
 
+const STATUS_LABELS = ["Listening…", "Remembering…", "Building…", "Ready to ship"];
+
 export function HowItThinks() {
-  const root = useRef<HTMLElement>(null);
-  const track = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  const pinRef = useRef<HTMLDivElement>(null);
+  const progressRef = useRef<{ v: number }>({ v: 0 });
+  const [active, setActive] = useState(0);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const section = sectionRef.current;
+    const pin = pinRef.current;
+    if (!section || !pin) return;
+
     const ctx = gsap.context(() => {
-      const el = track.current;
-      const section = root.current;
-      if (!el || !section) return;
-
-      const cards = gsap.utils.toArray<HTMLElement>(".wf-card");
-      const progressLine = section.querySelector<HTMLElement>(".wf-progress-fill");
-
-      const getDistance = () => Math.max(0, el.scrollWidth - window.innerWidth);
-
-      const tween = gsap.to(el, {
-        x: () => -getDistance(),
-        ease: "none",
-        scrollTrigger: {
-          trigger: section,
-          start: "top top",
-          end: () => `+=${getDistance()}`,
-          pin: true,
-          scrub: 1,
-          invalidateOnRefresh: true,
-          onUpdate: (self) => {
-            if (progressLine) progressLine.style.width = `${self.progress * 100}%`;
-          },
+      ScrollTrigger.create({
+        trigger: section,
+        start: "top top",
+        end: "+=2400",
+        pin,
+        pinSpacing: true,
+        scrub: 0.6,
+        anticipatePin: 1,
+        invalidateOnRefresh: true,
+        onUpdate: (self) => {
+          progressRef.current.v = self.progress;
+          setProgress(self.progress);
+          const idx = Math.min(STEPS.length - 1, Math.floor(self.progress * STEPS.length * 0.999 + 0.0001));
+          setActive((prev) => (prev !== idx ? idx : prev));
+          const fill = pin.querySelector<HTMLElement>(".hit-progress-fill");
+          if (fill) fill.style.width = `${self.progress * 100}%`;
+          const dots = pin.querySelectorAll<HTMLElement>(".hit-dot");
+          dots.forEach((d, i) => {
+            d.style.opacity = i <= idx ? "1" : "0.32";
+            d.style.transform = i === idx ? "scale(1.35)" : "scale(1)";
+          });
+          const status = pin.querySelector<HTMLElement>(".hit-status-text");
+          if (status) status.textContent = STATUS_LABELS[idx];
         },
       });
+      // keep ScrollTrigger in sync if images/fonts shift layout
+      requestAnimationFrame(() => ScrollTrigger.refresh());
+    }, section);
 
-      cards.forEach((card) => {
-        gsap.fromTo(
-          card,
-          { scale: 0.85, opacity: 0.2, filter: "blur(8px)" },
-          {
-            scale: 1,
-            opacity: 1,
-            filter: "blur(0px)",
-            ease: "power2.out",
-            duration: 0.6,
-            scrollTrigger: {
-              trigger: card,
-              containerAnimation: tween,
-              start: "left 80%",
-              end: "left 40%",
-              scrub: 1,
-            },
-          }
-        );
-      });
-    }, root);
     return () => ctx.revert();
   }, []);
 
-  return (
-    <section ref={root} id="how" className="relative h-[100svh] w-full overflow-hidden">
-      <SectionBackground variant="cool" />
 
-      {/* Heading pinned top-left */}
-      <div className="pointer-events-none absolute top-24 left-0 right-0 z-10 px-6">
-        <div className="mx-auto max-w-7xl">
-          <div className="landing-eyebrow mb-5">01 — Cognition</div>
-          <RevealHeading
-            text="How Co-Founder thinks."
-            className="landing-display text-[clamp(2rem,5vw,4rem)]"
+
+  return (
+    <section ref={sectionRef} id="how" className="relative w-full">
+      {/* PINNED VIEWPORT — everything that should stay in view while you scroll is INSIDE pinRef.
+          Previously background + heading were outside the pin, so the bg scrolled independently and
+          the pin appeared to jump after a long empty scroll. Moving them inside fixes alignment. */}
+      <div
+        ref={pinRef}
+        className="relative flex h-[100svh] w-full flex-col overflow-hidden bg-[var(--color-bg)] will-change-transform"
+      >
+        {/* pinned background — stays fixed with the content */}
+        <div className="pointer-events-none absolute inset-0">
+          <SectionBackground variant="cool" />
+          <span
+            className="glow-orb absolute"
+            style={{
+              left: "8%",
+              top: "12%",
+              width: "38vw",
+              height: "38vw",
+              background: "radial-gradient(circle, var(--color-accent), transparent 68%)",
+              opacity: 0.14,
+            }}
+          />
+          <span
+            className="glow-orb absolute"
+            style={{
+              left: "62%",
+              top: "48%",
+              width: "34vw",
+              height: "34vw",
+              background: "radial-gradient(circle, var(--color-accent-2), transparent 70%)",
+              opacity: 0.12,
+            }}
           />
         </div>
-      </div>
 
-      {/* Horizontal track */}
-      <div className="absolute top-1/2 left-0 -translate-y-1/2 w-full">
-        <div ref={track} className="flex gap-8 px-[10vw] will-change-transform">
-          {AGENTS.map((a) => (
-            <article
-              key={a.id}
-              className="wf-card relative flex h-[58vh] max-h-[520px] w-[78vw] sm:w-[440px] shrink-0 flex-col justify-between overflow-hidden rounded-3xl glass p-8 md:p-10"
-              data-cursor="hover"
-            >
-              <div
-                className="pointer-events-none absolute -top-1/4 -right-1/4 h-2/3 w-2/3 rounded-full opacity-20 blur-3xl"
-                style={{ background: a.accent }}
-              />
-
-              <div className="relative">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs text-[var(--color-text-dim)]">
-                    {a.index}
-                  </span>
-                  <span
-                    className="flex h-2 w-2 rounded-full"
-                    style={{ background: a.accent, boxShadow: `0 0 12px ${a.accent}` }}
-                  />
-                </div>
-
-                <div className="mt-10">
-                  <div className="text-xs uppercase tracking-[0.2em] text-[var(--color-text-dim)]">
-                    {a.role}
-                  </div>
-                  <h3 className="mt-3 landing-display text-3xl md:text-4xl">
-                    {a.label}
-                  </h3>
-                </div>
-
-                <p className="mt-6 max-w-sm text-[var(--color-text-muted)] leading-relaxed">
-                  {a.desc}
-                </p>
-              </div>
-
-              <div className="relative mt-8 flex items-center gap-3 border-t border-[var(--color-border)] pt-6">
-                <span
-                  className="h-1.5 w-1.5 rounded-full"
-                  style={{ background: a.accent }}
+        {/* pinned header */}
+        <div className="relative z-10 shrink-0 px-6 pt-8 md:px-8 md:pt-10 lg:px-10">
+          <div className="mx-auto max-w-7xl">
+            <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+              <div className="max-w-3xl">
+                <div className="landing-eyebrow">01 — How it works</div>
+                <RevealHeading
+                  text="From idea to shippable in one chat."
+                  className="landing-display mt-3 text-[clamp(1.9rem,4.8vw,3.6rem)] leading-[0.9]"
                 />
-                <span className="font-mono text-xs text-[var(--color-text-dim)]">
-                  {a.tool}
-                </span>
               </div>
-            </article>
-          ))}
-
-          {/* End card */}
-          <article className="wf-card relative flex h-[58vh] max-h-[520px] w-[78vw] sm:w-[440px] shrink-0 flex-col items-center justify-center overflow-hidden rounded-3xl glass-strong p-10 text-center">
-            <div className="pointer-events-none absolute inset-0 opacity-40"
-              style={{ background: "radial-gradient(60% 60% at 50% 50%, var(--color-accent-glow), transparent 70%)" }}
-            />
-            <div className="relative">
-              <div className="landing-eyebrow mb-6">Synthesis</div>
-              <h3 className="landing-display text-3xl md:text-4xl">
-                One coherent response.
-              </h3>
-              <p className="mt-6 text-[var(--color-text-muted)] leading-relaxed max-w-xs mx-auto">
-                The CEO assembles every agent's output into markdown or MCQ
-                cards — strategies, code, content, and plans you can ship.
+              <p className="max-w-sm shrink-0 text-sm leading-relaxed text-[var(--color-text-muted)] md:text-right md:text-[14px]">
+                Not technical. Not a demo. A real workflow — visualised — that shows a business owner{" "}
+                <span className="font-medium text-[var(--color-text)]">what they get</span>, not how it’s wired.
               </p>
             </div>
-          </article>
+          </div>
         </div>
-      </div>
 
-      {/* Progress bar */}
-      <div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-[60vw] max-w-md">
-        <div className="h-px w-full bg-[var(--color-border)]">
-          <div className="wf-progress-fill h-px bg-gradient-to-r from-[var(--color-accent)] to-[var(--color-accent-2)]" style={{ width: "0%" }} />
-        </div>
-        <div className="mt-3 flex justify-between font-mono text-[10px] text-[var(--color-text-dim)]">
-          <span>CEO</span>
-          <span>Scroll to trace the workflow →</span>
-          <span>Output</span>
+        {/* pinned content row — left demo + minimal right — centered, left moved right for balance */}
+        <div className="relative z-10 mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col overflow-hidden px-3 pb-3 pt-4 md:px-4 md:pb-4 lg:flex-row lg:gap-8 lg:px-6 lg:pt-6">
+          {/* LEFT — coded SaaS demo — hover here scrolls chat, outside scrolls page */}
+          <div
+            className="relative order-1 flex h-[52svh] max-h-[560px] w-full shrink-0 flex-col overflow-hidden rounded-[24px] lg:ml-8 lg:h-auto lg:max-h-none lg:w-[46%] lg:rounded-[28px]"
+            onWheel={(e) => {
+              const el = document.querySelector("[data-howdemo-scroll]") as HTMLElement | null;
+              if (!el) return;
+              const canScrollUp = el.scrollTop > 0;
+              const canScrollDown = el.scrollTop + el.clientHeight < el.scrollHeight - 1;
+              const goingUp = (e as unknown as WheelEvent).deltaY < 0;
+              const goingDown = (e as unknown as WheelEvent).deltaY > 0;
+              const canScroll = (goingUp && canScrollUp) || (goingDown && canScrollDown);
+              if (!canScroll) return; // at edge → let page scroll (don't block)
+              // chat can scroll → block page scroll, let chat handle
+              e.stopPropagation();
+              const inside = el.contains(e.target as Node);
+              if (!inside) {
+                // header/overlay area: manually drive chat scroll
+                e.preventDefault();
+                el.scrollTop += (e as unknown as WheelEvent).deltaY;
+              }
+            }}
+          >
+            <div className="glass-strong relative flex h-full w-full flex-1 flex-col overflow-hidden rounded-[24px] lg:rounded-[28px]">
+              {/* demo header */}
+              <div className="flex shrink-0 items-center gap-2 border-b border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5 lg:px-4">
+                <div className="flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+                </div>
+                <span className="flex-1 text-center font-mono text-[10px] text-[var(--color-text-dim)] lg:text-[11px]">cofounder.ai — live demo</span>
+                <span className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 py-1 text-[10px] font-medium text-emerald-700">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  LIVE
+                </span>
+              </div>
+
+              {/* demo body — coordinated with scroll */}
+              <div className="relative flex min-h-0 flex-1 flex-col bg-[var(--color-bg-soft)]">
+                <HowDemo progress={progress} />
+              </div>
+
+              {/* scroll progress (kept) */}
+              <div className="pointer-events-none absolute bottom-3 left-3 right-3 lg:bottom-4 lg:left-4 lg:right-4">
+                <div className="glass rounded-2xl px-3 py-2.5 lg:px-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      {STEPS.map((s, i) => (
+                        <span
+                          key={s.id}
+                          className="hit-dot h-1.5 w-1.5 rounded-full transition-all duration-500 lg:h-1.5 lg:w-1.5"
+                          style={{
+                            background: i <= active ? s.accent : "var(--color-border-strong)",
+                            boxShadow: i === active ? `0 0 8px ${s.accent}` : "none",
+                            opacity: i <= active ? 1 : 0.32,
+                          }}
+                        />
+                      ))}
+                      <span className="ml-2 hidden font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-text-dim)] sm:inline">
+                        Scroll — story on right
+                      </span>
+                    </div>
+                    <span className="hit-status-text hidden font-mono text-[10px] text-[var(--color-text-dim)] lg:inline">{STATUS_LABELS[0]}</span>
+                  </div>
+                  <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-[var(--color-border)]">
+                    <div className="hit-progress-fill h-full rounded-full bg-gradient-to-r from-[var(--color-accent)] to-[var(--color-accent-2)]" style={{ width: "0%" }} />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="pointer-events-none absolute bottom-2 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-[var(--color-text)] px-3 py-1 text-[10px] font-medium tracking-wide text-white lg:hidden">
+              <span>Scroll</span>
+              <ArrowRight className="h-3 w-3 animate-pulse" />
+            </div>
+          </div>
+
+          {/* RIGHT — minimal: only progressive down arrow */}
+          <div className="order-2 hidden min-h-0 flex-1 flex-col items-center justify-center px-8 py-10 lg:flex lg:px-12">
+            <div className="flex flex-col items-center gap-8">
+              <span className="font-mono text-[10px] tracking-[0.32em] text-[var(--color-text-dim)]">SCROLL</span>
+              <div className="relative flex h-32 w-px justify-center overflow-hidden bg-[var(--color-border)] lg:h-40">
+                <motion.div className="absolute top-0 w-full bg-[var(--color-text)]" style={{ height: `${progress * 100}%` }} transition={{ duration: 0.1, ease: "linear" }} />
+              </div>
+              <motion.div animate={{ y: [0, 6, 0] }} transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }} className="flex h-9 w-9 items-center justify-center rounded-full bg-white shadow-[0_4px_16px_rgba(0,0,0,0.06)] ring-1 ring-black/[0.04]">
+                <ArrowDown className="h-4 w-4 text-[var(--color-text-dim)]" strokeWidth={1.6} />
+              </motion.div>
+              <span className="font-mono text-[10px] tracking-wide text-[var(--color-text-dim)]">{Math.round(progress * 100)}%</span>
+            </div>
+          </div>
+          {/* mobile down arrow */}
+          <div className="flex order-2 flex-col items-center justify-center gap-3 py-6 lg:hidden">
+            <span className="font-mono text-[10px] tracking-[0.32em] text-[var(--color-text-dim)]">SCROLL</span>
+            <ArrowDown className="h-4 w-4 text-[var(--color-text-dim)] animate-bounce" strokeWidth={1.6} />
+          </div>
         </div>
       </div>
     </section>

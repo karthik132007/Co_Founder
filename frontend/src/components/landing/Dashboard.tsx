@@ -107,7 +107,7 @@ export function Dashboard() {
 
           <div className="mt-12">
             <Magnetic strength={0.4}>
-              <a href="#cta" className="btn-magnetic is-solid text-sm" data-cursor="hover">
+              <a href="/auth" className="btn-magnetic is-solid text-sm" data-cursor="hover">
                 <span className="btn-bg" />
                 <span className="btn-glow" />
                 Try the dashboard

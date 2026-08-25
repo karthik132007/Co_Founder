@@ -167,7 +167,7 @@ export function Pricing() {
                 <div className="relative mt-10">
                   <Magnetic strength={0.4}>
                     <a
-                      href="#cta"
+                      href="/auth"
                       className={`btn-magnetic w-full text-sm ${p.highlighted ? "is-solid" : "is-ghost"}`}
                       data-cursor="hover"
                     >
