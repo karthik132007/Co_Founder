@@ -21,8 +21,6 @@ services:
   kafka:
     image: confluentinc/cp-kafka:7.8.9
     container_name: kafka
-    ports:
-      - "9092:9092"
     environment:
       KAFKA_KRAFT_MODE: "true"
       KAFKA_NODE_ID: 1
@@ -59,8 +57,6 @@ services:
   redis:
     image: redis:7-alpine
     container_name: redis
-    ports:
-      - "6379:6379"
     volumes:
       - redis-data:/data
     healthcheck:
@@ -84,7 +80,7 @@ services:
       # e.g. CORS_ORIGINS=https://app.example.com in your shell/.env.
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     depends_on:
       kafka:
         condition: service_healthy
@@ -169,7 +165,7 @@ services:
         NEXT_PUBLIC_AUTH_REDIRECT_URL: ${NEXT_PUBLIC_AUTH_REDIRECT_URL:-}
     container_name: frontend
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     depends_on:
       backend:
         condition: service_healthy
