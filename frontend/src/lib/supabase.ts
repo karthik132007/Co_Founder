@@ -46,10 +46,13 @@ export function getSupabase(): SupabaseClient {
  * OAuth redirect must point at a fixed public URL.
  */
 export function getAuthRedirectUrl(): string {
-  return (
-    process.env.NEXT_PUBLIC_AUTH_REDIRECT_URL ??
-    `${window.location.origin}/auth/callback`
-  );
+  const configured = process.env.NEXT_PUBLIC_AUTH_REDIRECT_URL;
+  const base = (configured || window.location.origin).replace(/\/+$/, "");
+  // Always end at the OAuth callback path. This tolerates a base that points
+  // at the site root (e.g. https://get-cofounder.tech) as well as one that
+  // already includes /auth/callback.
+  if (base.endsWith("/auth/callback")) return base;
+  return `${base}/auth/callback`;
 }
 
 /**

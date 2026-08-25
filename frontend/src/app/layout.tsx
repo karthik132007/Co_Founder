@@ -13,6 +13,9 @@ export const metadata: Metadata = {
   title: "Co-Founder AI — Agentify your business",
   description:
     "An autonomous AI operating system for founders that thinks, researches, plans, builds, markets, and scales companies.",
+  icons: {
+    icon: "/icon.png",
+  },
   openGraph: {
     title: "Co-Founder AI — Agentify your business",
     description:

@@ -158,6 +158,9 @@ services:
         # Google OAuth (Supabase) — public values inlined at build time.
         NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-}
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}
+        # Optional. If set, use the FULL callback URL, e.g.
+        # https://get-cofounder.tech/auth/callback (NOT the bare domain).
+        # The app appends /auth/callback to a bare base as a safety net.
         NEXT_PUBLIC_AUTH_REDIRECT_URL: ${NEXT_PUBLIC_AUTH_REDIRECT_URL:-}
     container_name: frontend
     ports:

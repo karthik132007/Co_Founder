@@ -10,7 +10,10 @@
 # Google OAuth (Supabase) — public values, inlined at build time:
 #   NEXT_PUBLIC_SUPABASE_URL        e.g. https://<project-ref>.supabase.co
 #   NEXT_PUBLIC_SUPABASE_ANON_KEY   Supabase "anon public" key
-#   NEXT_PUBLIC_AUTH_REDIRECT_URL   optional fixed /auth/callback URL override
+#   NEXT_PUBLIC_AUTH_REDIRECT_URL   optional; if set, use the FULL callback URL,
+#                                   e.g. https://get-cofounder.tech/auth/callback
+#                                   (NOT the bare domain). If omitted, the app
+#                                   derives it from the site origin.
 # ─────────────────────────────────────────────────────────────────────────────
 FROM node:22-alpine AS deps
 WORKDIR /app
