@@ -30,7 +30,7 @@ def has_generated_image(token: str) -> bool:
 
 
 @tool("create_graphic", description="Create a PNG graphic from a prompt and return it as a data URL.")
-def create_graphic(company_id: int, prompt: str):
+def create_graphic(company_id: int, prompt: str,model : str):
     """Generate a graphic for immediate display; persistence is handled by the chat API."""
     if not isinstance(prompt, str) or not prompt.strip():
         raise ValueError("A non-empty image prompt is required")
@@ -42,7 +42,7 @@ def create_graphic(company_id: int, prompt: str):
         "https://openrouter.ai/api/v1/chat/completions",
         headers={"Authorization": f"Bearer {api}"},
         json={
-            "model": "google/gemini-2.5-flash-image",
+            "model": model,
             "messages": [{"role": "user", "content": prompt}],
             "modalities": ["image", "text"]
         },
