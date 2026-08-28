@@ -248,6 +248,9 @@ def talk_to_ceo(company_id: int, message: str, history: list[dict] | None = None
         session_id=session_id,
         invoke_config=invoke_config,
     )
+    # Record per-model token usage (for the credit-management Kafka job).
+    if session_id:
+        ceo_state.record_usage(session_id, _collect_usage(result))
     # Check tool outputs for image_generated payload (from graphic_design_request)
     image_payload = _find_image_generated_payload(result)
     if image_payload:
@@ -292,3 +295,39 @@ def _find_image_generated_payload(response) -> dict | None:
             except (json.JSONDecodeError, TypeError):
                 continue
     return None
+
+
+def _collect_usage(result: dict) -> dict:
+    """Aggregate per-model token usage from the agent's final messages.
+
+    LangChain AIMessages carry ``usage_metadata`` (input/output tokens) and
+    ``response_metadata`` (model name) populated by the OpenRouter provider.
+    Returns ``{"breakdown": [{"model", "input_tokens", "output_tokens"}...],
+    "no_of_images": int}`` — the shape the credit-management consumer expects.
+    """
+    from langchain_core.messages import AIMessage
+
+    per_model: dict[str, dict[str, int]] = {}
+    image_count = 0
+    for message in result.get("messages", []):
+        if not isinstance(message, AIMessage):
+            continue
+        usage_metadata = getattr(message, "usage_metadata", None) or {}
+        if not usage_metadata:
+            continue
+        model = (getattr(message, "response_metadata", {}) or {}).get("model") or "unknown"
+        entry = per_model.setdefault(model, {"input_tokens": 0, "output_tokens": 0})
+        entry["input_tokens"] += int(usage_metadata.get("input_tokens") or 0)
+        entry["output_tokens"] += int(usage_metadata.get("output_tokens") or 0)
+    # Count generated graphics — charged separately via the image model.
+    if _find_image_generated_payload(result):
+        image_count += 1
+    breakdown = [
+        {
+            "model": model,
+            "input_tokens": counts["input_tokens"],
+            "output_tokens": counts["output_tokens"],
+        }
+        for model, counts in per_model.items()
+    ]
+    return {"breakdown": breakdown, "no_of_images": image_count}

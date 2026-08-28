@@ -11,6 +11,13 @@ export async function readApiError(response: Response, fallback: string) {
         .map((e) => e.msg)
         .join("; ");
     }
+    // Structured error detail: { code, message } (e.g. 402 insufficient_credits)
+    if (typeof data.detail === "object" && data.detail !== null) {
+      const d = data.detail as { message?: unknown; code?: unknown };
+      if (typeof d.message === "string" && d.message) return d.message;
+      if (typeof d.code === "string" && d.code) return d.code;
+      return fallback;
+    }
     return String(data.detail);
   } catch {
     return fallback;
