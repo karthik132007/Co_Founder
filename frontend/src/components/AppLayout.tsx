@@ -13,6 +13,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { clearSession, getSession, parseSessionUser, saveSession } from "@/lib/session";
 import { fetchChatSessions, deleteChatSession, fetchMe, logoutUser, fetchProfile, fetchCreditBalance, type ChatSession } from "@/lib/api";
+import SettingsModal from "./SettingsModal";
 
 const ACCENT = "#4f46e5";
 
@@ -31,6 +32,7 @@ export default function AppLayout({ children }: Props) {
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [deletingSession, setDeletingSession] = useState<string | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [credits, setCredits] = useState<number | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const userId = session?.user?.id;
@@ -288,6 +290,16 @@ export default function AppLayout({ children }: Props) {
                 <div className={`px-3 py-2 border-b border-[#f3f4f6] ${sidebarCollapsed ? "lg:hidden" : ""}`}>
                   <div className="text-[13px] font-medium text-[#0a0a0a] truncate">{session.user.email}</div>
                 </div>
+                <button
+                  onClick={() => {
+                    setProfileOpen(false);
+                    setSettingsOpen(true);
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium text-[#374151] hover:bg-[#f3f4f6] transition-colors"
+                >
+                  <Settings className="w-4 h-4 text-[#9ca3af]" />
+                  Settings
+                </button>
                 <Link
                   href="/billing"
                   onClick={() => setProfileOpen(false)}
@@ -295,22 +307,6 @@ export default function AppLayout({ children }: Props) {
                 >
                   <CreditCard className="w-4 h-4 text-[#9ca3af]" />
                   Billing &amp; Credits
-                </Link>
-                <Link
-                  href="/profile"
-                  onClick={() => setProfileOpen(false)}
-                  className="flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium text-[#374151] hover:bg-[#f3f4f6] transition-colors"
-                >
-                  <User className="w-4 h-4 text-[#9ca3af]" />
-                  Profile
-                </Link>
-                <Link
-                  href="/profile/settings"
-                  onClick={() => setProfileOpen(false)}
-                  className="flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium text-[#374151] hover:bg-[#f3f4f6] transition-colors"
-                >
-                  <Settings className="w-4 h-4 text-[#9ca3af]" />
-                  Settings
                 </Link>
                 <button
                   onClick={() => { setProfileOpen(false); handleLogout(); }}
@@ -340,6 +336,8 @@ export default function AppLayout({ children }: Props) {
         </header>
         <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
+
+      <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
   );
 }
