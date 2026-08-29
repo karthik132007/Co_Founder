@@ -6,13 +6,13 @@ import {
   LayoutDashboard, Bell, LogOut, Menu,
   ChevronRight, Sparkles, MessageSquare, HardDrive,
   Plus, Clock, Trash2, Loader2,
-  Puzzle, User, ChevronUp, Settings,
+  Puzzle, User, ChevronUp, Settings, CreditCard, Coins,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { clearSession, getSession, parseSessionUser, saveSession } from "@/lib/session";
-import { fetchChatSessions, deleteChatSession, fetchMe, logoutUser, type ChatSession } from "@/lib/api";
+import { fetchChatSessions, deleteChatSession, fetchMe, logoutUser, fetchProfile, fetchCreditBalance, type ChatSession } from "@/lib/api";
 
 const ACCENT = "#4f46e5";
 
@@ -31,6 +31,7 @@ export default function AppLayout({ children }: Props) {
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [deletingSession, setDeletingSession] = useState<string | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [credits, setCredits] = useState<number | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const userId = session?.user?.id;
 
@@ -40,6 +41,32 @@ export default function AppLayout({ children }: Props) {
   useEffect(() => {
     setHydrated(true);
   }, []);
+
+  // Load the company's available credits for the sidebar badge. Reloads on
+  // route change so the badge refreshes after visiting /billing.
+  const loadCredits = useCallback(async () => {
+    if (!userId) return;
+    try {
+      const profile = await fetchProfile(userId);
+      const data = await fetchCreditBalance(profile.company.id);
+      setCredits(data.balance);
+    } catch {
+      // Non-critical — badge simply stays hidden.
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    if (hydrated && userId) loadCredits();
+  }, [hydrated, userId, pathname, loadCredits]);
+
+  // Refresh the badge immediately when a payment adds credits on /billing
+  // (the billing page dispatches this after a successful verification).
+  useEffect(() => {
+    const onCreditsUpdated = () => loadCredits();
+    window.addEventListener("cofounder:credits-updated", onCreditsUpdated);
+    return () =>
+      window.removeEventListener("cofounder:credits-updated", onCreditsUpdated);
+  }, [loadCredits]);
 
   const navItems = [
     { label: "Overview", icon: LayoutDashboard, href: "/dashboard" },
@@ -225,6 +252,16 @@ export default function AppLayout({ children }: Props) {
 
         {/* User — click opens profile dropdown */}
         <div className={`p-3 border-t border-[#e5e7eb] relative ${sidebarCollapsed ? "lg:px-2.5" : ""}`}>
+          {/* Available credits — credits are currency-agnostic, show the count */}
+          <div className={`mb-2 flex items-center gap-2 rounded-lg bg-[#eef2ff] border border-[#4f46e5]/15 px-2.5 py-1.5 ${sidebarCollapsed ? "lg:justify-center" : ""}`}>
+            <Coins className="w-3.5 h-3.5 shrink-0" style={{ color: ACCENT }} />
+            <div className={`min-w-0 ${sidebarCollapsed ? "lg:hidden" : ""}`}>
+              <div className="text-[13px] font-semibold leading-tight" style={{ color: ACCENT }}>
+                {credits !== null ? credits.toLocaleString("en-IN") : "—"}
+              </div>
+              <div className="text-[10px] text-[#6b7280] leading-tight">credits</div>
+            </div>
+          </div>
           <button
             onClick={() => setProfileOpen(v => !v)}
             className={`w-full flex items-center gap-2.5 rounded-lg p-2 hover:bg-[#f3f4f6] transition-colors ${sidebarCollapsed ? "lg:justify-center lg:p-1.5" : ""}`}
@@ -251,6 +288,14 @@ export default function AppLayout({ children }: Props) {
                 <div className={`px-3 py-2 border-b border-[#f3f4f6] ${sidebarCollapsed ? "lg:hidden" : ""}`}>
                   <div className="text-[13px] font-medium text-[#0a0a0a] truncate">{session.user.email}</div>
                 </div>
+                <Link
+                  href="/billing"
+                  onClick={() => setProfileOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium text-[#374151] hover:bg-[#f3f4f6] transition-colors"
+                >
+                  <CreditCard className="w-4 h-4 text-[#9ca3af]" />
+                  Billing &amp; Credits
+                </Link>
                 <Link
                   href="/profile"
                   onClick={() => setProfileOpen(false)}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Settings as SettingsIcon, Bell, Shield, Palette, CreditCard, ChevronRight } from "lucide-react";
 
@@ -13,7 +14,17 @@ const TABS = [
 ];
 
 export default function SettingsPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("general");
+
+  const handleTabClick = (tabId: string) => {
+    if (tabId === "billing") {
+      // Billing is a dedicated page (checkout UI lives there).
+      router.push("/billing");
+      return;
+    }
+    setActiveTab(tabId);
+  };
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-5xl mx-auto">
@@ -31,7 +42,7 @@ export default function SettingsPage() {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => handleTabClick(tab.id)}
                   className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-[14px] font-medium transition-all duration-200 text-left ${
                     active ? "bg-[#eef2ff] text-[#4f46e5] shadow-sm ring-1 ring-[#4f46e5]/10" : "text-[#6b7280] hover:bg-white hover:shadow-sm hover:text-[#0a0a0a]"
                   }`}

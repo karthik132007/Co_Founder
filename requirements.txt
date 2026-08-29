@@ -18,6 +18,7 @@ tavily
 e2b-code-interpreter
 redis
 requests
+razorpay
 confluent_kafka
 pwdlib[argon2]
 uvicorn[standard]

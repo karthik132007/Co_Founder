@@ -62,6 +62,114 @@ export async function logoutUser(): Promise<void> {
   }
 }
 
+/* ── Credits / Billing ── */
+
+export type CreditBalanceResponse = {
+  company_id: number;
+  balance: number;
+};
+
+export type AddCreditsResponse = {
+  company_id: number;
+  amount: number;
+  balance: number;
+};
+
+/** Current credit balance for a company (1 credit = ₹1 of selling value). */
+export async function fetchCreditBalance(
+  companyId: number,
+): Promise<CreditBalanceResponse> {
+  const res = await fetch(`${API_BASE_URL}/credits/${companyId}`);
+  if (!res.ok) {
+    throw new Error(await readApiError(res, "Failed to load credit balance"));
+  }
+  return res.json() as Promise<CreditBalanceResponse>;
+}
+
+/**
+ * Add credits to a company. Meant to be called from the payments flow once a
+ * payment for `amount` succeeds — not wired up in the UI until checkout is
+ * implemented (see /billing page).
+ */
+export async function addCredits(
+  companyId: number,
+  amount: number,
+): Promise<AddCreditsResponse> {
+  const res = await fetch(`${API_BASE_URL}/credits/add`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ company_id: companyId, amount }),
+  });
+  if (!res.ok) {
+    throw new Error(await readApiError(res, "Failed to add credits"));
+  }
+  return res.json() as Promise<AddCreditsResponse>;
+}
+
+/* ── Payments (Razorpay) ── */
+
+export type CreateOrderResponse = {
+  order_id: string;
+  amount: number;
+  currency: string;
+};
+
+export type VerifyPaymentResponse = {
+  status: string;
+  amount: number;
+  balance: number;
+  duplicate?: boolean;
+};
+
+/** Create a Razorpay order for `amount` INR of credits for a company. */
+export async function createRazorpayOrder(
+  companyId: number,
+  userId: number,
+  amount: number,
+): Promise<CreateOrderResponse> {
+  const res = await fetch(`${API_BASE_URL}/payments/create-order`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({
+      user_id: userId,
+      company_id: companyId,
+      amount,
+      currency: "INR",
+    }),
+  });
+  if (!res.ok) {
+    throw new Error(await readApiError(res, "Failed to create payment order"));
+  }
+  return res.json() as Promise<CreateOrderResponse>;
+}
+
+/** Verify the Razorpay signature after a successful checkout. */
+export async function verifyRazorpayPayment(
+  companyId: number,
+  userId: number,
+  payload: {
+    razorpay_payment_id: string;
+    razorpay_order_id: string;
+    razorpay_signature: string;
+  },
+): Promise<VerifyPaymentResponse> {
+  const res = await fetch(`${API_BASE_URL}/payments/verify-payment`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({
+      user_id: userId,
+      company_id: companyId,
+      ...payload,
+    }),
+  });
+  if (!res.ok) {
+    throw new Error(await readApiError(res, "Failed to verify payment"));
+  }
+  return res.json() as Promise<VerifyPaymentResponse>;
+}
+
 /* ── Dashboard ── */
 
 export type CompanyInfo = {
