@@ -28,6 +28,7 @@ from razorpay.errors import BadRequestError
 
 from backend.db.credits import add_credits, get_company_credits
 from backend.db.get_from_sql import get_company_id
+from backend.db.payment_history import create_payment_history
 from backend.security import verify_session_token
 
 logger = logging.getLogger(__name__)
@@ -184,6 +185,11 @@ def verify_payment(req: VerifyPaymentRequest, request: Request):
             "Payment signature mismatch order_id=%s payment_id=%s",
             req.razorpay_order_id, req.razorpay_payment_id,
         )
+        # Record the failed attempt so it shows up in payment history.
+        try:
+            create_payment_history(req.company_id, 0, status="failed")
+        except Exception:
+            logger.exception("Failed to record failed payment for company_id=%s", req.company_id)
         raise HTTPException(status_code=400, detail="Payment signature verification failed")
 
     # 2. Idempotency guard: a payment id is credited exactly once.
@@ -226,6 +232,12 @@ def verify_payment(req: VerifyPaymentRequest, request: Request):
     except Exception as e:
         logger.exception("Failed to add credits company_id=%s", req.company_id)
         raise HTTPException(status_code=500, detail="Payment verified but failed to add credits") from e
+
+    # 5. Record the completed payment in payment_history (invoice-style list).
+    try:
+        create_payment_history(req.company_id, amount_inr, status="completed")
+    except Exception:
+        logger.exception("Failed to record payment_history for company_id=%s", req.company_id)
 
     logger.info(
         "Payment verified & credited company_id=%s payment_id=%s amount_inr=%s",

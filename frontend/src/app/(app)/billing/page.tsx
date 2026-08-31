@@ -3,17 +3,28 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
-  Wallet,
-  Loader2,
-  CircleAlert,
+  ArrowUpRight,
   CheckCircle2,
+  CircleAlert,
+  Coins,
+  CreditCard,
+  Loader2,
+  ReceiptText,
+  ShieldCheck,
+  Sparkles,
+  Info,
+  History,
+  TrendingUp,
 } from "lucide-react";
 import { getSession } from "@/lib/session";
 import {
-  fetchProfile,
-  fetchCreditBalance,
   createRazorpayOrder,
+  fetchCreditBalance,
+  fetchPaymentHistory,
+  fetchProfile,
   verifyRazorpayPayment,
+  type PaymentHistoryEntry,
+  type PaymentStatus,
 } from "@/lib/api";
 
 const ACCENT = "#4f46e5";
@@ -74,58 +85,153 @@ function loadRazorpayCheckoutScript(): Promise<void> {
   return checkoutScriptPromise;
 }
 
-const CREDIT_PACKS = [
-  { amount: 500, label: "Starter" },
-  { amount: 1000, label: "Growth" },
-  { amount: 2500, label: "Scale" },
-  { amount: 5000, label: "Business" },
-];
+const formatINR = (credits: number) =>
+  credits.toLocaleString("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 2,
+  });
 
-// Display-only conversion rate used to show credit prices in USD
-// (credits are stored in INR — 1 credit = ₹1).
-const USD_INR_RATE = 83;
+const formatDate = (iso: string) => {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
 
-const formatMoney = (credits: number, currency: "INR" | "USD") =>
-  currency === "INR"
-    ? credits.toLocaleString("en-IN", {
-        style: "currency",
-        currency: "INR",
-        maximumFractionDigits: 2,
-      })
-    : (credits / USD_INR_RATE).toLocaleString("en-US", {
-        style: "currency",
-        currency: "USD",
-        maximumFractionDigits: 2,
-      });
+const STATUS_META: Record<
+  PaymentStatus,
+  { label: string; type: string; badge: string; dot: string }
+> = {
+  completed: {
+    label: "Completed",
+    type: "Credits purchased",
+    badge: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    dot: "bg-emerald-500",
+  },
+  pending: {
+    label: "Pending",
+    type: "Pending payment",
+    badge: "bg-amber-50 text-amber-700 border-amber-200",
+    dot: "bg-amber-500",
+  },
+  failed: {
+    label: "Failed",
+    type: "Failed payment",
+    badge: "bg-red-50 text-red-600 border-red-200",
+    dot: "bg-red-500",
+  },
+  refunded: {
+    label: "Refunded",
+    type: "Refund",
+    badge: "bg-zinc-100 text-zinc-600 border-zinc-200",
+    dot: "bg-zinc-400",
+  },
+};
+
+const AMOUNT_PRESETS = [100, 250, 500, 1000, 2500];
 
 export default function BillingPage() {
   const session = getSession();
   const userId = session?.user?.id;
   const [balance, setBalance] = useState<number | null>(null);
+  const [history, setHistory] = useState<PaymentHistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [historyLoading, setHistoryLoading] = useState(true);
   const [error, setError] = useState("");
-  const [selectedPack, setSelectedPack] = useState<number | null>(null);
+  const [notice, setNotice] = useState<{
+    type: "error" | "success" | "info";
+    text: string;
+  } | null>(null);
   const [customAmount, setCustomAmount] = useState("");
   const [currency, setCurrency] = useState<"INR" | "USD">("INR");
+  const [usdInrRate, setUsdInrRate] = useState<number>(83);
+  const [rateLoading, setRateLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
-  const [notice, setNotice] = useState<
-    { type: "error" | "success"; text: string } | null
-  >(null);
   const razorpayRef = useRef<RazorpayInstance | null>(null);
+
+  const formatUSD = useCallback(
+    (credits: number) =>
+      (credits / usdInrRate).toLocaleString("en-US", {
+        style: "currency",
+        currency: "USD",
+        maximumFractionDigits: 2,
+      }),
+    [usdInrRate],
+  );
 
   // Close an open Razorpay modal if the user navigates away mid-checkout.
   useEffect(() => {
     return () => razorpayRef.current?.close?.();
   }, []);
 
-  const loadBalance = useCallback(async () => {
+  // Fetch realtime USD→INR rate (credits are stored as INR). Falls back to 83 if fetch fails.
+  useEffect(() => {
+    let cancelled = false;
+    const fetchRate = async () => {
+      try {
+        setRateLoading(true);
+        const res = await fetch("https://api.frankfurter.app/latest?from=USD&to=INR");
+        if (res.ok) {
+          const data = await res.json();
+          const rate = data?.rates?.INR;
+          if (typeof rate === "number" && rate > 0 && !cancelled) {
+            setUsdInrRate(rate);
+            setRateLoading(false);
+            return;
+          }
+        }
+        throw new Error("frankfurter failed");
+      } catch {
+        try {
+          const res2 = await fetch("https://api.exchangerate-api.com/v4/latest/USD");
+          if (res2.ok) {
+            const data2 = await res2.json();
+            const rate2 = data2?.rates?.INR;
+            if (typeof rate2 === "number" && rate2 > 0 && !cancelled) {
+              setUsdInrRate(rate2);
+              setRateLoading(false);
+              return;
+            }
+          }
+          throw new Error("exchangerate-api failed");
+        } catch {
+          try {
+            const res3 = await fetch(
+              "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json",
+            );
+            if (res3.ok) {
+              const data3 = await res3.json();
+              const rate3 = data3?.usd?.inr;
+              if (typeof rate3 === "number" && rate3 > 0 && !cancelled) {
+                setUsdInrRate(rate3);
+              }
+            }
+          } catch {
+            // keep fallback 83
+          }
+          if (!cancelled) setRateLoading(false);
+        }
+      }
+    };
+    fetchRate();
+    const interval = setInterval(fetchRate, 1000 * 60 * 60);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, []);
+
+  const loadAll = useCallback(async () => {
     if (!userId) return;
-    setLoading(true);
-    setError("");
     try {
       const profile = await fetchProfile(userId);
       const data = await fetchCreditBalance(profile.company.id);
       setBalance(data.balance);
+      setError("");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load credit balance");
     } finally {
@@ -133,27 +239,40 @@ export default function BillingPage() {
     }
   }, [userId]);
 
+  const loadHistory = useCallback(async () => {
+    if (!userId) return;
+    try {
+      const profile = await fetchProfile(userId);
+      const res = await fetchPaymentHistory(profile.company.id);
+      setHistory(res.payments);
+    } catch {
+      // Non-critical — the table simply stays empty.
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [userId]);
+
   useEffect(() => {
-    loadBalance();
-  }, [loadBalance]);
+    loadAll();
+    loadHistory();
+  }, [loadAll, loadHistory]);
 
   if (!session || !userId) return null;
 
-  // Credits are stored in INR (1 credit = ₹1). When USD is selected, the
-  // custom amount entered is converted to credits at the display rate.
-  const amount = customAmount.trim()
-    ? currency === "INR"
-      ? Number(customAmount)
-      : Number(customAmount) * USD_INR_RATE
-    : selectedPack;
+  const rawAmount = customAmount.trim() ? Number(customAmount) : null;
+  const amount =
+    rawAmount !== null && Number.isFinite(rawAmount) && rawAmount > 0
+      ? currency === "INR"
+        ? rawAmount
+        : Math.round(rawAmount * usdInrRate)
+      : null;
   const canCheckout =
     typeof amount === "number" && Number.isFinite(amount) && amount > 0;
 
-  const handlePackClick = (packAmount: number) => {
-    setSelectedPack(packAmount);
-    setCustomAmount("");
-    setNotice(null);
-  };
+  const totalPurchased = history
+    .filter((p) => p.status === "completed")
+    .reduce((acc, p) => acc + Number(p.amount || 0), 0);
+  const totalTransactions = history.length;
 
   const handleCheckout = async () => {
     if (!canCheckout || processing || !userId) return;
@@ -172,11 +291,7 @@ export default function BillingPage() {
       const companyId = profile.company.id;
 
       // 1. Create a Razorpay order on the FastAPI backend.
-      const order = await createRazorpayOrder(
-        companyId,
-        userId,
-        amount as number,
-      );
+      const order = await createRazorpayOrder(companyId, userId, amount as number);
 
       // 2. Load checkout.js and open the Razorpay payment modal.
       await loadRazorpayCheckoutScript();
@@ -192,7 +307,7 @@ export default function BillingPage() {
         amount: order.amount, // paise, exactly as created by the backend
         currency: order.currency,
         name: "Co-Founder",
-        description: `Top-up of ${formatMoney(order.amount / 100, "INR")} credits`,
+        description: `Top-up of ${formatINR(order.amount / 100)} credits`,
         order_id: order.order_id,
         prefill: {
           name: session.user.name || undefined,
@@ -212,14 +327,13 @@ export default function BillingPage() {
               type: "success",
               text: verified.duplicate
                 ? "This payment was already applied — balance refreshed."
-                : `Payment successful! ${formatMoney(
+                : `Payment successful! ${formatINR(
                     verified.amount,
-                    "INR",
                   )} credits added to your balance.`,
             });
-            setSelectedPack(null);
             setCustomAmount("");
-            await loadBalance();
+            await loadAll();
+            loadHistory();
             // Keep the sidebar badge in sync with the new balance.
             window.dispatchEvent(new Event("cofounder:credits-updated"));
           } catch (e) {
@@ -230,8 +344,9 @@ export default function BillingPage() {
                   ? e.message
                   : "Payment was received but couldn't be verified — please contact support.",
             });
-            await loadBalance();            // Payment may have been credited server-side — refresh the badge too.
-            window.dispatchEvent(new Event("cofounder:credits-updated"));          } finally {
+            await loadAll();
+            window.dispatchEvent(new Event("cofounder:credits-updated"));
+          } finally {
             setProcessing(false);
           }
         },
@@ -272,172 +387,535 @@ export default function BillingPage() {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="space-y-6 max-w-3xl"
-    >
+    <div className="space-y-6">
+      {/* ── Page header — left aligned like dashboard ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="flex flex-col lg:flex-row lg:items-end justify-between gap-4"
+      >
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-[28px] font-semibold tracking-tight text-[#0a0a0a]">
+              Billing
+            </h1>
+            <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-[#eef2ff] border border-[#c7d2fe] px-2.5 py-0.5 text-[11px] font-semibold text-[#4338ca]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#4f46e5] animate-pulse" />
+              Live
+            </span>
+          </div>
+          <p className="mt-1.5 text-[13.5px] text-[#6b7280] max-w-[560px] leading-relaxed">
+            Manage credits, top up your balance and review every invoice.
+            <span className="hidden sm:inline"> Secure payments powered by Razorpay.</span>
+          </p>
+        </div>
+        <div className="flex flex-col items-end gap-1.5 shrink-0">
+          <div className="inline-flex rounded-full border border-[#e5e7eb] bg-white p-1 shadow-sm">
+            <button
+              type="button"
+              onClick={() => setCurrency("INR")}
+              className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                currency === "INR"
+                  ? "bg-[#0a0a0a] text-white shadow"
+                  : "text-[#6b7280] hover:text-[#0a0a0a]"
+              }`}
+              aria-pressed={currency === "INR"}
+            >
+              INR ₹
+            </button>
+            <button
+              type="button"
+              onClick={() => setCurrency("USD")}
+              className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                currency === "USD"
+                  ? "bg-[#0a0a0a] text-white shadow"
+                  : "text-[#6b7280] hover:text-[#0a0a0a]"
+              }`}
+              aria-pressed={currency === "USD"}
+            >
+              USD $
+            </button>
+          </div>
+          <span className="text-[11px] text-[#9ca3af] font-medium flex items-center gap-1">
+            {rateLoading ? (
+              <>
+                <Loader2 className="w-3 h-3 animate-spin" /> fetching live rate…
+              </>
+            ) : (
+              <>1 USD ≈ {formatINR(usdInrRate)} • live</>
+            )}
+          </span>
+        </div>
+      </motion.div>
+
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-[13px] font-medium text-red-600">
-          {error}{" "}
-          <button onClick={() => setError("")} className="ml-3 underline">
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center justify-between gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-[13px] font-medium text-red-600"
+        >
+          <span className="flex items-center gap-2.5">
+            <CircleAlert className="w-4 h-4 shrink-0" />
+            {error}
+          </span>
+          <button onClick={() => setError("")} className="underline shrink-0 text-xs">
             Dismiss
           </button>
-        </div>
+        </motion.div>
       )}
 
-      <div>
-        <h2 className="text-lg font-semibold text-[#0a0a0a]">
-          Billing &amp; Credits
-        </h2>
-        <p className="text-sm text-[#6b7280] mt-0.5">
-          Top up credits to keep your AI team running.
-        </p>
-      </div>
+      {notice && (
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`flex items-start gap-2.5 rounded-xl border px-4 py-3 text-[13px] ${
+            notice.type === "success"
+              ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+              : notice.type === "info"
+                ? "border-[#c7d2fe] bg-[#eef2ff] text-[#4338ca]"
+                : "border-amber-200 bg-amber-50 text-amber-800"
+          }`}
+        >
+          {notice.type === "success" ? (
+            <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
+          ) : (
+            <CircleAlert className="w-4 h-4 mt-0.5 shrink-0" />
+          )}
+          <span className="flex-1 leading-relaxed">{notice.text}</span>
+          <button
+            onClick={() => setNotice(null)}
+            className="text-xs underline opacity-70 hover:opacity-100 shrink-0 mt-0.5"
+          >
+            Dismiss
+          </button>
+        </motion.div>
+      )}
 
       {loading ? (
         <div className="flex items-center justify-center py-24">
           <Loader2 className="h-6 w-6 animate-spin" style={{ color: ACCENT }} />
         </div>
       ) : (
-        <div className="space-y-6">
-          {/* Balance */}
-          <div className="card p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-[#eef2ff] flex items-center justify-center">
-                  <Wallet className="w-4 h-4" style={{ color: ACCENT }} />
+        <>
+          {/* ── Stats strip ── */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Balance — hero card */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35 }}
+              className="card p-5 relative overflow-hidden group"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-[#eef2ff]/70 via-transparent to-transparent opacity-60 pointer-events-none" />
+              <div className="relative">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-[#9ca3af]">
+                    Available balance
+                  </span>
+                  <span className="w-8 h-8 rounded-lg bg-[#eef2ff] flex items-center justify-center">
+                    <Coins className="w-4 h-4" style={{ color: ACCENT }} />
+                  </span>
                 </div>
-                <div>
-                  <div className="text-[11px] font-medium text-[#9ca3af] uppercase tracking-wider">
-                    Current balance
-                  </div>
-                  <div className="mt-0.5 text-2xl font-semibold text-[#0a0a0a]">
-                    {balance !== null ? formatMoney(balance, currency) : "—"}
-                  </div>
+                <div className="mt-3 flex items-baseline gap-2 flex-wrap">
+                  <span className="text-[30px] font-bold tracking-tight text-[#0a0a0a]">
+                    {balance !== null ? (currency === "INR" ? formatINR(balance) : formatUSD(balance)) : "—"}
+                  </span>
+                  {balance !== null && balance > 0 && (
+                    <span className="text-[12px] font-medium text-[#9ca3af] bg-[#f9fafb] border border-[#f3f4f6] rounded-full px-2 py-0.5">
+                      ≈ {currency === "INR" ? formatUSD(balance) : formatINR(balance)}
+                    </span>
+                  )}
                 </div>
+                <p className="mt-2 text-[12px] text-[#6b7280] flex items-center gap-1.5">
+                  <Sparkles className="w-3 h-3 text-[#9ca3af]" />
+                  Credits never expire • used per AI request
+                </p>
               </div>
+            </motion.div>
 
-              {/* Currency toggle */}
-              <div className="inline-flex items-center rounded-lg border border-[#e5e7eb] bg-white p-0.5">
-                {(["INR", "USD"] as const).map((cur) => (
-                  <button
-                    key={cur}
-                    type="button"
-                    onClick={() => setCurrency(cur)}
-                    className={`px-3 py-1.5 rounded-md text-[12px] font-semibold transition-all ${
-                      currency === cur
-                        ? "bg-[#0a0a0a] text-white"
-                        : "text-[#6b7280] hover:text-[#0a0a0a]"
-                    }`}
-                  >
-                    {cur === "INR" ? "₹ INR" : "$ USD"}
-                  </button>
-                ))}
+            {/* Total purchased */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: 0.05 }}
+              className="card p-5"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-[#9ca3af]">
+                  Total purchased
+                </span>
+                <span className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4 text-emerald-600" />
+                </span>
               </div>
-            </div>
-          </div>
-
-          {/* Packs */}
-          <div className="card p-6">
-            <h3 className="text-[15px] font-semibold text-[#0a0a0a] mb-4">
-              Choose a pack
-            </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {CREDIT_PACKS.map((pack) => {
-                const active = selectedPack === pack.amount;
-                return (
-                  <button
-                    key={pack.amount}
-                    type="button"
-                    onClick={() => handlePackClick(pack.amount)}
-                    className={`rounded-xl border p-4 text-left transition-all ${
-                      active
-                        ? "border-[#4f46e5] bg-[#eef2ff] shadow-sm"
-                        : "border-[#e5e7eb] bg-white hover:border-[#c7d2fe] hover:shadow-sm"
-                    }`}
-                  >
-                    <div
-                      className={`text-[13px] font-semibold ${
-                        active ? "text-[#4f46e5]" : "text-[#0a0a0a]"
-                      }`}
-                    >
-                      {pack.label}
-                    </div>
-                    <div className="text-[13px] text-[#6b7280] mt-0.5">
-                      {formatMoney(pack.amount, currency)}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Custom + checkout */}
-          <div className="card p-6">
-            <h3 className="text-[15px] font-semibold text-[#0a0a0a] mb-4">
-              Add credits
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
-              <div className="space-y-1.5">
-                <label
-                  htmlFor="custom-credits"
-                  className="text-[13px] font-semibold text-[#374151]"
-                >
-                  Custom amount
-                </label>
-                <input
-                  id="custom-credits"
-                  type="number"
-                  min="1"
-                  inputMode="numeric"
-                  value={customAmount}
-                  onChange={(e) => {
-                    setCustomAmount(e.target.value);
-                    setSelectedPack(null);
-                    setNotice(null);
+              <div className="mt-3 text-[22px] font-semibold tracking-tight text-[#0a0a0a]">
+                {currency === "INR" ? formatINR(totalPurchased) : formatUSD(totalPurchased)}
+              </div>
+              <p className="mt-1 text-[12px] text-[#6b7280]">
+                Lifetime credits bought
+                <span className="text-[#9ca3af]"> • ≈ {currency === "INR" ? formatUSD(totalPurchased) : formatINR(totalPurchased)}</span>
+              </p>
+              <div className="mt-3 h-1.5 w-full rounded-full bg-[#f3f4f6] overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all"
+                  style={{
+                    width: `${Math.min(100, (totalPurchased / 5000) * 100)}%`,
+                    background: ACCENT,
                   }}
-                  placeholder={currency === "INR" ? "Enter amount in ₹" : "Enter amount in $"}
-                  className="input px-3.5 py-2.5 text-[14px]"
                 />
               </div>
+            </motion.div>
+
+            {/* Invoices */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: 0.1 }}
+              className="card p-5"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-[#9ca3af]">
+                  Invoices
+                </span>
+                <span className="w-8 h-8 rounded-lg bg-[#fafafa] border border-[#e5e7eb] flex items-center justify-center">
+                  <History className="w-4 h-4 text-[#6b7280]" />
+                </span>
+              </div>
+              <div className="mt-3 flex items-baseline gap-2">
+                <span className="text-[22px] font-semibold tracking-tight text-[#0a0a0a]">
+                  {totalTransactions}
+                </span>
+                <span className="text-xs text-[#9ca3af] font-medium">
+                  {totalTransactions === 1 ? "transaction" : "transactions"}
+                </span>
+              </div>
+              <p className="mt-1 text-[12px] text-[#6b7280]">
+                {history.filter((h) => h.status === "completed").length} completed •{" "}
+                {history.filter((h) => h.status === "failed").length} failed
+              </p>
               <button
-                type="button"
-                disabled={!canCheckout || processing}
-                onClick={handleCheckout}
-                className="btn-primary w-full py-3 text-[14px] disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+                onClick={() => document.getElementById("invoice-history")?.scrollIntoView({ behavior: "smooth" })}
+                className="mt-3 inline-flex items-center gap-1 text-[12px] font-semibold hover:underline"
+                style={{ color: ACCENT }}
               >
-                {processing ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Processing…
-                  </>
-                ) : canCheckout ? (
-                  `Add ${formatMoney(amount as number, currency)} credits`
-                ) : (
-                  "Add credits"
-                )}
+                View history <ArrowUpRight className="w-3 h-3" />
               </button>
-            </div>
-            {notice && (
-              <div
-                className={`mt-4 flex items-start gap-2.5 rounded-xl border px-3.5 py-3 text-[13px] ${
-                  notice.type === "success"
-                    ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                    : "border-amber-200 bg-amber-50 text-amber-800"
-                }`}
+            </motion.div>
+          </div>
+
+          {/* ── Main grid: buy + summary ── */}
+          <div className="grid grid-cols-1 lg:grid-cols-[1.65fr_0.9fr] gap-6 items-start">
+            {/* Buy credits */}
+            <motion.section
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: 0.12 }}
+              className="card overflow-hidden"
+            >
+              <div className="px-6 sm:px-8 pt-6 sm:pt-7">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h2 className="text-[15px] font-semibold text-[#0a0a0a]">Buy credits</h2>
+                    <p className="mt-1 text-[13px] text-[#6b7280]">
+                      Choose a preset or enter a custom amount. You’ll be charged in INR{currency === "USD" ? " (USD shown for reference)" : ""}.
+                    </p>
+                  </div>
+                  <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-[#e5e7eb] bg-[#fafafa] px-2.5 py-1 text-[11px] font-medium text-[#6b7280]">
+                    <Info className="w-3 h-3" /> Minimum ₹1
+                  </span>
+                </div>
+
+                {/* Presets */}
+                <div className="mt-6 grid grid-cols-3 sm:grid-cols-5 gap-2">
+                  {AMOUNT_PRESETS.map((chip) => {
+                    const active = amount === chip;
+                    const label = currency === "INR" ? `₹${chip.toLocaleString("en-IN")}` : formatUSD(chip);
+                    return (
+                      <button
+                        key={chip}
+                        type="button"
+                        onClick={() => {
+                          setCustomAmount(currency === "INR" ? String(chip) : (chip / usdInrRate).toFixed(2));
+                          setNotice(null);
+                        }}
+                        className={`group relative rounded-xl border px-3 py-3 text-center transition-all ${
+                          active
+                            ? "border-[#0a0a0a] bg-[#0a0a0a] text-white shadow-[0_4px_14px_rgba(0,0,0,0.2)]"
+                            : "border-[#e5e7eb] bg-white text-[#0a0a0a] hover:border-[#c7d2fe] hover:bg-[#eef2ff]/50"
+                        }`}
+                      >
+                        <div className={`text-[15px] font-bold leading-none ${active ? "text-white" : "text-[#0a0a0a]"}`}>
+                          {label}
+                        </div>
+                        <div className={`mt-1 text-[10px] font-medium ${active ? "text-white/60" : "text-[#9ca3af]"}`}>
+                          {chip} credits
+                        </div>
+                        {active && (
+                          <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-white border border-[#0a0a0a] flex items-center justify-center">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-[#0a0a0a]" />
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Custom input */}
+                <div className="mt-6">
+                  <label
+                    htmlFor="buy-custom-credits"
+                    className="text-[12px] font-semibold text-[#374151] flex items-center gap-1.5"
+                  >
+                    Custom amount
+                    <span className="font-normal text-[#9ca3af]">({currency})</span>
+                  </label>
+                  <div className="relative mt-2">
+                    <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[14px] font-semibold text-[#6b7280]">
+                      {currency === "INR" ? "₹" : "$"}
+                    </span>
+                    <input
+                      id="buy-custom-credits"
+                      type="number"
+                      min="1"
+                      inputMode="decimal"
+                      step={currency === "INR" ? "1" : "0.01"}
+                      value={customAmount}
+                      onChange={(e) => {
+                        setCustomAmount(e.target.value);
+                        setNotice(null);
+                      }}
+                      placeholder={currency === "INR" ? "Enter amount e.g. 750" : "Enter amount e.g. 9.00"}
+                      className="input pl-8 pr-28 py-3 text-[14px] font-medium"
+                    />
+                    {canCheckout && (
+                      <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-[#eef2ff] border border-[#c7d2fe] px-2.5 py-1 text-[11px] font-semibold text-[#4338ca]">
+                        ≈ {currency === "INR" ? formatUSD(amount as number) : formatINR(amount as number)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Mobile summary + CTA (visible only on small screens) */}
+              <div className="lg:hidden px-6 sm:px-8 pb-6 pt-5">
+                <div className="rounded-xl bg-[#0a0a0a] text-white p-4 flex items-center justify-between">
+                  <div>
+                    <div className="text-[11px] font-medium text-white/60 uppercase tracking-wider">Total due today</div>
+                    <div className="mt-1 text-xl font-bold">{canCheckout ? (currency === "INR" ? formatINR(amount as number) : formatUSD(amount as number)) : "—"}</div>
+                    {canCheckout && <div className="text-[11px] text-white/60">≈ {currency === "INR" ? formatUSD(amount as number) : formatINR(amount as number)} • {amount} credits</div>}
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[11px] text-white/60">New balance</div>
+                    <div className="text-sm font-semibold">
+                      {canCheckout && balance !== null ? (currency === "INR" ? formatINR(balance + (amount as number)) : formatUSD(balance + (amount as number))) : "—"}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  disabled={!canCheckout || processing}
+                  onClick={handleCheckout}
+                  className="btn-accent w-full mt-4 py-3.5 text-[14px] disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {processing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Processing…
+                    </>
+                  ) : canCheckout ? (
+                    <>
+                      <CreditCard className="w-4 h-4" />
+                      Pay {currency === "INR" ? formatINR(amount as number) : formatUSD(amount as number)}
+                    </>
+                  ) : (
+                    "Select an amount"
+                  )}
+                </button>
+                <p className="mt-2 text-center text-[11px] text-[#9ca3af]">Secure checkout via Razorpay — UPI, Cards, Netbanking, Wallets</p>
+              </div>
+
+              {/* Desktop footer bar inside card */}
+              <div className="hidden lg:flex items-center gap-1.5 border-t border-[#f3f4f6] bg-[#fafafa]/60 px-8 py-4 text-[11px] text-[#9ca3af]">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                Payments are encrypted. We never store card details.
+              </div>
+            </motion.section>
+
+            {/* Right rail: order summary + trust */}
+            <div className="space-y-4 lg:sticky lg:top-6">
+              {/* Order summary — primary CTA on desktop */}
+              <motion.section
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: 0.16 }}
+                className="card overflow-hidden"
               >
-                {notice.type === "success" ? (
-                  <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
-                ) : (
-                  <CircleAlert className="w-4 h-4 mt-0.5 shrink-0" />
-                )}
-                {notice.text}
+                <div className="p-6">
+                  <h3 className="text-[13px] font-semibold text-[#0a0a0a]">Order summary</h3>
+                  <div className="mt-4 space-y-3 text-[13px]">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[#6b7280]">Credits</span>
+                      <span className="font-semibold text-[#0a0a0a]">{canCheckout ? `${(amount as number).toLocaleString("en-IN")} credits` : "—"}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[#6b7280]">Amount ({currency})</span>
+                      <span className="font-semibold text-[#0a0a0a]">{canCheckout ? (currency === "INR" ? formatINR(amount as number) : formatUSD(amount as number)) : "—"}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[#6b7280]">Approx. {currency === "INR" ? "USD" : "INR"}</span>
+                      <span className="font-medium text-[#6b7280]">{canCheckout ? (currency === "INR" ? formatUSD(amount as number) : formatINR(amount as number)) : "—"}</span>
+                    </div>
+                    <div className="h-px bg-[#f3f4f6]" />
+                    <div className="flex items-center justify-between">
+                      <span className="text-[13px] font-semibold text-[#0a0a0a]">Total due today</span>
+                      <span className="text-lg font-bold text-[#0a0a0a]">{canCheckout ? (currency === "INR" ? formatINR(amount as number) : formatUSD(amount as number)) : "—"}</span>
+                    </div>
+                    {canCheckout && balance !== null && (
+                      <div className="rounded-lg bg-[#eef2ff] border border-[#c7d2fe] px-3 py-2 flex items-center justify-between">
+                        <span className="text-[11px] font-medium text-[#4338ca]">New balance after top-up</span>
+                        <span className="text-[13px] font-bold text-[#4338ca]">{currency === "INR" ? formatINR(balance + (amount as number)) : formatUSD(balance + (amount as number))}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={!canCheckout || processing}
+                    onClick={handleCheckout}
+                    className="btn-accent w-full mt-5 py-3 text-[14px] disabled:opacity-40 disabled:cursor-not-allowed hidden lg:inline-flex"
+                  >
+                    {processing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Processing…
+                      </>
+                    ) : canCheckout ? (
+                      <>
+                        <CreditCard className="w-4 h-4" />
+                        Pay {currency === "INR" ? formatINR(amount as number) : formatUSD(amount as number)}
+                      </>
+                    ) : (
+                      "Select an amount"
+                    )}
+                  </button>
+                  <p className="hidden lg:block mt-2 text-center text-[11px] text-[#9ca3af]">
+                    You’ll be redirected to Razorpay’s secure checkout.
+                  </p>
+                </div>
+                <div className="border-t border-[#f3f4f6] bg-[#fafafa] px-6 py-3 flex items-center justify-between">
+                  <span className="text-[11px] font-medium text-[#6b7280]">Questions?</span>
+                  <a href="mailto:support@cofounder.ai" className="text-[11px] font-semibold hover:underline" style={{ color: ACCENT }}>
+                    Contact support →
+                  </a>
+                </div>
+              </motion.section>
+
+
+            </div>
+          </div>
+
+          {/* ── Invoice history — full width ── */}
+          <motion.section
+            id="invoice-history"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.22 }}
+            className="card overflow-hidden"
+          >
+            <div className="px-6 sm:px-7 pt-6 pb-4">
+              <h2 className="text-[15px] font-semibold text-[#0a0a0a] flex items-center gap-2">
+                <ReceiptText className="w-4 h-4 text-[#9ca3af]" />
+                Invoice history
+              </h2>
+              <p className="mt-1 text-[13px] text-[#6b7280]">
+                Invoices are issued when credits are purchased. Dates are in your local timezone.
+              </p>
+            </div>
+
+            {historyLoading ? (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="h-5 w-5 animate-spin" style={{ color: ACCENT }} />
+              </div>
+            ) : history.length === 0 ? (
+              <div className="text-center py-14 px-6 border-t border-[#f3f4f6]">
+                <div className="mx-auto mb-3 w-12 h-12 rounded-2xl bg-[#fafafa] border border-[#e5e7eb] flex items-center justify-center">
+                  <ReceiptText className="w-5 h-5 text-[#d4d4d8]" />
+                </div>
+                <p className="text-sm font-medium text-[#0a0a0a]">No payments yet</p>
+                <p className="mt-1 text-[13px] text-[#9ca3af] max-w-sm mx-auto">
+                  Your first credit purchase will show up here with its invoice, status and amount.
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto border-t border-[#f3f4f6]">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="bg-[#fafafa] border-b border-[#f3f4f6]">
+                      {["Date", "Invoice type", "Status", "Cost"].map((h, i) => (
+                        <th
+                          key={h}
+                          className={`px-6 sm:px-7 py-3 text-[11px] font-semibold uppercase tracking-wider text-[#9ca3af] whitespace-nowrap ${
+                            i >= 3 ? "text-right" : ""
+                          }`}
+                        >
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#f3f4f6]">
+                    {history.map((p) => {
+                      const meta = STATUS_META[p.status] ?? STATUS_META.pending;
+                      const cost = Number(p.amount);
+                      return (
+                        <tr key={p.id} className="hover:bg-[#fafafa]/70 transition-colors">
+                          <td className="px-6 sm:px-7 py-3.5 text-[13px] font-medium text-[#0a0a0a] whitespace-nowrap">
+                            {formatDate(p.payment_date)}
+                          </td>
+                          <td className="px-6 sm:px-7 py-3.5 text-[13px] text-[#374151]">
+                            <span className="inline-flex items-center gap-1.5">
+                              <span className="w-6 h-6 rounded-md bg-[#eef2ff] border border-[#e5e7eb] hidden sm:inline-flex items-center justify-center">
+                                <Coins className="w-3 h-3" style={{ color: ACCENT }} />
+                              </span>
+                              {meta.type}
+                            </span>
+                          </td>
+                          <td className="px-6 sm:px-7 py-3.5">
+                            <span
+                              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[12px] font-medium whitespace-nowrap ${meta.badge}`}
+                            >
+                              <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
+                              {meta.label}
+                            </span>
+                          </td>
+                          <td className="px-6 sm:px-7 py-3.5 text-right text-[13px] font-semibold text-[#0a0a0a] whitespace-nowrap">
+                            {cost > 0 ? (currency === "INR" ? formatINR(cost) : formatUSD(cost)) : "—"}
+                            {cost > 0 && (
+                              <span className="ml-1.5 hidden sm:inline text-[11px] font-normal text-[#9ca3af]">
+                                ≈ {currency === "INR" ? formatUSD(cost) : formatINR(cost)}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             )}
-          </div>
-        </div>
+
+            {/* Bottom trust strip inside history card */}
+            <div className="border-t border-[#f3f4f6] bg-[#fafafa]/60 px-6 sm:px-7 py-3 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-[#9ca3af]">
+              <span className="flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                All payments are processed securely by Razorpay. Invoices are final.
+              </span>
+              <span className="font-medium text-[#6b7280]">Need a GST invoice? Contact support.</span>
+            </div>
+          </motion.section>
+        </>
       )}
-    </motion.div>
+    </div>
   );
 }

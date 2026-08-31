@@ -170,6 +170,47 @@ export async function verifyRazorpayPayment(
   return res.json() as Promise<VerifyPaymentResponse>;
 }
 
+/* ── Payment history ── */
+
+export type PaymentStatus = "pending" | "completed" | "failed" | "refunded";
+
+export type PaymentHistoryEntry = {
+  id: number;
+  company_id: number;
+  amount: number | string;
+  status: PaymentStatus;
+  payment_date: string;
+  created_at: string;
+};
+
+export type PaymentHistoryResponse = {
+  payments: PaymentHistoryEntry[];
+  total: number;
+  limit: number;
+  offset: number;
+};
+
+/** List a company's payment history (invoice-style), newest first. */
+export async function fetchPaymentHistory(
+  companyId: number,
+  limit = 100,
+  offset = 0,
+): Promise<PaymentHistoryResponse> {
+  const params = new URLSearchParams({
+    company_id: String(companyId),
+    limit: String(limit),
+    offset: String(offset),
+  });
+  const res = await fetch(
+    `${API_BASE_URL}/payment-history?${params.toString()}`,
+    { credentials: "include" },
+  );
+  if (!res.ok) {
+    throw new Error(await readApiError(res, "Failed to load payment history"));
+  }
+  return res.json() as Promise<PaymentHistoryResponse>;
+}
+
 /* ── Dashboard ── */
 
 export type CompanyInfo = {
