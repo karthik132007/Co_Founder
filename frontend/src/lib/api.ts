@@ -69,12 +69,6 @@ export type CreditBalanceResponse = {
   balance: number;
 };
 
-export type AddCreditsResponse = {
-  company_id: number;
-  amount: number;
-  balance: number;
-};
-
 /** Current credit balance for a company (1 credit = ₹1 of selling value). */
 export async function fetchCreditBalance(
   companyId: number,
@@ -84,26 +78,6 @@ export async function fetchCreditBalance(
     throw new Error(await readApiError(res, "Failed to load credit balance"));
   }
   return res.json() as Promise<CreditBalanceResponse>;
-}
-
-/**
- * Add credits to a company. Meant to be called from the payments flow once a
- * payment for `amount` succeeds — not wired up in the UI until checkout is
- * implemented (see /billing page).
- */
-export async function addCredits(
-  companyId: number,
-  amount: number,
-): Promise<AddCreditsResponse> {
-  const res = await fetch(`${API_BASE_URL}/credits/add`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ company_id: companyId, amount }),
-  });
-  if (!res.ok) {
-    throw new Error(await readApiError(res, "Failed to add credits"));
-  }
-  return res.json() as Promise<AddCreditsResponse>;
 }
 
 /* ── Payments (Razorpay) ── */
@@ -382,6 +356,7 @@ export type ChatSession = {
   session_id: string;
   title: string;
   created_at: string | null;
+  credits_used?: number;
 };
 
 export type ChatSessionsResponse = {

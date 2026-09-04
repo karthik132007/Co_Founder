@@ -19,7 +19,6 @@ import Link from "next/link";
 import { getSession } from "@/lib/session";
 import {
   fetchDashboard,
-  fetchFiles,
   fetchChatSessions,
   fetchProfile,
   fetchCreditBalance,
@@ -27,7 +26,7 @@ import {
   formatFileSize,
   isImageMime,
 } from "@/lib/api";
-import type { DashboardData, DriveFile, ChatSession } from "@/lib/api";
+import type { DashboardData, ChatSession } from "@/lib/api";
 
 const ACCENT = "#143620";
 
@@ -35,7 +34,6 @@ export default function DashboardPage() {
   const session = getSession();
   const userId = session?.user?.id;
   const [data, setData] = useState<DashboardData | null>(null);
-  const [allFiles, setAllFiles] = useState<DriveFile[]>([]);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [credits, setCredits] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,13 +46,11 @@ export default function DashboardPage() {
     setLoading(true);
     setError("");
     try {
-      const [dash, files, chatRes] = await Promise.all([
+      const [dash, chatRes] = await Promise.all([
         fetchDashboard(userId),
-        fetchFiles(userId),
         fetchChatSessions(userId).catch(() => ({ sessions: [] as ChatSession[] })),
       ]);
       setData(dash);
-      setAllFiles(files.files);
       setSessions(chatRes.sessions);
 
       // credits — need company id
@@ -297,6 +293,13 @@ export default function DashboardPage() {
                             <span className="block truncate text-[13px] font-medium text-[#0f2214] group-hover:text-[#143620]">{s.title || "Untitled"}</span>
                             <span className="flex items-center gap-1.5 text-[11px] text-[#8d9d94]">
                               <Clock className="h-3 w-3" /> {label}
+                              {typeof s.credits_used === "number" && s.credits_used > 0 && (
+                                <span className="inline-flex items-center gap-1 text-[#143620]">
+                                  <span className="text-[#c6d0c9]">·</span>
+                                  <Coins className="h-3 w-3" />
+                                  {s.credits_used.toLocaleString("en-IN")} credits
+                                </span>
+                              )}
                             </span>
                           </span>
                           <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-[#aab8b0] opacity-0 transition-all group-hover:opacity-100 group-hover:text-[#143620]" />

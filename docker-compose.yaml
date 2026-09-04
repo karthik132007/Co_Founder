@@ -147,6 +147,24 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  consumer-credits:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: consumer-credits
+    command: ["python", "backend/kafka_jobs/consumers/manage_credits.py"]
+    env_file:
+      - .env
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
   frontend:
     build:
       context: ./frontend

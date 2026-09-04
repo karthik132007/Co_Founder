@@ -45,6 +45,7 @@ setup_logging()
 from confluent_kafka import Consumer, KafkaError
 from credits_engine.usage import get_total_usage
 from backend.db.credits import deduct_credits, InsufficientCreditsError
+from backend.db.insert_to_sql import add_credits_to_session
 
 logger = logging.getLogger(__name__)
 
@@ -126,6 +127,18 @@ def process_message(data: dict) -> None:
             company_id,
             priced["per_model"],
         )
+
+        # Record per-session usage so the overview can show credits per chat.
+        session_id = data.get("session_id")
+        if session_id:
+            try:
+                add_credits_to_session(session_id, credits_to_deduct)
+            except Exception:
+                # Balance is already deducted; per-session tracking is best-effort.
+                logger.exception(
+                    "Failed to record session credits session_id=%s — balance already deducted",
+                    session_id,
+                )
 
 
 try:

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { HardDrive, Sparkles, Upload, FileText, Image as ImageIcon, Trash2, Loader2, Eye, Download } from "lucide-react";
 import { getSession } from "@/lib/session";
-import { fetchFiles, uploadFile, deleteFile, formatFileSize, isImageMime, getFileDownloadUrl } from "@/lib/api";
+import { fetchFiles, uploadFile, deleteFile, isImageMime, getFileDownloadUrl } from "@/lib/api";
 import type { DriveFile } from "@/lib/api";
 
 const ACCENT = "#143620";

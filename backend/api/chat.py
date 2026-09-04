@@ -259,6 +259,7 @@ def list_chat_sessions(user_id: int = Query(..., description="User ID")):
                 "session_id": s["session_id"],
                 "title": s.get("title", "Untitled Chat"),
                 "created_at": s.get("created_at"),
+                "credits_used": s.get("credits_used", 0),
             }
             for s in sessions
         ]

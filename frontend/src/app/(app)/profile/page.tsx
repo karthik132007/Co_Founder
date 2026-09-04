@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { User, Building2, Briefcase, Palette, Save, Loader2, Check } from "lucide-react";
 import { getSession } from "@/lib/session";
-import { fetchProfile, updateProfile, type ProfileData } from "@/lib/api";
+import { fetchProfile, updateProfile } from "@/lib/api";
 
 const ACCENT = "#143620";
 const TONES = ["friendly", "professional", "witty"];
@@ -16,7 +16,6 @@ const INDUSTRIES = [
 export default function ProfilePage() {
   const session = getSession();
   const userId = session?.user?.id;
-  const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -31,7 +30,6 @@ export default function ProfilePage() {
     if (!userId) return;
     fetchProfile(userId)
       .then((p) => {
-        setProfile(p);
         setName(p.company.company_name);
         setDescription(p.company.small_description);
         setIndustry(p.company.industry);

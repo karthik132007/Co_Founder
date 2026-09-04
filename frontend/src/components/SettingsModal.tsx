@@ -7,7 +7,7 @@ import {
   Settings as SettingsIcon, Shield, Bell
 } from "lucide-react";
 import { getSession } from "@/lib/session";
-import { fetchProfile, updateProfile, type ProfileData } from "@/lib/api";
+import { fetchProfile, updateProfile } from "@/lib/api";
 
 const ACCENT = "#143620";
 const TONES = ["friendly", "professional", "witty"];
@@ -18,7 +18,6 @@ const INDUSTRIES = [
 
 function GeneralTab() {
   const session = getSession();
-  const userId = session?.user?.id;
 
   if (!session) return null;
 

@@ -4,9 +4,9 @@ import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, Bell, LogOut, Menu,
-  ChevronRight, Sparkles, MessageSquare, HardDrive,
+  ChevronRight, MessageSquare, HardDrive,
   Plus, Clock, Trash2, Loader2,
-  Puzzle, User, ChevronUp, Settings, CreditCard, Coins,
+  Puzzle, ChevronUp, Settings, CreditCard, Coins,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";

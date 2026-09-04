@@ -633,7 +633,7 @@ export default function Chat({
   }, [input, sending, sendToBackend]);
 
   const handleMcqAnswer = useCallback(
-    async (messageId: string, question: string, answer: string) => {
+    async (messageId: string, _question: string, answer: string) => {
       if (sending) return;
 
       // Mark this MCQ as answered (locks the buttons)

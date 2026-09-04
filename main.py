@@ -38,6 +38,7 @@ def _queue_usage_charge(company_id: int, session_id: str) -> None:
             company_id,
             usage=usage.get("breakdown", []),
             no_of_images=int(usage.get("no_of_images") or 0),
+            session_id=session_id,
         )
     except Exception:
         logger.exception(

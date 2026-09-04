@@ -14,14 +14,8 @@ import {
   Megaphone,
   Palette,
   Bot,
-  Terminal,
 } from "lucide-react";
 import type { ToolRun } from "@/lib/observability";
-
-export type AgentTraceInlineProps = {
-  runs: ToolRun[];
-  isStreaming?: boolean;
-};
 
 export const SUBAGENT_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   Researcher: Search,
@@ -129,76 +123,6 @@ export function TraceRow({ run }: { run: ToolRun }) {
                 </div>
               )}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-export default function AgentTraceInline({ runs, isStreaming }: AgentTraceInlineProps) {
-  const [collapsed, setCollapsed] = useState(false);
-
-  // Show nothing only when not streaming and no runs at all
-  if (runs.length === 0 && !isStreaming) return null;
-
-  return (
-    <div className="mt-2 rounded-xl border border-[#e8e9e3] bg-[#fdfcf8]/60 overflow-hidden">
-      {/* Header — click to collapse */}
-      <button
-        type="button"
-        onClick={() => setCollapsed((v) => !v)}
-        className="w-full flex items-center gap-2 px-3 py-2 border-b border-[rgba(15,34,20,0.06)] hover:bg-[rgba(16,36,24,0.04)] transition-colors"
-      >
-        <ChevronRight
-          className={`w-3 h-3 text-[#8d9d94] transition-transform shrink-0 ${collapsed ? "" : "rotate-90"}`}
-        />
-        <Terminal className="w-3 h-3 text-[#5f6f63]" />
-        <span className="text-[11px] font-semibold text-[#5f6f63] uppercase tracking-wide">
-          Agent Trace
-        </span>
-        {isStreaming && runs.length === 0 && (
-          <span className="inline-flex items-center gap-1 text-[10px] text-[#143620] font-medium ml-auto">
-            <Loader2 className="w-2.5 h-2.5 animate-spin" />
-            Waiting for agent…
-          </span>
-        )}
-        {isStreaming && runs.length > 0 && (
-          <span className="inline-flex items-center gap-1 text-[10px] text-[#143620] font-medium ml-auto">
-            <Loader2 className="w-2.5 h-2.5 animate-spin" />
-            {runs.length} tool{runs.length !== 1 ? "s" : ""}
-          </span>
-        )}
-        {!isStreaming && runs.length > 0 && (
-          <span className="text-[10px] text-[#8d9d94] font-medium ml-auto">
-            {runs.length} tool{runs.length !== 1 ? "s" : ""}
-          </span>
-        )}
-      </button>
-
-      {/* Collapsible body */}
-      <AnimatePresence initial={false}>
-        {!collapsed && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="overflow-hidden"
-          >
-            {runs.length === 0 && isStreaming ? (
-              <div className="flex items-center justify-center py-4 text-center px-4">
-                <p className="text-[11px] text-[#8d9d94]">
-                  Listening for tool calls from the CEO agent…
-                </p>
-              </div>
-            ) : (
-              <div className="max-h-[300px] overflow-y-auto overscroll-contain">
-                {runs.map((run) => (
-                  <TraceRow key={run.runId} run={run} />
-                ))}
-              </div>
-            )}
           </motion.div>
         )}
       </AnimatePresence>
