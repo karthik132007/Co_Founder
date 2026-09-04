@@ -6,7 +6,7 @@ import { User, Building2, Briefcase, Palette, Save, Loader2, Check } from "lucid
 import { getSession } from "@/lib/session";
 import { fetchProfile, updateProfile, type ProfileData } from "@/lib/api";
 
-const ACCENT = "#4f46e5";
+const ACCENT = "#143620";
 const TONES = ["friendly", "professional", "witty"];
 const INDUSTRIES = [
   "Skin and hair care", "SaaS", "E-commerce", "Health & Wellness", "Food & Beverage",
@@ -66,8 +66,8 @@ export default function ProfilePage() {
 
   const Field = ({ label, icon: Icon, children }: { label: string; icon: typeof User; children: React.ReactNode }) => (
     <div className="space-y-1.5">
-      <label className="flex items-center gap-2 text-[13px] font-semibold text-[#374151]">
-        <Icon className="w-3.5 h-3.5 text-[#9ca3af]" />{label}
+      <label className="flex items-center gap-2 text-[13px] font-semibold text-[#2f3e32]">
+        <Icon className="w-3.5 h-3.5 text-[#8d9d94]" />{label}
       </label>
       {children}
     </div>
@@ -76,8 +76,8 @@ export default function ProfilePage() {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6 max-w-2xl">
       <div>
-        <h2 className="text-lg font-semibold text-[#0a0a0a]">Profile</h2>
-        <p className="text-sm text-[#6b7280] mt-0.5">Manage your company profile and brand settings.</p>
+        <h2 className="text-lg font-semibold text-[#0f2214]">Profile</h2>
+        <p className="text-sm text-[#5f6f63] mt-0.5">Manage your company profile and brand settings.</p>
       </div>
 
       {loading ? (
@@ -87,25 +87,25 @@ export default function ProfilePage() {
           {/* Email (read-only) */}
           <Field label="Email" icon={User}>
             <input type="email" value={session.user.email} disabled
-              className="w-full rounded-xl border border-[#e5e7eb] bg-[#f9fafb] px-4 py-2.5 text-[14px] text-[#9ca3af] outline-none" />
+              className="w-full rounded-xl border border-[#e8e9e3] bg-[#fdfcf8] px-4 py-2.5 text-[14px] text-[#8d9d94] outline-none" />
           </Field>
 
           {/* Company Name */}
           <Field label="Company Name" icon={Building2}>
             <input value={name} onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-xl border border-[#e5e7eb] bg-[#fafafa] hover:border-[#d4d4d8] focus:bg-white px-4 py-2.5 text-[14px] text-[#0a0a0a] placeholder:text-[#9ca3af] outline-none focus:border-[#4f46e5] focus:ring-4 focus:ring-[#4f46e5]/10 transition-all duration-200" />
+              className="w-full rounded-xl border border-[#e8e9e3] bg-[#fdfcf8] hover:border-[#c2c9c0] focus:bg-white px-4 py-2.5 text-[14px] text-[#0f2214] placeholder:text-[#8d9d94] outline-none focus:border-[#143620] focus:ring-4 focus:ring-[#143620]/10 transition-all duration-200" />
           </Field>
 
           {/* Description */}
           <Field label="Description" icon={Building2}>
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4}
-              className="w-full rounded-xl border border-[#e5e7eb] bg-[#fafafa] hover:border-[#d4d4d8] focus:bg-white px-4 py-2.5 text-[14px] text-[#0a0a0a] placeholder:text-[#9ca3af] outline-none focus:border-[#4f46e5] focus:ring-4 focus:ring-[#4f46e5]/10 transition-all duration-200 resize-none" />
+              className="w-full rounded-xl border border-[#e8e9e3] bg-[#fdfcf8] hover:border-[#c2c9c0] focus:bg-white px-4 py-2.5 text-[14px] text-[#0f2214] placeholder:text-[#8d9d94] outline-none focus:border-[#143620] focus:ring-4 focus:ring-[#143620]/10 transition-all duration-200 resize-none" />
           </Field>
 
           {/* Industry */}
           <Field label="Industry" icon={Briefcase}>
             <select value={industry} onChange={(e) => setIndustry(e.target.value)}
-              className="w-full rounded-xl border border-[#e5e7eb] bg-[#fafafa] hover:border-[#d4d4d8] focus:bg-white px-4 py-2.5 text-[14px] text-[#0a0a0a] outline-none focus:border-[#4f46e5] focus:ring-4 focus:ring-[#4f46e5]/10 transition-all duration-200">
+              className="w-full rounded-xl border border-[#e8e9e3] bg-[#fdfcf8] hover:border-[#c2c9c0] focus:bg-white px-4 py-2.5 text-[14px] text-[#0f2214] outline-none focus:border-[#143620] focus:ring-4 focus:ring-[#143620]/10 transition-all duration-200">
               {INDUSTRIES.map((i) => <option key={i} value={i}>{i}</option>)}
             </select>
           </Field>
@@ -116,7 +116,7 @@ export default function ProfilePage() {
               {TONES.map((t) => (
                 <button key={t} type="button" onClick={() => setTone(t)}
                   className={`flex-1 rounded-xl border px-4 py-2.5 text-[13px] font-medium capitalize transition-all duration-200 ${
-                    tone === t ? "border-[#4f46e5] bg-[#eef2ff] text-[#4f46e5] shadow-sm ring-1 ring-[#4f46e5]/20" : "border-[#e5e7eb] text-[#6b7280] bg-white hover:border-[#d4d4d8] hover:-translate-y-0.5 hover:shadow-sm"
+                    tone === t ? "border-[#143620] bg-[#eaf0e8] text-[#143620] shadow-sm ring-1 ring-[#143620]/20" : "border-[#e8e9e3] text-[#5f6f63] bg-white hover:border-[#c2c9c0] hover:-translate-y-0.5 hover:shadow-sm"
                   }`}>
                   {t}
                 </button>

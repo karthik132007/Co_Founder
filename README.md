@@ -1,4 +1,4 @@
-# Co_Founder — v0.9.15 (Production Test)
+# Co_Founder — v0.9.16 (Live Billing)
 
 > **📘 For complete system context and understanding, please refer to [`Agents_rules.md`](Agents_rules.md) before contributing or making changes.**
 
@@ -12,6 +12,7 @@
 - [Agent System](#agent-system)
 - [RAG Engine](#rag-engine)
 - [Backend](#backend)
+- [Credits & Billing](#credits--billing)
 - [Frontend](#frontend)
 - [Code Sandbox](#code-sandbox)
 - [Prompt System & Tool Registry](#prompt-system--tool-registry)
@@ -24,6 +25,8 @@
 - The CEO agent routes work to Researcher, Writer, CMO, Data Analyst, Graphic Designer, Judge, and memory/title helpers.
 - Chat uses a shared RAG + chat memory system, plus Kafka-backed async persistence for messages, memories, and session titles.
 - **v0.9.15 — trace fixed + streaming**: `SessionEventBus` now buffers events and replays them when the WebSocket connects (no more invisible trace in prod); the CEO streams via `agent.stream()` — tokens batched (~24 / 60ms) as `llm_token` events with a live answer and an `AgentTracePanel` popover beside the chat bar.
+- **v0.9.16 — live billing**: Razorpay Standard Checkout is live (`RAZORPAY_KEY_ID` `rzp_live_…`), minimum top-up **₹100** (10000 paise), HMAC-SHA256 signature verification, authoritative `order.fetch` amount, Redis idempotency guard (`razorpay_paid:{payment_id}` 24h), and an invoice-style `payment_history` table surfaced on a redesigned `/billing` page (presets, custom amount, INR/USD toggle with live FX, order summary, per-side effects for `cofounder:credits-updated`). See [Credits & Billing](#credits--billing).
+- Landing was reworked: sticky pill `Nav` (`frontend/src/components/landing/Nav.tsx:1`), editorial serif + mono fonts (`Instrument_Serif`, `JetBrains_Mono` via `frontend/src/app/layout.tsx:1`), cinematic `landing.css` theme (forest/cream), continuous `bg-grid` backdrop, and `SectionBridge` separators (`comet`/`aurora`/`orbit` with GSAP ScrollTrigger) between every fold; `Demo` section removed.
 - `evals/` contains the current evaluation scripts; the latest RAG benchmark hit 95.00% pass rate, 0.950 Average Recall@5, and 0.883 Average MRR.
 - **CEO end-to-end eval is live**: 27 runs / 81 judge verdicts across 5 tasks, 6 prompt tweaks, and 2 effort modes — `normal` prompt + `flash` mode currently leads (8.62 overall) (see [Evals & Benchmarks](#evals--benchmarks) and [`docs/eval_report.md`](docs/eval_report.md)).
 
@@ -31,7 +34,7 @@
 
 AI Co-Founder is a multi-agent AI platform that replaces a human founding team with a CEO orchestrator agent and specialized sub-agents. Founders describe their business idea through a conversational chat interface, and the agents collaboratively handle strategy, market research, content writing, data analysis, and knowledge management via a shared RAG + chat memory backbone.
 
-This v0.9.15 production test ships the full Dockerized stack, async Kafka persistence, effort-based agent routing, **buffered WebSocket observability with real-time LLM streaming**, Argon2id password hashing, Google OAuth + cookie session auth, and env-driven CORS/rate limiting. The app is usable end-to-end. The v0.9.15 highlight is a production fix for the invisible agent trace (race between `POST /chat` threadpool and WebSocket upgrade) plus token-by-token answer streaming via `agent.stream()`.
+This v0.9.16 production test ships the full Dockerized stack, async Kafka persistence, effort-based agent routing, **buffered WebSocket observability with real-time LLM streaming**, Argon2id password hashing, Google OAuth + cookie session auth, env-driven CORS/rate limiting, and **live Razorpay billing** (Standard Checkout, 1 credit == ₹1, `company_credits` + `payment_history` with Redis caching/idempotency). The app is usable end-to-end. The v0.9.15 highlight is a production fix for the invisible agent trace (race between `POST /chat` threadpool and WebSocket upgrade) plus token-by-token answer streaming via `agent.stream()`; v0.9.16 wires that into a real money path (₹100 minimum) and a polished billing/landing shell.
 
 ## Architecture
 
@@ -111,6 +114,8 @@ Every chat request accepts an `effort` parameter (⚡ Flash / ⚖️ Mid / 🎯 
 | CEO agent instance | In-memory `(company_id, effort)` | ∞ | `agents/CEO/CEO.py` |
 | **CEO request state** | `ceo_req:{uuid}` | 5min | `agents/CEO/ceo_state.py` ✨ |
 | **Session resources** | `session_resources:{id}` | 1h | `agents/CEO/ceo_resources.py` |
+| **Company credits** | `company_credits:{id}` | 60s | `backend/db/credits.py:23` |
+| **Razorpay idempotency** | `razorpay_paid:{payment_id}` | 24h | `backend/api/payments.py:45` |
 
 ### Measured Impact
 
@@ -140,7 +145,7 @@ After:  "best selling product" → Data Analyst → reads CSV → actual data an
 |---|---|
 | Orchestration | Python 3.13+, LangChain (`create_agent` factory) |
 | Backend | FastAPI, Uvicorn |
-| Caching | Redis (company data, user→company mapping, sessions, messages, embeddings, CEO state, session resources) |
+| Caching | Redis (company data, user→company mapping, sessions, messages, embeddings, CEO state, session resources, company credits, Razorpay idempotency) |
 | Message Bus | Apache Kafka (KRaft, Confluent 7.8.9) + `confluent_kafka` (fire-and-forget background jobs) |
 | Vector Search | Supabase pgvector (cosine similarity + keyword fusion) |
 | LLM Provider | OpenRouter (DeepSeek, GLM, GPT-OSS 120b/20b, Gemma, Morph, text-embedding-3-small) |
@@ -151,6 +156,7 @@ After:  "best selling product" → Data Analyst → reads CSV → actual data an
 | OCR | Vision LLM (Gemma 4 26B via OpenRouter) |
 | Database | Supabase PostgreSQL + pgvector (HNSW indexes) |
 | Storage | Supabase Storage (S3-compatible) |
+| Payments | Razorpay Standard Checkout (`razorpay` SDK, HMAC-SHA256 verify, live keys) |
 | Frontend | Next.js 16.2.9, React 19.2.4, Tailwind CSS v4 |
 | UI Animation | framer-motion 12.42.0, GSAP 3.15.0, Lenis, Three.js 0.185 (React Three Fiber, drei, postprocessing) |
 | Icons | lucide-react 1.21.0 |
@@ -247,6 +253,9 @@ User asks question in chat:
 - `users.sql`, `companies.sql`, `chat_sessions.sql`, `chat_messages.sql`, `chat_memeories.sql`, `color_palettes.sql`, `files.sql`, `document_chunks.sql` — table definitions with HNSW indexes on embedding columns
 - `semantic_search.sql`, `keyword_search.sql`, `search_chat_memory.sql` — PostgreSQL RPC functions for pgvector similarity and keyword search
 - `match_chat_memories.sql` — pgvector RPC for chat memory similarity (added v0.8.0)
+- `company_credits.sql` — `company_credits` table (`company_id` PK, `credits numeric(18,4)`, `created_at`/`updated_at`) — 1 credit == ₹1
+- `payment_history.sql` — `payment_history` table (id, company_id FK, amount, status `pending|completed|failed|refunded`, payment_date, created_at) — invoice history for billing
+- `migrations/create_payment_history.sql` — idempotent migration (`CREATE TABLE IF NOT EXISTS` + `company_id, payment_date DESC` index)
 
 ## Backend
 
@@ -256,7 +265,7 @@ Co_Founder/
 ├── main.py                  # Chat entry point: chat()
 ├── logger_config.py         # RotatingFileHandler (10MB × 3), dual handlers
 ├── docker-compose.yaml      # Kafka broker (KRaft, single node, port 9092)
-├── requirements.txt
+├── requirements.txt         # includes razorpay, confluent_kafka
 ├── agents/                  # Agent implementations (repo root)
 │   ├── agents.json          # Central agent registry (10 agents)
 │   ├── CEO/                 # CEO orchestrator (CEO.py with _invoke_agent streaming, ceo_prompts.py, ceo_agent_tools.py, ceo_resources.py, ceo_state.py)
@@ -268,14 +277,18 @@ Co_Founder/
 │   ├── util_agents/         # Chat memory, title, description, image description, writer agents
 │   └── helpers/             # LLM selection, datetime, utilities
 ├── backend/
-│   ├── app.py               # FastAPI app, CORS, router registration
+│   ├── app.py               # FastAPI app, CORS, router registration (auth/user/drive/chat/credits/payments/payment_history)
 │   ├── models.py            # SQLAlchemy models
 │   ├── utils.py             # Supabase client init, helpers
+│   ├── security.py          # Argon2id hashing + HMAC session cookies
 │   ├── api/
-│   │   ├── auth.py          # /auth/signup, /auth/login
+│   │   ├── auth.py          # /auth/signup, /auth/login, /auth/google, /auth/me, /auth/logout
 │   │   ├── chat.py          # POST /chat, session CRUD, WS /chat/ws, MCQ guard
-│   │   ├── user.py          # /user/onboarding, /user/dashboard, /user/files
+│   │   ├── user.py          # /user/onboarding, /user/dashboard, /user/files, /user/profile
 │   │   ├── drive.py         # POST /upload, DELETE /file/{id}
+│   │   ├── credits.py       # POST /credits/add, GET /credits/{company_id}
+│   │   ├── payments.py      # POST /payments/create-order, POST /payments/verify-payment (Razorpay)
+│   │   ├── payment_history.py  # CRUD /payment-history (list/create/update/delete)
 │   │   ├── connection_manager.py    # ConnectionManager + SessionEventBus (buffered replay, WS traces)
 │   │   └── observability_events.py  # Agent trace event types/factories (incl. llm_token)
 │   ├── kafka_jobs/          # Async Kafka pipeline (producers + consumers)
@@ -289,30 +302,49 @@ Co_Founder/
 │       ├── insert_to_sql.py # Supabase write queries
 │       ├── delete_from_sql.py
 │       ├── put_to_drive.py  # Supabase Storage uploads
+│       ├── credits.py       # company_credits CRUD + Redis cache (60s) + add/deduct with quantize
+│       ├── payment_history.py  # payment_history CRUD (create/list/count/get/update/delete)
 │       └── redis_client.py  # Redis client singleton
+├── credits_engine/          # get_usage / get_total_usage pricing (MARKUP 2×, USD_INR 100, 1 credit = ₹1)
+│   ├── Get_model_price.py
+│   └── usage.py
 ├── RAG_Engine/              # rag.py, chat_memory.py, retrive.py, embeddings.py, chunking.py
 ├── e2b_sandbox/             # Secure Python code execution sandbox
 ├── connectors/              # BaseConnector abstraction (connect/disconnect/get_status)
-├── evals/                   # Per-agent test scripts
-└── schemas/                 # Raw SQL migration files
+├── evals/                   # Per-agent test scripts + e2e CEO harness
+└── schemas/                 # Raw SQL migration files (incl. company_credits.sql, payment_history.sql)
 ```
 
 ### API Endpoints
 | Method | Path | Description |
 |---|---|---|
-| POST | `/auth/signup` | Create user (plaintext password) |
-| POST | `/auth/login` | Authenticate user (returns id + email) |
+| POST | `/auth/signup` | Create user (Argon2id-hashed password) |
+| POST | `/auth/login` | Authenticate user (returns id + email + onboarding_complete, sets `cofounder_session` cookie) |
 | POST | `/auth/google` | Google OAuth sign-in — verifies a Supabase access token, finds/creates the app user, returns id + email + `is_new` |
-| POST | `/user/onboarding` | Create company profile (name, description, industry, tone) |
+| GET | `/auth/me` | Restore session from `cofounder_session` cookie |
+| POST | `/auth/logout` | Clear session cookie |
+| POST | `/user/onboarding` | Create company profile (name, description, industry, tone, user name) |
 | GET | `/user/dashboard` | Fetch company + dashboard details |
+| GET | `/user/profile` | Fetch user + company profile |
+| PUT | `/user/profile` | Update company profile fields |
 | POST | `/upload` | Upload file (PDF, image, CSV, Excel, JSON, Parquet) |
 | GET | `/user/files` | List company files |
+| GET | `/user/files/{id}/download` | Download/view a file |
 | DELETE | `/file/{file_id}` | Delete file |
-| POST | `/chat` | Send message to CEO agent (auto-creates session if `session_id` omitted) |
+| POST | `/chat` | Send message to CEO agent (auto-creates session if `session_id` omitted, `effort` flash/mid/max) |
 | GET | `/chat/sessions` | List user's chat sessions |
 | GET | `/chat/sessions/{session_id}` | Get messages for a session |
 | DELETE | `/chat/sessions/{session_id}` | Delete chat session |
 | WS | `/chat/ws?session_id=` | Real-time agent trace events (`tool_start/end`, `subagent_spawn/end`, `llm_token` streaming, `heartbeat`, `session_start/end`) — buffered replay ensures no lost events in prod |
+| POST | `/credits/add` | Add credits to a company (1 credit = ₹1) |
+| GET | `/credits/{company_id}` | Get current credit balance |
+| POST | `/payments/create-order` | Create a Razorpay order — body `{user_id?, company_id, amount (INR), currency}` — min ₹100 (10000 paise), currencies INR/USD/EUR/AED/GBP, returns `{order_id, amount (paise), currency}` |
+| POST | `/payments/verify-payment` | Verify Razorpay HMAC-SHA256 signature + idempotency guard + authoritative `order.fetch` — credits on success, records `payment_history`, duplicate returns `{status:"paid", duplicate:true}` |
+| GET | `/payment-history` | List payment history — query `company_id, limit (1-200), offset, status?` — returns `{payments, total, limit, offset}` |
+| POST | `/payment-history` | Create a payment_history row — body `{company_id, amount, status?, payment_date?}` |
+| GET | `/payment-history/{payment_id}` | Fetch a single payment row |
+| PATCH | `/payment-history/{payment_id}` | Update status (`pending|completed|failed|refunded`) |
+| DELETE | `/payment-history/{payment_id}` | Delete a payment row |
 
 ### Async Kafka Pipeline
 
@@ -338,8 +370,9 @@ POST /chat
 
 ### Authentication Flow
 - On success, user metadata (id, email) is returned — `company_id` is not included
-- Client stores in `localStorage` and sends `user_id` as a query/form parameter
-- No JWT, no HTTP-only cookies, no session expiry
+- Backend sets `httpOnly` `cofounder_session` (HMAC-signed, `SESSION_SECRET`, `SESSION_MAX_AGE_DAYS`, `SESSION_COOKIE_SECURE`) — `GET /auth/me` restores it; `POST /auth/logout` clears it; `localStorage` keeps a non-httpOnly mirror for the UI
+- Client may still send `user_id` as a query/form param as a fallback (verified against the cookie when present)
+- No per-request JWT verification on most protected endpoints — they trust `user_id` when no cookie is present (known gap, see [Status](#status))
 
 #### Google OAuth (Supabase Auth)
 - Frontend uses `@supabase/supabase-js` (PKCE flow): `signInWithOAuth({ provider: "google" })` → Google → Supabase Auth → redirect back to `/auth/callback`
@@ -350,8 +383,8 @@ POST /chat
   - Email already used by an email/password account → `409` (no silent account merge)
 - Returns the same shape as `/auth/login` (`{id, email, message}`) plus `is_new`; the frontend then saves the session and redirects to `/chat`
 - Required env vars:
-  - Frontend (`NEXT_PUBLIC_*`, inlined at build time, read from the **repo-root `.env`** via `frontend/scripts/run-next.js` — no separate `frontend/.env.local` needed): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, optional `NEXT_PUBLIC_AUTH_REDIRECT_URL`
-  - Backend (root `.env`, already used by the REST layer): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
+  - Frontend (`NEXT_PUBLIC_*`, inlined at build time, read from the **repo-root `.env`** via `frontend/scripts/run-next.js` — no separate `frontend/.env.local` needed): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, optional `NEXT_PUBLIC_AUTH_REDIRECT_URL`, plus `NEXT_PUBLIC_RAZORPAY_KEY_ID` for checkout
+  - Backend (root `.env`, already used by the REST layer): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `SESSION_SECRET`, `SESSION_COOKIE_SECURE`, `SESSION_MAX_AGE_DAYS`
   - Configure the OAuth redirect URL in Supabase → Authentication → URL Configuration (e.g. `http://localhost:3000/auth/callback`)
 - Database: `public.users` gains `supabase_user_id uuid` (nullable, unique) — see `schemas/migrations/add_supabase_user_id.sql`
 
@@ -360,9 +393,89 @@ POST /chat
 - **Fail-closed**: empty/missing hashes never authenticate; login/signup are rate-limited (10/min per IP)
 - `UserCreate` enforces `EmailStr` + 8–128 char passwords; `LoginRequest` stays permissive for legacy accounts
 
+## Credits & Billing
+
+Credits are the product's currency: **1 credit == ₹1 of selling value**. The CEO agent's token usage is priced per model, marked up, and charged in INR. Payments are collected via **Razorpay Standard Checkout** — the frontend never sees `RAZORPAY_KEY_SECRET`.
+
+### Pricing Engine (`credits_engine/usage.py:18`)
+
+```python
+get_usage(model, input_tokens, output_tokens, image_count=0)
+get_total_usage(usage_list, no_of_images=0)  # sums across models
+```
+
+- `get_model_price(model, is_image_model)` (`credits_engine/Get_model_price.py`) returns per-1M input/output USD rates (and image pricing for `x-ai/grok-imagine-image-2.0` at $0.04/image).
+- `MARKUP = 2`, `USD_INR = 100` (`credits_engine/usage.py:8`) — i.e. 2× over raw LLM cost, $1 = ₹100 for the selling price.
+- Returns `credits = selling_price_inr = total_cost_usd * 2 * 100`. Multi-model requests are summed in `get_total_usage()` (`credits_engine/usage.py:82`) with per-model breakdown and graceful skipping of unpriceable models.
+
+### Company Balance (`backend/db/credits.py:1`)
+
+Table `company_credits` (`schemas/company_credits.sql:1`): `company_id` PK FK → `companies`, `credits numeric(18,4) >=0`, `created_at`/`updated_at`. Helpers:
+
+- `create_company_credits`, `get_company_credits` (Redis-cached 60s, `company_credits:{id}`), `update_company_credits`, `add_credits` (creates row at 0 if missing), `deduct_credits` (raises `InsufficientCreditsError`, handles `23514` race), `delete_company_credits` — all with quantized `Decimal("0.0001")` and `invalidate` on write.
+- Balance read: `GET /credits/{company_id}` (`backend/api/credits.py:31`) — returns `{company_id, balance}`.
+- Top-up (internal): `POST /credits/add` — called by the payments flow, not directly from the billing UI anymore.
+
+### Razorpay Checkout (`backend/api/payments.py:1`)
+
+**Flow**
+
+1. Frontend `POST /payments/create-order` with `{company_id, user_id?, amount (INR), currency="INR"}` → backend `_resolve_user` (cookie preferred, fallback `user_id`, else 401) + `_require_company` (403 if not owned) → validates currency in `{"INR","USD","EUR","AED","GBP"}` and `amount_paise >= 10000` (₹100) (`backend/api/payments.py:41`) → `razorpay.Client.order.create({amount: paise, currency, receipt: "credit_{company_id}_{ts}"})` → returns `{order_id, amount, currency}`.
+2. Browser opens `https://checkout.razorpay.com/v1/checkout.js` (injected once via `loadRazorpayCheckoutScript()` in `frontend/src/app/(app)/billing/page.tsx:68`) — keyed only by public `NEXT_PUBLIC_RAZORPAY_KEY_ID` (`RAZORPAY_KEY_ID` live `rzp_live_TWK3IQpepNq9B8` in `.env`).
+3. On success, frontend `POST /payments/verify-payment` with `{company_id, user_id?, razorpay_payment_id, razorpay_order_id, razorpay_signature}` → backend verifies `HMAC-SHA256(order_id|payment_id, RAZORPAY_KEY_SECRET)` with `hmac.compare_digest` (`backend/api/payments.py:177`) → on mismatch records a `failed` `payment_history` row and returns 400; on match checks Redis idempotency `razorpay_paid:{payment_id}` (`nx=True`, 86400s) — duplicate returns `{status:"paid", duplicate:true, balance}` without double-crediting; otherwise `order.fetch(order_id)` for the **authoritative** paise amount, `add_credits(company_id, amount_inr)`, and `create_payment_history(company_id, amount_inr, status="completed")`.
+
+- `RAZORPAY_KEY_SECRET` (`3eN5V0zGlNtVK1QrRvJJYhBR` in `.env` — rotate before sharing) **never leaves the backend** (`backend/api/payments.py:15`); env vars are `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` (backend) and `NEXT_PUBLIC_RAZORPAY_KEY_ID` (frontend).
+- `frontend/src/lib/api.ts:124` exposes `createRazorpayOrder` / `verifyRazorpayPayment` / `fetchPaymentHistory` / `fetchCreditBalance` used by the billing page.
+
+### Payment History (`backend/db/payment_history.py:1`, `backend/api/payment_history.py:1`)
+
+Table `payment_history` (`schemas/payment_history.sql:1` / `schemas/migrations/create_payment_history.sql:1`): `id` identity PK, `company_id` FK cascade, `amount numeric(18,4) >=0`, `status in ('pending','completed','failed','refunded')`, `payment_date` + `created_at` (defaults `now()`), index on `(company_id, payment_date DESC)`.
+
+- DB helpers: `create_payment_history`, `get_payment_history(limit 1-200, offset, status?)`, `count_payment_history`, `get_payment_history_by_id`, `update_payment_history_status`, `delete_payment_history` — all via Supabase client (`backend/utils.py`), with status/amount validation.
+- API (`backend/app.py:18`): `GET /payment-history?company_id&limit&offset&status`, `POST /payment-history`, `GET /payment-history/{id}`, `PATCH /payment-history/{id}` (`{status}`), `DELETE /payment-history/{id}` — auth mirrors payments (cookie preferred, fallback `user_id`).
+
 ## Frontend
 
-Frontend is a Next.js app with the main user flows in `frontend/src/app/` and shared chat/agent UI in `frontend/src/components/`. The important bits are the chat experience, onboarding, dashboard, drive, and observability views.
+Frontend is a Next.js app with the main user flows in `frontend/src/app/` and shared chat/agent UI in `frontend/src/components/`. The important bits are the chat experience, onboarding, dashboard, drive, billing, and observability views plus a cinematic marketing landing.
+
+### Billing (`frontend/src/app/(app)/billing/page.tsx:1`)
+
+- **Header** with Live badge and INR/USD toggle (pill, `bg-[#0a0a0a]` active) + live FX display (`1 USD ≈ ₹… • live`).
+- **FX fetching** (`frontend/src/app/(app)/billing/page.tsx:173`): `frankfurter.app` → `exchangerate-api.com` → `jsdelivr @fawazahmed0/currency-api` fallback, fallback 83, refreshed hourly via `setInterval`.
+- **Stats strip** (3 cards): Available balance (hero card with gradient, `Coins`, `formatINR`/`formatUSD`, secondary approx), Total purchased (lifetime completed sum, `TrendingUp`, progress bar to 5000), Invoices (total count + completed/failed split, `History`, scrolls to `#invoice-history`).
+- **Buy credits** card: preset chips `[100,250,500,1000,2500]` (`frontend/src/app/(app)/billing/page.tsx:135`) with active state (`bg-[#0a0a0a]` + check), custom amount input with `₹`/`$` prefix, `below min` guard (₹100 / `MIN_AMOUNT` `frontend/src/app/(app)/billing/page.tsx:136`), dual-currency conversion (`rawAmount * usdInrRate`), approx badge, and trust footer.
+- **Order summary** rail (sticky on `lg`): Credits / Amount / Approx USD-INR / Total due today / New balance (`bg-[#eef2ff]`), primary CTA `Pay ₹…` (`btn-accent`, disabled until `canCheckout`, `CreditCard` icon, `Loader2` while `processing`), `ondismiss` → `Checkout cancelled`, `payment.failed` handler surfaces `error.description`.
+- **Razorpay wiring**: `loadRazorpayCheckoutScript()` (`frontend/src/app/(app)/billing/page.tsx:68`) lazy-loads `checkout.js`, `new Razorpay({key, amount: order.amount (paise), currency, name:"Co-Founder", description, order_id, prefill:{name,email}, theme:{color:"#4f46e5"}, handler, modal:{ondismiss}})` (`frontend/src/app/(app)/billing/page.tsx:315`), then `verifyRazorpayPayment` → success/duplicate notice (`CheckCircle2`), reset `customAmount`, reload balance/history, dispatch `window.dispatchEvent(new Event("cofounder:credits-updated"))` for the sidebar badge; failures reload balance and show error.
+- **Invoice history** (`#invoice-history`): `ReceiptText` heading, `historyLoading` spinner, empty state (icon + "No payments yet"), else bordered table (`Date | Invoice type | Status | Cost`) with `STATUS_META` badges (`completed` emerald, `pending` amber, `failed` red, `refunded` zinc), formatted `formatDate` + dual-currency cost, plus bottom trust strip.
+
+### Landing (`frontend/src/app/page.tsx:1`)
+
+`LandingThemeProvider` + `Cursor` + `Nav` + `main.bg-[var(--color-bg)]` with absolute `bg-grid` backdrop (`opacity-[0.42]`) + sequential folds separated by `SectionBridge`:
+
+```tsx
+Hero
+<SectionBridge variant="comet"  label="meet your team" />
+Dashboard
+<SectionBridge variant="aurora" label="under the hood" />
+HowItThinks
+<SectionBridge variant="orbit"  label="the difference" />
+Comparison
+<SectionBridge variant="comet"  label="capabilities" />
+Features
+<SectionBridge variant="aurora" label="extend it" />
+Plugins
+<SectionBridge variant="orbit"  label="simple pricing" />
+Pricing
+CTA
+```
+
+- **`Nav`** (`frontend/src/components/landing/Nav.tsx:1`) — fixed pill header (max 1440px), scroll-aware shadow (`scrolled` → larger shadow), wordmark with `icon.png`, center links (`Platform`/`Agents`/`Use Cases`/`Pricing`/`Resources`) in `bg-[#f3f1ea]` pill (desktop), `Login` + CTA on the right, mobile drawer.
+- **`SectionBridge`** (`frontend/src/components/landing/SectionBridge.tsx:1`) — three variants: `comet` (glowing comet glides across a static hairline), `aurora` (shimmer band), `orbit` (orbiting dot) — GSAP `ScrollTrigger` `scrub:0.9`, twinkling stars (`bridge-star`), edge blends, mono label (`tracking-[0.32em]`), respects `prefers-reduced-motion`.
+- **`Hero`** (`frontend/src/components/landing/Hero.tsx:1`), **`Dashboard`** (`frontend/src/components/landing/Dashboard.tsx:1`), **`HowItThinks`** (`frontend/src/components/landing/HowItThinks.tsx:1`), **`Comparison`** (`frontend/src/components/landing/Comparison.tsx:1`), **`Features`** (`frontend/src/components/landing/Features.tsx:1`), **`Plugins`** (`frontend/src/components/landing/Plugins.tsx:1` — hub-and-spoke integrations: Instagram, Google Ads, Meta, Google Sheets, Shopify, Razorpay + more, connector lines with flowing dots, responsive grid below `lg`), **`Pricing`** (`frontend/src/components/landing/Pricing.tsx:1`), **`CTA`** (`frontend/src/components/landing/CTA.tsx:1`) — editorial layout, `Instrument_Serif` headlines, `JetBrains_Mono` labels.
+- **`landing.css`** (`frontend/src/app/landing.css:1`) — cream/forest theme (`--color-accent #163a24`, `--color-bg #fdfcf8`, light/dark `[data-theme]`), `bg-grid`, noise overlay (`frontend/src/app/page.tsx:23`).
+- **`layout.tsx`** (`frontend/src/app/layout.tsx:1`) — `next/font/google` `Inter` + `Instrument_Serif` (`--font-display-serif`) + `JetBrains_Mono` (`--font-mono`), all `display:swap`, applied to `<html>` class.
+- `Demo` (`frontend/src/components/landing/Demo.tsx`) was removed from the landing flow; the file remains for reference.
+- Public brand SVGs: `google-sheets.svg`, `google_ads-icon.svg`, `instagram.svg`, `meta.svg`, `shopify.svg`, `razorpay-mark.svg`/`razorpay.svg`, plus `bg.png`.
 
 **v0.9.15 — chat trace & streaming:**
 - `frontend/src/components/Chat.tsx:422` — chat container owns the session, effort selector, message list, and the **live streaming answer bubble** (`streamingText` + `llmActive` from `useObservability`). `sendToBackend` pre-generates the `sessionId`, calls `startQuery(sid)` + `await waitForConnection(sid)` *before* `POST /chat`, then snapshots `runs` via `snapshotRuns()` for the response. Typing indicator and streaming bubble render under `sending`.
@@ -441,10 +554,11 @@ Real-time observability streamed to the frontend via WebSocket (`WS /chat/ws?ses
 
 ## Status
 
-Functional end-to-end production test release (v0.9.15). The core chat loop, multi-agent system, RAG pipeline, file management, **buffered WebSocket observability with live LLM streaming**, effort-based execution, Kafka async jobs, onboarding flow, Argon2id password hashing, Google OAuth, and cookie-based session auth are operational. v0.9.15 fixes the production-only invisible trace and adds token-by-token answer streaming. Known gaps:
+Functional end-to-end production test release (v0.9.16). The core chat loop, multi-agent system, RAG pipeline, file management, **buffered WebSocket observability with live LLM streaming**, effort-based execution, Kafka async jobs, onboarding flow, Argon2id password hashing, Google OAuth, cookie-based session auth, and **live Razorpay billing (₹100 minimum, payment_history invoices, INR/USD)** are operational. v0.9.15 fixed the production-only invisible trace and added token-by-token answer streaming; v0.9.16 ships the money path and a reworked landing/billing shell. Known gaps:
 - Image generation uses OpenRouter `google/gemini-2.5-flash-image`; slow (~30s) and blocks the CEO pipeline
 - Supabase free tier REST API adds 3-7s latency per RPC call (embedding serialization overhead)
-- The session cookie restores login on the next visit, but protected endpoints still trust the `user_id` query param (no per-request JWT verification)
+- The session cookie restores login on the next visit, but protected endpoints still trust the `user_id` query param when no cookie is present (no per-request JWT verification beyond `verify_session_token` in payments/payment-history)
+- Razorpay live keys are currently in `.env` in the repo — rotate before public deploy
 
 ## License
 
@@ -456,4 +570,4 @@ See the LICENSE file for details.
 
 ## Notes For The Sleepy Reader
 
-If you only skimmed this far: the app is production-test ready (v0.9.15), the frontend is a Next.js chat/product shell, the backend is FastAPI with Kafka and Redis, login is email/password or Google with a browser session cookie, the agent trace now reliably streams in production (buffered EventBus + `agent.stream()` tokens + `AgentTracePanel` popover), and the main caveat is that protected endpoints still trust the `user_id` query param. The rest of the README mostly exists so future-me can remember what past-me was doing.
+If you only skimmed this far: the app is production-test ready (v0.9.16), the frontend is a Next.js chat/product shell with a cinematic landing (SectionBridge separators, editorial fonts) and a live billing page (Razorpay, ₹100 floor, INR/USD), the backend is FastAPI with Kafka, Redis (credits + Razorpay idempotency), Supabase pgvector, login via email/password or Google with a browser session cookie, the agent trace now reliably streams in production (buffered EventBus + `agent.stream()` tokens + `AgentTracePanel` popover), and the main caveat is that protected endpoints still trust the `user_id` query param when no httpOnly cookie is present. The rest of the README mostly exists so future-me can remember what past-me was doing.

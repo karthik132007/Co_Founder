@@ -10,7 +10,7 @@ import { API_BASE_URL, readApiError, fetchMe } from "@/lib/api";
 import { parseSessionUser, saveSession, getSession } from "@/lib/session";
 import { signInWithGoogle } from "@/lib/supabase";
 
-const ACCENT = "#4f46e5";
+const ACCENT = "#143620";
 
 export default function AuthPage() {
   const router = useRouter();
@@ -134,9 +134,9 @@ export default function AuthPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#fafafa] flex text-[#0a0a0a]">
+    <main className="min-h-screen bg-[#fdfcf8] flex text-[#0f2214]">
       {/* ── Left: brand panel ── */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col relative px-14 py-12 overflow-hidden bg-[#0a0a0a]">
+      <div className="hidden lg:flex lg:w-1/2 flex-col relative px-14 py-12 overflow-hidden bg-[#08130d]">
         <div
           className="absolute inset-0 opacity-[0.12] pointer-events-none"
           style={{
@@ -145,14 +145,14 @@ export default function AuthPage() {
             backgroundSize: "56px 56px",
           }}
         />
-        <div className="absolute -bottom-32 -left-24 w-[480px] h-[480px] bg-[#4f46e5]/25 rounded-full blur-[140px] pointer-events-none" />
+        <div className="absolute -bottom-32 -left-24 w-[480px] h-[480px] bg-[#143620]/25 rounded-full blur-[140px] pointer-events-none" />
 
         <Link href="/" className="flex items-center gap-2.5 relative z-10">
           <div className="w-8 h-8 rounded-lg bg-white/10 border border-white/15 flex items-center justify-center overflow-hidden">
             <Image src="/icon.png" alt="Co-Founder AI" width={24} height={24} className="w-6 h-6 object-contain" />
           </div>
           <span className="font-semibold text-[15px] tracking-tight text-white">
-            Co-Founder<span style={{ color: "#8b85ff" }}> AI</span>
+            Co-Founder<span style={{ color: "#7cc99a" }}> AI</span>
           </span>
           <span className="hidden sm:block font-mono text-[10px] uppercase tracking-[0.22em] text-white/40">
             · Agentify your business
@@ -168,9 +168,9 @@ export default function AuthPage() {
             className="text-[clamp(2rem,3.4vw,3.1rem)] font-semibold leading-[1.12] tracking-tight text-white"
           >
             {isLogin ? (
-              <>Welcome back to your <span className="text-[#8b85ff]">AI founding team.</span></>
+              <>Welcome back to your <span className="text-[#7cc99a]">AI founding team.</span></>
             ) : (
-              <>Start building. Your <span className="text-[#8b85ff]">AI team</span> is ready.</>
+              <>Start building. Your <span className="text-[#7cc99a]">AI team</span> is ready.</>
             )}
           </motion.h1>
 
@@ -178,7 +178,7 @@ export default function AuthPage() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.12 }}
-            className="mt-5 text-[15px] text-[#a1a1aa] leading-relaxed"
+            className="mt-5 text-[15px] text-[#aab8b0] leading-relaxed"
           >
             {isLogin
               ? "Pick up where you left off. Your agents are waiting to execute."
@@ -203,14 +203,14 @@ export default function AuthPage() {
                 key={label}
                 className="flex items-center gap-2 rounded-full border border-white/12 bg-white/[0.06] px-3.5 py-2 backdrop-blur-sm"
               >
-                <Icon className="w-3.5 h-3.5 text-[#8b85ff]" />
-                <span className="text-xs font-medium text-[#d4d4d8]">{label}</span>
+                <Icon className="w-3.5 h-3.5 text-[#7cc99a]" />
+                <span className="text-xs font-medium text-[#c2c9c0]">{label}</span>
               </div>
             ))}
           </motion.div>
         </div>
 
-        <p className="relative z-10 text-xs text-[#71717a]">
+        <p className="relative z-10 text-xs text-[#8d9d94]">
           © 2026 Co-Founder AI — All rights reserved.
         </p>
       </div>
@@ -225,25 +225,25 @@ export default function AuthPage() {
         >
           {/* Mobile logo */}
           <Link href="/" className="flex items-center justify-center gap-2.5 mb-10 lg:hidden">
-            <div className="w-9 h-9 rounded-lg bg-white border border-[#e5e7eb] flex items-center justify-center overflow-hidden">
+            <div className="w-9 h-9 rounded-lg bg-white border border-[#e8e9e3] flex items-center justify-center overflow-hidden">
               <Image src="/icon.png" alt="Co-Founder AI" width={26} height={26} className="w-7 h-7 object-contain" />
             </div>
-            <span className="font-semibold text-lg tracking-tight text-[#0a0a0a]">
+            <span className="font-semibold text-lg tracking-tight text-[#0f2214]">
               Co-Founder<span style={{ color: ACCENT }}> AI</span>
             </span>
           </Link>
 
           <div className="mb-8">
-            <h1 className="text-2xl font-semibold tracking-tight text-[#0a0a0a]">
+            <h1 className="text-2xl font-semibold tracking-tight text-[#0f2214]">
               {isLogin ? "Welcome back" : "Create your account"}
             </h1>
-            <p className="mt-1.5 text-sm text-[#6b7280]">
+            <p className="mt-1.5 text-sm text-[#5f6f63]">
               {isLogin ? "Log in to continue building." : "Sign up to start building."}
             </p>
           </div>
 
           {/* Mode toggle */}
-          <div className="grid grid-cols-2 gap-1 p-1 mb-7 bg-[#f3f4f6] rounded-xl">
+          <div className="grid grid-cols-2 gap-1 p-1 mb-7 bg-[#f6f5ef] rounded-xl">
             {(["Log In", "Sign Up"] as const).map((label, i) => {
               const active = isLogin === (i === 0);
               return (
@@ -253,8 +253,8 @@ export default function AuthPage() {
                   onClick={() => { setIsLogin(i === 0); setError(""); setSuccess(""); setConfirmPassword(""); }}
                   className={`py-2 text-sm font-medium rounded-lg transition-all ${
                     active
-                      ? "bg-white text-[#0a0a0a] shadow-sm border border-[#e5e7eb]"
-                      : "text-[#6b7280] hover:text-[#0a0a0a]"
+                      ? "bg-white text-[#0f2214] shadow-sm border border-[#e8e9e3]"
+                      : "text-[#5f6f63] hover:text-[#0f2214]"
                   }`}
                 >
                   {label}
@@ -292,7 +292,7 @@ export default function AuthPage() {
             type="button"
             onClick={handleGoogleSignIn}
             disabled={googleLoading}
-            className="w-full flex items-center justify-center gap-2.5 px-3.5 py-2.5 text-sm font-medium text-[#374151] bg-white border border-[#e5e7eb] rounded-xl hover:bg-[#fafafa] transition-colors disabled:opacity-60 disabled:cursor-not-allowed mb-5"
+            className="w-full flex items-center justify-center gap-2.5 px-3.5 py-2.5 text-sm font-medium text-[#2f3e32] bg-white border border-[#e8e9e3] rounded-xl hover:bg-[#fdfcf8] transition-colors disabled:opacity-60 disabled:cursor-not-allowed mb-5"
           >
             {googleLoading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -314,16 +314,16 @@ export default function AuthPage() {
           )}
 
           <div className="flex items-center gap-3 mb-5">
-            <div className="flex-1 h-px bg-[#e5e7eb]" />
-            <span className="text-[11px] font-medium uppercase tracking-wider text-[#9ca3af]">
+            <div className="flex-1 h-px bg-[#e8e9e3]" />
+            <span className="text-[11px] font-medium uppercase tracking-wider text-[#8d9d94]">
               or with email
             </span>
-            <div className="flex-1 h-px bg-[#e5e7eb]" />
+            <div className="flex-1 h-px bg-[#e8e9e3]" />
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-[13px] font-medium text-[#374151] mb-1.5">
+              <label htmlFor="email" className="block text-[13px] font-medium text-[#2f3e32] mb-1.5">
                 Email
               </label>
               <input
@@ -340,7 +340,7 @@ export default function AuthPage() {
 
             <div>
               <div className="flex justify-between items-center mb-1.5">
-                <label htmlFor="password" className="block text-[13px] font-medium text-[#374151]">
+                <label htmlFor="password" className="block text-[13px] font-medium text-[#2f3e32]">
                   Password
                 </label>
                 {isLogin && (
@@ -364,7 +364,7 @@ export default function AuthPage() {
 
             {!isLogin && (
               <div>
-                <label htmlFor="confirmPassword" className="block text-[13px] font-medium text-[#374151] mb-1.5">
+                <label htmlFor="confirmPassword" className="block text-[13px] font-medium text-[#2f3e32] mb-1.5">
                   Confirm password
                 </label>
                 <input
@@ -397,8 +397,8 @@ export default function AuthPage() {
             </button>
           </form>
 
-          <p className="mt-8 text-center text-[13px] text-[#9ca3af]">
-            <Link href="/" className="hover:text-[#0a0a0a] transition-colors">
+          <p className="mt-8 text-center text-[13px] text-[#8d9d94]">
+            <Link href="/" className="hover:text-[#0f2214] transition-colors">
               ← Back to home
             </Link>
           </p>

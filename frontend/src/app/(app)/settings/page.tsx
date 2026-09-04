@@ -29,8 +29,8 @@ export default function SettingsPage() {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-5xl mx-auto">
       <div className="mb-8">
-        <h2 className="text-xl font-bold text-[#0a0a0a]">Settings</h2>
-        <p className="text-[14px] text-[#6b7280] mt-1">Manage your account preferences and application settings.</p>
+        <h2 className="text-xl font-bold text-[#0f2214]">Settings</h2>
+        <p className="text-[14px] text-[#5f6f63] mt-1">Manage your account preferences and application settings.</p>
       </div>
 
       <div className="flex flex-col md:flex-row gap-8">
@@ -44,12 +44,12 @@ export default function SettingsPage() {
                   key={tab.id}
                   onClick={() => handleTabClick(tab.id)}
                   className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-[14px] font-medium transition-all duration-200 text-left ${
-                    active ? "bg-[#eef2ff] text-[#4f46e5] shadow-sm ring-1 ring-[#4f46e5]/10" : "text-[#6b7280] hover:bg-white hover:shadow-sm hover:text-[#0a0a0a]"
+                    active ? "bg-[#eaf0e8] text-[#143620] shadow-sm ring-1 ring-[#143620]/10" : "text-[#5f6f63] hover:bg-white hover:shadow-sm hover:text-[#0f2214]"
                   }`}
                 >
-                  <tab.icon className={`w-4 h-4 shrink-0 transition-colors ${active ? "text-[#4f46e5]" : "text-[#9ca3af]"}`} />
+                  <tab.icon className={`w-4 h-4 shrink-0 transition-colors ${active ? "text-[#143620]" : "text-[#8d9d94]"}`} />
                   {tab.label}
-                  {active && <ChevronRight className="w-4 h-4 ml-auto text-[#4f46e5] opacity-50" />}
+                  {active && <ChevronRight className="w-4 h-4 ml-auto text-[#143620] opacity-50" />}
                 </button>
               );
             })}
@@ -68,21 +68,21 @@ export default function SettingsPage() {
               className="card bg-white p-8 min-h-[400px] flex flex-col"
             >
               <div className="flex items-center gap-4 mb-8">
-                 <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#eef2ff] to-[#e0e7ff] flex items-center justify-center shrink-0 shadow-sm border border-[#4f46e5]/10">
-                    {TABS.find(t => t.id === activeTab)?.icon({ className: "w-5 h-5 text-[#4f46e5]" })}
+                 <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#eaf0e8] to-[#d6e2d1] flex items-center justify-center shrink-0 shadow-sm border border-[#143620]/10">
+                    {TABS.find(t => t.id === activeTab)?.icon({ className: "w-5 h-5 text-[#143620]" })}
                  </div>
                  <div>
-                    <h3 className="text-[17px] font-semibold text-[#0a0a0a] capitalize">{activeTab}</h3>
-                    <p className="text-[13px] text-[#6b7280]">Configure your {activeTab} preferences here.</p>
+                    <h3 className="text-[17px] font-semibold text-[#0f2214] capitalize">{activeTab}</h3>
+                    <p className="text-[13px] text-[#5f6f63]">Configure your {activeTab} preferences here.</p>
                  </div>
               </div>
               
-              <div className="border-t border-[#f3f4f6] pt-10 flex-1 flex flex-col items-center justify-center text-center">
-                <div className="w-16 h-16 rounded-2xl bg-[#fafafa] border border-[#e5e7eb] flex items-center justify-center mb-5 shadow-sm">
-                  <SettingsIcon className="w-6 h-6 text-[#9ca3af]" />
+              <div className="border-t border-[#f6f5ef] pt-10 flex-1 flex flex-col items-center justify-center text-center">
+                <div className="w-16 h-16 rounded-2xl bg-[#fdfcf8] border border-[#e8e9e3] flex items-center justify-center mb-5 shadow-sm">
+                  <SettingsIcon className="w-6 h-6 text-[#8d9d94]" />
                 </div>
-                <h4 className="text-[16px] font-semibold text-[#0a0a0a] mb-1.5">Coming Soon</h4>
-                <p className="text-[14px] text-[#6b7280] max-w-sm leading-relaxed">This section is currently under development. Detailed settings will be available in the next release.</p>
+                <h4 className="text-[16px] font-semibold text-[#0f2214] mb-1.5">Coming Soon</h4>
+                <p className="text-[14px] text-[#5f6f63] max-w-sm leading-relaxed">This section is currently under development. Detailed settings will be available in the next release.</p>
               </div>
             </motion.div>
           </AnimatePresence>

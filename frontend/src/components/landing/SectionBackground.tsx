@@ -22,14 +22,14 @@ export function SectionBackground({
     const ctx = gsap.context(() => {
       gsap.utils.toArray<HTMLElement>(".sb-orb").forEach((orb, i) => {
         gsap.to(orb, {
-          y: (i % 2 ? 1 : -1) * (60 + i * 20),
-          x: (i % 2 ? -1 : 1) * 30,
+          y: (i % 2 ? 1 : -1) * (22 + i * 8),
+          x: (i % 2 ? -1 : 1) * 12,
           ease: "none",
           scrollTrigger: {
             trigger: root.current,
             start: "top bottom",
             end: "bottom top",
-            scrub: 1.5,
+            scrub: 1.8,
           },
         });
       });
@@ -54,8 +54,17 @@ export function SectionBackground({
         ];
 
   return (
-    <div ref={root} className="pointer-events-none absolute inset-0 overflow-hidden">
-      <div className="absolute inset-0 bg-grid opacity-60" />
+    <div
+      ref={root}
+      className="pointer-events-none absolute inset-0 overflow-hidden"
+      style={{
+        WebkitMaskImage:
+          "linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)",
+        maskImage:
+          "linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)",
+      }}
+    >
+      {/* no grid here — global grid provides continuity */}
       {orbs.map((o, i) => (
         <span
           key={i}
@@ -65,7 +74,8 @@ export function SectionBackground({
             top: o.y,
             width: o.s,
             height: o.s,
-            background: `radial-gradient(circle, ${o.c}, transparent 70%)`,
+            background: `radial-gradient(circle, ${o.c}, transparent 72%)`,
+            opacity: 0.055,
           }}
         />
       ))}

@@ -9,10 +9,10 @@ import { Dashboard } from "@/components/landing/Dashboard";
 import { HowItThinks } from "@/components/landing/HowItThinks";
 import { Comparison } from "@/components/landing/Comparison";
 import { Features } from "@/components/landing/Features";
-import { Demo } from "@/components/landing/Demo";
 import { Plugins } from "@/components/landing/Plugins";
 import { Pricing } from "@/components/landing/Pricing";
 import { CTA } from "@/components/landing/CTA";
+import { SectionBridge } from "@/components/landing/SectionBridge";
 
 export default function HomePage() {
   useLenis();
@@ -23,21 +23,23 @@ export default function HomePage() {
         <div className="noise" />
         <Cursor />
         <Nav />
-        <main>
+        <main className="relative bg-[var(--color-bg)]">
+          {/* continuous backdrop — absolute inside main so it sits between main bg and sections */}
+          <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-[0.42]" aria-hidden>
+            <div className="absolute inset-0 bg-grid opacity-[0.32]" />
+          </div>
           <Hero />
-          <div className="mx-auto max-w-7xl px-6"><div className="divider-line" /></div>
+          <SectionBridge variant="comet" label="meet your team" />
           <Dashboard />
-          <div className="mx-auto max-w-7xl px-6"><div className="divider-line" /></div>
+          <SectionBridge variant="aurora" label="under the hood" />
           <HowItThinks />
-          <div className="mx-auto max-w-7xl px-6"><div className="divider-line" /></div>
+          <SectionBridge variant="orbit" label="the difference" />
           <Comparison />
-          <div className="mx-auto max-w-7xl px-6"><div className="divider-line" /></div>
+          <SectionBridge variant="comet" label="capabilities" />
           <Features />
-          <div className="mx-auto max-w-7xl px-6"><div className="divider-line" /></div>
-          <Demo />
-          <div className="mx-auto max-w-7xl px-6"><div className="divider-line" /></div>
+          <SectionBridge variant="aurora" label="extend it" />
           <Plugins />
-          <div className="mx-auto max-w-7xl px-6"><div className="divider-line" /></div>
+          <SectionBridge variant="orbit" label="simple pricing" />
           <Pricing />
           <CTA />
         </main>

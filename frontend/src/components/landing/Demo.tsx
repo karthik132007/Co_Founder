@@ -147,10 +147,10 @@ export function Demo() {
         ctx.stroke();
       }
 
-      // line
+      // line — forest palette to match hero
       const grad = ctx.createLinearGradient(0, 0, rect.width, 0);
-      grad.addColorStop(0, "rgba(124,140,255,0.1)");
-      grad.addColorStop(1, "#7c8cff");
+      grad.addColorStop(0, "rgba(20,54,32,0.06)");
+      grad.addColorStop(1, "#143620");
       ctx.strokeStyle = grad;
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -166,7 +166,7 @@ export function Demo() {
       ctx.lineTo(rect.width, rect.height);
       ctx.lineTo(0, rect.height);
       ctx.closePath();
-      ctx.fillStyle = "rgba(124,140,255,0.08)";
+      ctx.fillStyle = "rgba(20,54,32,0.06)";
       ctx.fill();
 
       raf = requestAnimationFrame(draw);
@@ -180,7 +180,9 @@ export function Demo() {
   }, []);
 
   return (
-    <section ref={root} id="demo" className="relative py-32 md:py-48 overflow-hidden">
+    <section ref={root} id="demo" className="relative py-24 md:py-32 overflow-hidden" style={{ isolation: "isolate" }}>
+      <div className="pointer-events-none absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-black/[0.04] to-transparent" />
+      <div className="pointer-events-none absolute top-0 inset-x-0 h-[36px] md:h-[48px] bg-gradient-to-b from-[var(--color-bg)] to-transparent opacity-30" />
       <SectionBackground variant="default" />
       <div className="relative mx-auto max-w-7xl px-6">
         <div className="mb-16 max-w-3xl">

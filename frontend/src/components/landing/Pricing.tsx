@@ -81,7 +81,9 @@ export function Pricing() {
   }, []);
 
   return (
-    <section ref={root} id="pricing" className="relative py-32 md:py-48 overflow-hidden">
+    <section ref={root} id="pricing" className="relative py-24 md:py-32 overflow-hidden" style={{ isolation: "isolate" }}>
+      <div className="pointer-events-none absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-black/[0.04] to-transparent" />
+      <div className="pointer-events-none absolute top-0 inset-x-0 h-[36px] md:h-[48px] bg-gradient-to-b from-[var(--color-bg)] to-transparent opacity-30" />
       <SectionBackground variant="cool" />
 
       <div className="relative mx-auto max-w-7xl px-6">

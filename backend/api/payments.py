@@ -37,8 +37,8 @@ router = APIRouter(prefix="/payments", tags=["Payments"])
 
 _SESSION_COOKIE_NAME = "cofounder_session"
 
-# Razorpay minimum order amount is ₹1 (100 paise).
-_MIN_AMOUNT_PAISE = 100
+# Minimum top-up is ₹100 (10000 paise) — enforced in billing UI and here.
+_MIN_AMOUNT_PAISE = 10000
 _CURRENCIES = {"INR", "USD", "EUR", "AED", "GBP"}
 
 # Redis key TTL for the idempotency guard (long past any retry window).
@@ -105,7 +105,7 @@ class CreateOrderRequest(BaseModel):
 
 @router.post("/create-order")
 def create_order(req: CreateOrderRequest, request: Request):
-    """Create a Razorpay order. Minimum amount is 100 paise (₹1)."""
+    """Create a Razorpay order. Minimum amount is 10000 paise (₹100)."""
     user_id = _resolve_user(request, req.user_id)
     _require_company(user_id, req.company_id)
 
@@ -117,7 +117,7 @@ def create_order(req: CreateOrderRequest, request: Request):
     if amount_paise < _MIN_AMOUNT_PAISE:
         raise HTTPException(
             status_code=422,
-            detail="Amount must be at least ₹1 (100 paise)",
+            detail="Amount must be at least ₹100 (10000 paise)",
         )
 
     receipt = f"credit_{req.company_id}_{int(time.time())}"

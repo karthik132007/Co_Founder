@@ -44,7 +44,7 @@ const STEPS: Step[] = [
     titleAccent: "you’d to a cofounder.",
     desc: "No forms. No prompt tricks. One sentence or a dropped file is enough — it listens.",
     proof: "“Launch a D2C skincare line for men 28–35 in India”",
-    accent: "#7c8cff",
+    accent: "#143620",
     Icon: MessageCircle,
     chips: ["Chat", "Drop files", "No setup"],
   },
@@ -56,7 +56,7 @@ const STEPS: Step[] = [
     titleAccent: "your business.",
     desc: "Decks, sheets, past chats, your tone — kept forever. You never start from zero.",
     proof: "Never re-explain your brand again.",
-    accent: "#b388ff",
+    accent: "#1e4d30",
     Icon: Brain,
     chips: ["Brand tone", "Past chats", "Your files"],
   },
@@ -68,13 +68,13 @@ const STEPS: Step[] = [
     titleAccent: "moves at once.",
     desc: "One brain plans. Three specialists build in parallel — what’s real, what your numbers say, what to ship.",
     proof: "Seconds, not weeks.",
-    accent: "#6ee7b7",
+    accent: "#2a5a3a",
     Icon: Sparkles,
     chips: [],
     workers: [
-      { label: "Market", sub: "What’s really selling", Icon: Search, color: "#7c8cff" },
-      { label: "Numbers", sub: "What your data says", Icon: BarChart3, color: "#6ee7b7" },
-      { label: "Create", sub: "Copy + visuals", Icon: Palette, color: "#fbbf24" },
+      { label: "Market", sub: "What’s really selling", Icon: Search, color: "#143620" },
+      { label: "Numbers", sub: "What your data says", Icon: BarChart3, color: "#2a5a3a" },
+      { label: "Create", sub: "Copy + visuals", Icon: Palette, color: "#5a7247" },
     ],
   },
   {
@@ -85,7 +85,7 @@ const STEPS: Step[] = [
     titleAccent: "actually ship.",
     desc: "Not advice. Ready-to-copy text, real charts, on-brand images — hit publish.",
     proof: "From idea → shippable in seconds.",
-    accent: "#fbbf24",
+    accent: "#5a7247",
     Icon: Copy,
     chips: ["Copy-ready", "Charts", "Brand images"],
   },
@@ -112,10 +112,10 @@ export function HowItThinks() {
       ScrollTrigger.create({
         trigger: section,
         start: "top top",
-        end: "+=2400",
+        end: "+=2000",
         pin,
         pinSpacing: true,
-        scrub: 0.6,
+        scrub: 0.8,
         anticipatePin: 1,
         invalidateOnRefresh: true,
         onUpdate: (self) => {
@@ -145,12 +145,12 @@ export function HowItThinks() {
 
   return (
     <section ref={sectionRef} id="how" className="relative w-full">
-      {/* PINNED VIEWPORT — everything that should stay in view while you scroll is INSIDE pinRef.
-          Previously background + heading were outside the pin, so the bg scrolled independently and
-          the pin appeared to jump after a long empty scroll. Moving them inside fixes alignment. */}
+      <div className="pointer-events-none absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-black/[0.06] to-transparent z-20" />
+      {/* PINNED VIEWPORT — everything that should stay in view while you scroll is INSIDE pinRef. */}
       <div
         ref={pinRef}
         className="relative flex h-[100svh] w-full flex-col overflow-hidden bg-[var(--color-bg)] will-change-transform"
+        style={{ borderTop: "1px solid rgba(15,34,20,0.04)" }}
       >
         {/* pinned background — stays fixed with the content */}
         <div className="pointer-events-none absolute inset-0">
@@ -163,7 +163,7 @@ export function HowItThinks() {
               width: "38vw",
               height: "38vw",
               background: "radial-gradient(circle, var(--color-accent), transparent 68%)",
-              opacity: 0.14,
+              opacity: 0.07,
             }}
           />
           <span
@@ -174,7 +174,7 @@ export function HowItThinks() {
               width: "34vw",
               height: "34vw",
               background: "radial-gradient(circle, var(--color-accent-2), transparent 70%)",
-              opacity: 0.12,
+              opacity: 0.06,
             }}
           />
         </div>

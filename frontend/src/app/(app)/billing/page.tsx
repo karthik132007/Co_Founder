@@ -27,7 +27,7 @@ import {
   type PaymentStatus,
 } from "@/lib/api";
 
-const ACCENT = "#4f46e5";
+const ACCENT = "#143620";
 
 // Public Razorpay key — the KEY_SECRET never leaves the backend.
 const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
@@ -133,6 +133,7 @@ const STATUS_META: Record<
 };
 
 const AMOUNT_PRESETS = [100, 250, 500, 1000, 2500];
+const MIN_AMOUNT = 100;
 
 export default function BillingPage() {
   const session = getSession();
@@ -266,8 +267,9 @@ export default function BillingPage() {
         ? rawAmount
         : Math.round(rawAmount * usdInrRate)
       : null;
+  const isBelowMin = typeof amount === "number" && amount < MIN_AMOUNT;
   const canCheckout =
-    typeof amount === "number" && Number.isFinite(amount) && amount > 0;
+    typeof amount === "number" && Number.isFinite(amount) && amount >= MIN_AMOUNT;
 
   const totalPurchased = history
     .filter((p) => p.status === "completed")
@@ -275,7 +277,15 @@ export default function BillingPage() {
   const totalTransactions = history.length;
 
   const handleCheckout = async () => {
-    if (!canCheckout || processing || !userId) return;
+    if (processing || !userId) return;
+    if (amount !== null && amount < MIN_AMOUNT) {
+      setNotice({
+        type: "error",
+        text: `Minimum top-up is ${formatINR(MIN_AMOUNT)} (${formatUSD(MIN_AMOUNT)}). Please enter at least ${currency === "INR" ? formatINR(MIN_AMOUNT) : formatUSD(MIN_AMOUNT)}.`,
+      });
+      return;
+    }
+    if (!canCheckout) return;
     if (!RAZORPAY_KEY_ID) {
       setNotice({
         type: "error",
@@ -397,28 +407,28 @@ export default function BillingPage() {
       >
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-[28px] font-semibold tracking-tight text-[#0a0a0a]">
+            <h1 className="text-[28px] font-semibold tracking-tight text-[#0f2214]">
               Billing
             </h1>
-            <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-[#eef2ff] border border-[#c7d2fe] px-2.5 py-0.5 text-[11px] font-semibold text-[#4338ca]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#4f46e5] animate-pulse" />
+            <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-[#eaf0e8] border border-[#cfe0cf] px-2.5 py-0.5 text-[11px] font-semibold text-[#143620]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#143620] animate-pulse" />
               Live
             </span>
           </div>
-          <p className="mt-1.5 text-[13.5px] text-[#6b7280] max-w-[560px] leading-relaxed">
+          <p className="mt-1.5 text-[13.5px] text-[#5f6f63] max-w-[560px] leading-relaxed">
             Manage credits, top up your balance and review every invoice.
             <span className="hidden sm:inline"> Secure payments powered by Razorpay.</span>
           </p>
         </div>
         <div className="flex flex-col items-end gap-1.5 shrink-0">
-          <div className="inline-flex rounded-full border border-[#e5e7eb] bg-white p-1 shadow-sm">
+          <div className="inline-flex rounded-full border border-[#e8e9e3] bg-white p-1 shadow-sm">
             <button
               type="button"
               onClick={() => setCurrency("INR")}
               className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
                 currency === "INR"
-                  ? "bg-[#0a0a0a] text-white shadow"
-                  : "text-[#6b7280] hover:text-[#0a0a0a]"
+                  ? "bg-[#0f2214] text-white shadow"
+                  : "text-[#5f6f63] hover:text-[#0f2214]"
               }`}
               aria-pressed={currency === "INR"}
             >
@@ -429,15 +439,15 @@ export default function BillingPage() {
               onClick={() => setCurrency("USD")}
               className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
                 currency === "USD"
-                  ? "bg-[#0a0a0a] text-white shadow"
-                  : "text-[#6b7280] hover:text-[#0a0a0a]"
+                  ? "bg-[#0f2214] text-white shadow"
+                  : "text-[#5f6f63] hover:text-[#0f2214]"
               }`}
               aria-pressed={currency === "USD"}
             >
               USD $
             </button>
           </div>
-          <span className="text-[11px] text-[#9ca3af] font-medium flex items-center gap-1">
+          <span className="text-[11px] text-[#8d9d94] font-medium flex items-center gap-1">
             {rateLoading ? (
               <>
                 <Loader2 className="w-3 h-3 animate-spin" /> fetching live rate…
@@ -473,7 +483,7 @@ export default function BillingPage() {
             notice.type === "success"
               ? "border-emerald-200 bg-emerald-50 text-emerald-800"
               : notice.type === "info"
-                ? "border-[#c7d2fe] bg-[#eef2ff] text-[#4338ca]"
+                ? "border-[#cfe0cf] bg-[#eaf0e8] text-[#143620]"
                 : "border-amber-200 bg-amber-50 text-amber-800"
           }`}
         >
@@ -507,28 +517,28 @@ export default function BillingPage() {
               transition={{ duration: 0.35 }}
               className="card p-5 relative overflow-hidden group"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-[#eef2ff]/70 via-transparent to-transparent opacity-60 pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-br from-[#eaf0e8]/70 via-transparent to-transparent opacity-60 pointer-events-none" />
               <div className="relative">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-[#9ca3af]">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-[#8d9d94]">
                     Available balance
                   </span>
-                  <span className="w-8 h-8 rounded-lg bg-[#eef2ff] flex items-center justify-center">
+                  <span className="w-8 h-8 rounded-lg bg-[#eaf0e8] flex items-center justify-center">
                     <Coins className="w-4 h-4" style={{ color: ACCENT }} />
                   </span>
                 </div>
                 <div className="mt-3 flex items-baseline gap-2 flex-wrap">
-                  <span className="text-[30px] font-bold tracking-tight text-[#0a0a0a]">
+                  <span className="text-[30px] font-bold tracking-tight text-[#0f2214]">
                     {balance !== null ? (currency === "INR" ? formatINR(balance) : formatUSD(balance)) : "—"}
                   </span>
                   {balance !== null && balance > 0 && (
-                    <span className="text-[12px] font-medium text-[#9ca3af] bg-[#f9fafb] border border-[#f3f4f6] rounded-full px-2 py-0.5">
+                    <span className="text-[12px] font-medium text-[#8d9d94] bg-[#fdfcf8] border border-[#f6f5ef] rounded-full px-2 py-0.5">
                       ≈ {currency === "INR" ? formatUSD(balance) : formatINR(balance)}
                     </span>
                   )}
                 </div>
-                <p className="mt-2 text-[12px] text-[#6b7280] flex items-center gap-1.5">
-                  <Sparkles className="w-3 h-3 text-[#9ca3af]" />
+                <p className="mt-2 text-[12px] text-[#5f6f63] flex items-center gap-1.5">
+                  <Sparkles className="w-3 h-3 text-[#8d9d94]" />
                   Credits never expire • used per AI request
                 </p>
               </div>
@@ -542,21 +552,21 @@ export default function BillingPage() {
               className="card p-5"
             >
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-[#9ca3af]">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-[#8d9d94]">
                   Total purchased
                 </span>
                 <span className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center">
                   <TrendingUp className="w-4 h-4 text-emerald-600" />
                 </span>
               </div>
-              <div className="mt-3 text-[22px] font-semibold tracking-tight text-[#0a0a0a]">
+              <div className="mt-3 text-[22px] font-semibold tracking-tight text-[#0f2214]">
                 {currency === "INR" ? formatINR(totalPurchased) : formatUSD(totalPurchased)}
               </div>
-              <p className="mt-1 text-[12px] text-[#6b7280]">
+              <p className="mt-1 text-[12px] text-[#5f6f63]">
                 Lifetime credits bought
-                <span className="text-[#9ca3af]"> • ≈ {currency === "INR" ? formatUSD(totalPurchased) : formatINR(totalPurchased)}</span>
+                <span className="text-[#8d9d94]"> • ≈ {currency === "INR" ? formatUSD(totalPurchased) : formatINR(totalPurchased)}</span>
               </p>
-              <div className="mt-3 h-1.5 w-full rounded-full bg-[#f3f4f6] overflow-hidden">
+              <div className="mt-3 h-1.5 w-full rounded-full bg-[#f6f5ef] overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all"
                   style={{
@@ -575,22 +585,22 @@ export default function BillingPage() {
               className="card p-5"
             >
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-[#9ca3af]">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-[#8d9d94]">
                   Invoices
                 </span>
-                <span className="w-8 h-8 rounded-lg bg-[#fafafa] border border-[#e5e7eb] flex items-center justify-center">
-                  <History className="w-4 h-4 text-[#6b7280]" />
+                <span className="w-8 h-8 rounded-lg bg-[#fdfcf8] border border-[#e8e9e3] flex items-center justify-center">
+                  <History className="w-4 h-4 text-[#5f6f63]" />
                 </span>
               </div>
               <div className="mt-3 flex items-baseline gap-2">
-                <span className="text-[22px] font-semibold tracking-tight text-[#0a0a0a]">
+                <span className="text-[22px] font-semibold tracking-tight text-[#0f2214]">
                   {totalTransactions}
                 </span>
-                <span className="text-xs text-[#9ca3af] font-medium">
+                <span className="text-xs text-[#8d9d94] font-medium">
                   {totalTransactions === 1 ? "transaction" : "transactions"}
                 </span>
               </div>
-              <p className="mt-1 text-[12px] text-[#6b7280]">
+              <p className="mt-1 text-[12px] text-[#5f6f63]">
                 {history.filter((h) => h.status === "completed").length} completed •{" "}
                 {history.filter((h) => h.status === "failed").length} failed
               </p>
@@ -616,13 +626,13 @@ export default function BillingPage() {
               <div className="px-6 sm:px-8 pt-6 sm:pt-7">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <h2 className="text-[15px] font-semibold text-[#0a0a0a]">Buy credits</h2>
-                    <p className="mt-1 text-[13px] text-[#6b7280]">
+                    <h2 className="text-[15px] font-semibold text-[#0f2214]">Buy credits</h2>
+                    <p className="mt-1 text-[13px] text-[#5f6f63]">
                       Choose a preset or enter a custom amount. You’ll be charged in INR{currency === "USD" ? " (USD shown for reference)" : ""}.
                     </p>
                   </div>
-                  <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-[#e5e7eb] bg-[#fafafa] px-2.5 py-1 text-[11px] font-medium text-[#6b7280]">
-                    <Info className="w-3 h-3" /> Minimum ₹1
+                  <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-[#e8e9e3] bg-[#fdfcf8] px-2.5 py-1 text-[11px] font-medium text-[#5f6f63]">
+                    <Info className="w-3 h-3" /> Minimum {formatINR(MIN_AMOUNT)}
                   </span>
                 </div>
 
@@ -641,19 +651,19 @@ export default function BillingPage() {
                         }}
                         className={`group relative rounded-xl border px-3 py-3 text-center transition-all ${
                           active
-                            ? "border-[#0a0a0a] bg-[#0a0a0a] text-white shadow-[0_4px_14px_rgba(0,0,0,0.2)]"
-                            : "border-[#e5e7eb] bg-white text-[#0a0a0a] hover:border-[#c7d2fe] hover:bg-[#eef2ff]/50"
+                            ? "border-[#0f2214] bg-[#0f2214] text-white shadow-[0_4px_14px_rgba(0,0,0,0.2)]"
+                            : "border-[#e8e9e3] bg-white text-[#0f2214] hover:border-[#cfe0cf] hover:bg-[#eaf0e8]/50"
                         }`}
                       >
-                        <div className={`text-[15px] font-bold leading-none ${active ? "text-white" : "text-[#0a0a0a]"}`}>
+                        <div className={`text-[15px] font-bold leading-none ${active ? "text-white" : "text-[#0f2214]"}`}>
                           {label}
                         </div>
-                        <div className={`mt-1 text-[10px] font-medium ${active ? "text-white/60" : "text-[#9ca3af]"}`}>
+                        <div className={`mt-1 text-[10px] font-medium ${active ? "text-white/60" : "text-[#8d9d94]"}`}>
                           {chip} credits
                         </div>
                         {active && (
-                          <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-white border border-[#0a0a0a] flex items-center justify-center">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-[#0a0a0a]" />
+                          <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-white border border-[#0f2214] flex items-center justify-center">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-[#0f2214]" />
                           </span>
                         )}
                       </button>
@@ -665,19 +675,23 @@ export default function BillingPage() {
                 <div className="mt-6">
                   <label
                     htmlFor="buy-custom-credits"
-                    className="text-[12px] font-semibold text-[#374151] flex items-center gap-1.5"
+                    className="text-[12px] font-semibold text-[#2f3e32] flex items-center gap-1.5"
                   >
                     Custom amount
-                    <span className="font-normal text-[#9ca3af]">({currency})</span>
+                    <span className="font-normal text-[#8d9d94]">({currency})</span>
                   </label>
-                  <div className="relative mt-2">
-                    <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[14px] font-semibold text-[#6b7280]">
+                  <div
+                    className={`relative mt-2 rounded-xl transition-all ${isBelowMin ? "ring-1 ring-red-300" : ""}`}
+                  >
+                    <span
+                      className={`pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[14px] font-semibold ${isBelowMin ? "text-red-500" : "text-[#5f6f63]"}`}
+                    >
                       {currency === "INR" ? "₹" : "$"}
                     </span>
                     <input
                       id="buy-custom-credits"
                       type="number"
-                      min="1"
+                      min={currency === "INR" ? MIN_AMOUNT : Number((MIN_AMOUNT / usdInrRate).toFixed(2))}
                       inputMode="decimal"
                       step={currency === "INR" ? "1" : "0.01"}
                       value={customAmount}
@@ -685,21 +699,43 @@ export default function BillingPage() {
                         setCustomAmount(e.target.value);
                         setNotice(null);
                       }}
-                      placeholder={currency === "INR" ? "Enter amount e.g. 750" : "Enter amount e.g. 9.00"}
-                      className="input pl-8 pr-28 py-3 text-[14px] font-medium"
+                      placeholder={currency === "INR" ? "Enter amount e.g. 750" : `Enter amount e.g. ${(500 / usdInrRate).toFixed(2)}`}
+                      className={`input pl-8 pr-28 py-3 text-[14px] font-medium !rounded-xl transition-colors ${isBelowMin ? "!border-red-400 !bg-red-50/60 !text-red-700 placeholder:text-red-300 !shadow-[0_0_0_3px_rgba(239,68,68,0.15)]" : ""}`}
+                      aria-invalid={isBelowMin}
+                      aria-describedby="min-amount-hint"
                     />
-                    {canCheckout && (
-                      <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-[#eef2ff] border border-[#c7d2fe] px-2.5 py-1 text-[11px] font-semibold text-[#4338ca]">
+                    {canCheckout && !isBelowMin && (
+                      <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-[#eaf0e8] border border-[#cfe0cf] px-2.5 py-1 text-[11px] font-semibold text-[#143620]">
                         ≈ {currency === "INR" ? formatUSD(amount as number) : formatINR(amount as number)}
                       </span>
                     )}
+                    {isBelowMin && (
+                      <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-red-50 border border-red-200 px-2.5 py-1 text-[11px] font-semibold text-red-600">
+                        below min
+                      </span>
+                    )}
                   </div>
+                  <p
+                    id="min-amount-hint"
+                    className={`mt-1.5 text-[11px] flex items-center gap-1 ${isBelowMin ? "font-semibold text-red-600" : "text-[#8d9d94]"}`}
+                  >
+                    {isBelowMin ? (
+                      <>
+                        <CircleAlert className="w-3 h-3 shrink-0" /> Minimum top-up is{" "}
+                        {currency === "INR" ? formatINR(MIN_AMOUNT) : formatUSD(MIN_AMOUNT)} (≈{" "}
+                        {currency === "INR" ? formatUSD(MIN_AMOUNT) : formatINR(MIN_AMOUNT)}) — enter at least{" "}
+                        {currency === "INR" ? MIN_AMOUNT : Number((MIN_AMOUNT / usdInrRate).toFixed(2))} {currency}
+                      </>
+                    ) : (
+                      <>Minimum top-up is {formatINR(MIN_AMOUNT)} • {formatUSD(MIN_AMOUNT)} — 1 credit = ₹1</>
+                    )}
+                  </p>
                 </div>
               </div>
 
               {/* Mobile summary + CTA (visible only on small screens) */}
               <div className="lg:hidden px-6 sm:px-8 pb-6 pt-5">
-                <div className="rounded-xl bg-[#0a0a0a] text-white p-4 flex items-center justify-between">
+                <div className="rounded-xl bg-[#0f2214] text-white p-4 flex items-center justify-between">
                   <div>
                     <div className="text-[11px] font-medium text-white/60 uppercase tracking-wider">Total due today</div>
                     <div className="mt-1 text-xl font-bold">{canCheckout ? (currency === "INR" ? formatINR(amount as number) : formatUSD(amount as number)) : "—"}</div>
@@ -728,15 +764,17 @@ export default function BillingPage() {
                       <CreditCard className="w-4 h-4" />
                       Pay {currency === "INR" ? formatINR(amount as number) : formatUSD(amount as number)}
                     </>
+                  ) : isBelowMin ? (
+                    `Minimum ${currency === "INR" ? formatINR(MIN_AMOUNT) : formatUSD(MIN_AMOUNT)}`
                   ) : (
                     "Select an amount"
                   )}
                 </button>
-                <p className="mt-2 text-center text-[11px] text-[#9ca3af]">Secure checkout via Razorpay — UPI, Cards, Netbanking, Wallets</p>
+                <p className="mt-2 text-center text-[11px] text-[#8d9d94]">Secure checkout via Razorpay — UPI, Cards, Netbanking, Wallets</p>
               </div>
 
               {/* Desktop footer bar inside card */}
-              <div className="hidden lg:flex items-center gap-1.5 border-t border-[#f3f4f6] bg-[#fafafa]/60 px-8 py-4 text-[11px] text-[#9ca3af]">
+              <div className="hidden lg:flex items-center gap-1.5 border-t border-[#f6f5ef] bg-[#fdfcf8]/60 px-8 py-4 text-[11px] text-[#8d9d94]">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
                 Payments are encrypted. We never store card details.
               </div>
@@ -752,29 +790,29 @@ export default function BillingPage() {
                 className="card overflow-hidden"
               >
                 <div className="p-6">
-                  <h3 className="text-[13px] font-semibold text-[#0a0a0a]">Order summary</h3>
+                  <h3 className="text-[13px] font-semibold text-[#0f2214]">Order summary</h3>
                   <div className="mt-4 space-y-3 text-[13px]">
                     <div className="flex items-center justify-between">
-                      <span className="text-[#6b7280]">Credits</span>
-                      <span className="font-semibold text-[#0a0a0a]">{canCheckout ? `${(amount as number).toLocaleString("en-IN")} credits` : "—"}</span>
+                      <span className="text-[#5f6f63]">Credits</span>
+                      <span className="font-semibold text-[#0f2214]">{canCheckout ? `${(amount as number).toLocaleString("en-IN")} credits` : "—"}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-[#6b7280]">Amount ({currency})</span>
-                      <span className="font-semibold text-[#0a0a0a]">{canCheckout ? (currency === "INR" ? formatINR(amount as number) : formatUSD(amount as number)) : "—"}</span>
+                      <span className="text-[#5f6f63]">Amount ({currency})</span>
+                      <span className="font-semibold text-[#0f2214]">{canCheckout ? (currency === "INR" ? formatINR(amount as number) : formatUSD(amount as number)) : "—"}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-[#6b7280]">Approx. {currency === "INR" ? "USD" : "INR"}</span>
-                      <span className="font-medium text-[#6b7280]">{canCheckout ? (currency === "INR" ? formatUSD(amount as number) : formatINR(amount as number)) : "—"}</span>
+                      <span className="text-[#5f6f63]">Approx. {currency === "INR" ? "USD" : "INR"}</span>
+                      <span className="font-medium text-[#5f6f63]">{canCheckout ? (currency === "INR" ? formatUSD(amount as number) : formatINR(amount as number)) : "—"}</span>
                     </div>
-                    <div className="h-px bg-[#f3f4f6]" />
+                    <div className="h-px bg-[#f6f5ef]" />
                     <div className="flex items-center justify-between">
-                      <span className="text-[13px] font-semibold text-[#0a0a0a]">Total due today</span>
-                      <span className="text-lg font-bold text-[#0a0a0a]">{canCheckout ? (currency === "INR" ? formatINR(amount as number) : formatUSD(amount as number)) : "—"}</span>
+                      <span className="text-[13px] font-semibold text-[#0f2214]">Total due today</span>
+                      <span className="text-lg font-bold text-[#0f2214]">{canCheckout ? (currency === "INR" ? formatINR(amount as number) : formatUSD(amount as number)) : "—"}</span>
                     </div>
                     {canCheckout && balance !== null && (
-                      <div className="rounded-lg bg-[#eef2ff] border border-[#c7d2fe] px-3 py-2 flex items-center justify-between">
-                        <span className="text-[11px] font-medium text-[#4338ca]">New balance after top-up</span>
-                        <span className="text-[13px] font-bold text-[#4338ca]">{currency === "INR" ? formatINR(balance + (amount as number)) : formatUSD(balance + (amount as number))}</span>
+                      <div className="rounded-lg bg-[#eaf0e8] border border-[#cfe0cf] px-3 py-2 flex items-center justify-between">
+                        <span className="text-[11px] font-medium text-[#143620]">New balance after top-up</span>
+                        <span className="text-[13px] font-bold text-[#143620]">{currency === "INR" ? formatINR(balance + (amount as number)) : formatUSD(balance + (amount as number))}</span>
                       </div>
                     )}
                   </div>
@@ -795,16 +833,18 @@ export default function BillingPage() {
                         <CreditCard className="w-4 h-4" />
                         Pay {currency === "INR" ? formatINR(amount as number) : formatUSD(amount as number)}
                       </>
+                    ) : isBelowMin ? (
+                      `Minimum ${currency === "INR" ? formatINR(MIN_AMOUNT) : formatUSD(MIN_AMOUNT)}`
                     ) : (
                       "Select an amount"
                     )}
                   </button>
-                  <p className="hidden lg:block mt-2 text-center text-[11px] text-[#9ca3af]">
+                  <p className="hidden lg:block mt-2 text-center text-[11px] text-[#8d9d94]">
                     You’ll be redirected to Razorpay’s secure checkout.
                   </p>
                 </div>
-                <div className="border-t border-[#f3f4f6] bg-[#fafafa] px-6 py-3 flex items-center justify-between">
-                  <span className="text-[11px] font-medium text-[#6b7280]">Questions?</span>
+                <div className="border-t border-[#f6f5ef] bg-[#fdfcf8] px-6 py-3 flex items-center justify-between">
+                  <span className="text-[11px] font-medium text-[#5f6f63]">Questions?</span>
                   <a href="mailto:support@cofounder.ai" className="text-[11px] font-semibold hover:underline" style={{ color: ACCENT }}>
                     Contact support →
                   </a>
@@ -824,11 +864,11 @@ export default function BillingPage() {
             className="card overflow-hidden"
           >
             <div className="px-6 sm:px-7 pt-6 pb-4">
-              <h2 className="text-[15px] font-semibold text-[#0a0a0a] flex items-center gap-2">
-                <ReceiptText className="w-4 h-4 text-[#9ca3af]" />
+              <h2 className="text-[15px] font-semibold text-[#0f2214] flex items-center gap-2">
+                <ReceiptText className="w-4 h-4 text-[#8d9d94]" />
                 Invoice history
               </h2>
-              <p className="mt-1 text-[13px] text-[#6b7280]">
+              <p className="mt-1 text-[13px] text-[#5f6f63]">
                 Invoices are issued when credits are purchased. Dates are in your local timezone.
               </p>
             </div>
@@ -838,24 +878,24 @@ export default function BillingPage() {
                 <Loader2 className="h-5 w-5 animate-spin" style={{ color: ACCENT }} />
               </div>
             ) : history.length === 0 ? (
-              <div className="text-center py-14 px-6 border-t border-[#f3f4f6]">
-                <div className="mx-auto mb-3 w-12 h-12 rounded-2xl bg-[#fafafa] border border-[#e5e7eb] flex items-center justify-center">
-                  <ReceiptText className="w-5 h-5 text-[#d4d4d8]" />
+              <div className="text-center py-14 px-6 border-t border-[#f6f5ef]">
+                <div className="mx-auto mb-3 w-12 h-12 rounded-2xl bg-[#fdfcf8] border border-[#e8e9e3] flex items-center justify-center">
+                  <ReceiptText className="w-5 h-5 text-[#c2c9c0]" />
                 </div>
-                <p className="text-sm font-medium text-[#0a0a0a]">No payments yet</p>
-                <p className="mt-1 text-[13px] text-[#9ca3af] max-w-sm mx-auto">
+                <p className="text-sm font-medium text-[#0f2214]">No payments yet</p>
+                <p className="mt-1 text-[13px] text-[#8d9d94] max-w-sm mx-auto">
                   Your first credit purchase will show up here with its invoice, status and amount.
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto border-t border-[#f3f4f6]">
+              <div className="overflow-x-auto border-t border-[#f6f5ef]">
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="bg-[#fafafa] border-b border-[#f3f4f6]">
+                    <tr className="bg-[#fdfcf8] border-b border-[#f6f5ef]">
                       {["Date", "Invoice type", "Status", "Cost"].map((h, i) => (
                         <th
                           key={h}
-                          className={`px-6 sm:px-7 py-3 text-[11px] font-semibold uppercase tracking-wider text-[#9ca3af] whitespace-nowrap ${
+                          className={`px-6 sm:px-7 py-3 text-[11px] font-semibold uppercase tracking-wider text-[#8d9d94] whitespace-nowrap ${
                             i >= 3 ? "text-right" : ""
                           }`}
                         >
@@ -864,18 +904,18 @@ export default function BillingPage() {
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#f3f4f6]">
+                  <tbody className="divide-y divide-[#f6f5ef]">
                     {history.map((p) => {
                       const meta = STATUS_META[p.status] ?? STATUS_META.pending;
                       const cost = Number(p.amount);
                       return (
-                        <tr key={p.id} className="hover:bg-[#fafafa]/70 transition-colors">
-                          <td className="px-6 sm:px-7 py-3.5 text-[13px] font-medium text-[#0a0a0a] whitespace-nowrap">
+                        <tr key={p.id} className="hover:bg-[#fdfcf8]/70 transition-colors">
+                          <td className="px-6 sm:px-7 py-3.5 text-[13px] font-medium text-[#0f2214] whitespace-nowrap">
                             {formatDate(p.payment_date)}
                           </td>
-                          <td className="px-6 sm:px-7 py-3.5 text-[13px] text-[#374151]">
+                          <td className="px-6 sm:px-7 py-3.5 text-[13px] text-[#2f3e32]">
                             <span className="inline-flex items-center gap-1.5">
-                              <span className="w-6 h-6 rounded-md bg-[#eef2ff] border border-[#e5e7eb] hidden sm:inline-flex items-center justify-center">
+                              <span className="w-6 h-6 rounded-md bg-[#eaf0e8] border border-[#e8e9e3] hidden sm:inline-flex items-center justify-center">
                                 <Coins className="w-3 h-3" style={{ color: ACCENT }} />
                               </span>
                               {meta.type}
@@ -889,10 +929,10 @@ export default function BillingPage() {
                               {meta.label}
                             </span>
                           </td>
-                          <td className="px-6 sm:px-7 py-3.5 text-right text-[13px] font-semibold text-[#0a0a0a] whitespace-nowrap">
+                          <td className="px-6 sm:px-7 py-3.5 text-right text-[13px] font-semibold text-[#0f2214] whitespace-nowrap">
                             {cost > 0 ? (currency === "INR" ? formatINR(cost) : formatUSD(cost)) : "—"}
                             {cost > 0 && (
-                              <span className="ml-1.5 hidden sm:inline text-[11px] font-normal text-[#9ca3af]">
+                              <span className="ml-1.5 hidden sm:inline text-[11px] font-normal text-[#8d9d94]">
                                 ≈ {currency === "INR" ? formatUSD(cost) : formatINR(cost)}
                               </span>
                             )}
@@ -906,12 +946,12 @@ export default function BillingPage() {
             )}
 
             {/* Bottom trust strip inside history card */}
-            <div className="border-t border-[#f3f4f6] bg-[#fafafa]/60 px-6 sm:px-7 py-3 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-[#9ca3af]">
+            <div className="border-t border-[#f6f5ef] bg-[#fdfcf8]/60 px-6 sm:px-7 py-3 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-[#8d9d94]">
               <span className="flex items-center gap-1.5">
                 <ShieldCheck className="w-3.5 h-3.5" />
                 All payments are processed securely by Razorpay. Invoices are final.
               </span>
-              <span className="font-medium text-[#6b7280]">Need a GST invoice? Contact support.</span>
+              <span className="font-medium text-[#5f6f63]">Need a GST invoice? Contact support.</span>
             </div>
           </motion.section>
         </>

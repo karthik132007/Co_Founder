@@ -9,7 +9,7 @@ import {
 import { getSession } from "@/lib/session";
 import { fetchProfile, updateProfile, type ProfileData } from "@/lib/api";
 
-const ACCENT = "#4f46e5";
+const ACCENT = "#143620";
 const TONES = ["friendly", "professional", "witty"];
 const INDUSTRIES = [
   "Skin and hair care", "SaaS", "E-commerce", "Health & Wellness", "Food & Beverage",
@@ -25,14 +25,14 @@ function GeneralTab() {
   const Section = ({ icon: Icon, title, desc, children }: {
     icon: typeof SettingsIcon; title: string; desc: string; children: React.ReactNode;
   }) => (
-    <div className="border border-[#e5e7eb] rounded-xl p-5 space-y-4">
-      <div className="flex items-center gap-3 border-b border-[#e5e7eb] pb-3 mb-3">
-        <div className="w-8 h-8 rounded-lg bg-[#eef2ff] flex items-center justify-center shrink-0">
+    <div className="border border-[#e8e9e3] rounded-xl p-5 space-y-4">
+      <div className="flex items-center gap-3 border-b border-[#e8e9e3] pb-3 mb-3">
+        <div className="w-8 h-8 rounded-lg bg-[#eaf0e8] flex items-center justify-center shrink-0">
           <Icon className="w-4 h-4" style={{ color: ACCENT }} />
         </div>
         <div>
-          <h3 className="text-[14px] font-semibold text-[#0a0a0a]">{title}</h3>
-          <p className="text-[12px] text-[#6b7280]">{desc}</p>
+          <h3 className="text-[14px] font-semibold text-[#0f2214]">{title}</h3>
+          <p className="text-[12px] text-[#5f6f63]">{desc}</p>
         </div>
       </div>
       {children}
@@ -41,22 +41,22 @@ function GeneralTab() {
 
   return (
     <div className="space-y-6">
-      <div className="border-b border-[#e5e7eb] pb-4">
-        <h2 className="text-lg font-semibold text-[#0a0a0a]">General Settings</h2>
+      <div className="border-b border-[#e8e9e3] pb-4">
+        <h2 className="text-lg font-semibold text-[#0f2214]">General Settings</h2>
       </div>
 
       <Section icon={Shield} title="Account" desc="Your email and password.">
         <div className="space-y-4">
           <div>
-            <label className="text-[12px] font-semibold text-[#6b7280] uppercase tracking-wider">Email</label>
+            <label className="text-[12px] font-semibold text-[#5f6f63] uppercase tracking-wider">Email</label>
             <input type="email" value={session.user.email} disabled
-              className="w-full rounded-xl border border-[#e5e7eb] bg-[#f9fafb] px-4 py-2.5 text-[14px] text-[#9ca3af] outline-none mt-1" />
+              className="w-full rounded-xl border border-[#e8e9e3] bg-[#fdfcf8] px-4 py-2.5 text-[14px] text-[#8d9d94] outline-none mt-1" />
           </div>
           <div>
-            <label className="text-[12px] font-semibold text-[#6b7280] uppercase tracking-wider">Password</label>
+            <label className="text-[12px] font-semibold text-[#5f6f63] uppercase tracking-wider">Password</label>
             <div className="flex items-center gap-3 mt-1">
               <input type="password" value="••••••••" disabled
-                className="flex-1 rounded-xl border border-[#e5e7eb] bg-[#f9fafb] px-4 py-2.5 text-[14px] text-[#9ca3af] outline-none" />
+                className="flex-1 rounded-xl border border-[#e8e9e3] bg-[#fdfcf8] px-4 py-2.5 text-[14px] text-[#8d9d94] outline-none" />
               <button disabled className="btn-primary px-4 py-2.5 text-[13px] opacity-40 cursor-not-allowed">Change</button>
             </div>
           </div>
@@ -64,11 +64,11 @@ function GeneralTab() {
       </Section>
 
       <Section icon={Bell} title="Notifications" desc="Manage notifications.">
-        <p className="text-[13px] text-[#9ca3af]">Email and in-app notification preferences will be available here.</p>
+        <p className="text-[13px] text-[#8d9d94]">Email and in-app notification preferences will be available here.</p>
       </Section>
 
       <Section icon={Palette} title="Appearance" desc="Theme preferences.">
-        <p className="text-[13px] text-[#9ca3af]">Theme and display settings will be available here.</p>
+        <p className="text-[13px] text-[#8d9d94]">Theme and display settings will be available here.</p>
       </Section>
     </div>
   );
@@ -125,8 +125,8 @@ function CompanyTab() {
 
   const Field = ({ label, icon: Icon, children }: { label: string; icon: typeof User; children: React.ReactNode }) => (
     <div className="space-y-1.5">
-      <label className="flex items-center gap-2 text-[13px] font-semibold text-[#374151]">
-        <Icon className="w-3.5 h-3.5 text-[#9ca3af]" />{label}
+      <label className="flex items-center gap-2 text-[13px] font-semibold text-[#2f3e32]">
+        <Icon className="w-3.5 h-3.5 text-[#8d9d94]" />{label}
       </label>
       {children}
     </div>
@@ -134,8 +134,8 @@ function CompanyTab() {
 
   return (
     <div className="space-y-6 pb-8">
-      <div className="border-b border-[#e5e7eb] pb-4">
-        <h2 className="text-lg font-semibold text-[#0a0a0a]">Company Settings</h2>
+      <div className="border-b border-[#e8e9e3] pb-4">
+        <h2 className="text-lg font-semibold text-[#0f2214]">Company Settings</h2>
       </div>
 
       {loading ? (
@@ -144,22 +144,22 @@ function CompanyTab() {
         <div className="space-y-6">
           <Field label="Email" icon={User}>
             <input type="email" value={session.user.email} disabled
-              className="w-full rounded-xl border border-[#e5e7eb] bg-[#f9fafb] px-4 py-2.5 text-[14px] text-[#9ca3af] outline-none" />
+              className="w-full rounded-xl border border-[#e8e9e3] bg-[#fdfcf8] px-4 py-2.5 text-[14px] text-[#8d9d94] outline-none" />
           </Field>
 
           <Field label="Company Name" icon={Building2}>
             <input value={name} onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-xl border border-[#e5e7eb] bg-[#fafafa] hover:border-[#d4d4d8] focus:bg-white px-4 py-2.5 text-[14px] text-[#0a0a0a] placeholder:text-[#9ca3af] outline-none focus:border-[#4f46e5] focus:ring-4 focus:ring-[#4f46e5]/10 transition-all duration-200" />
+              className="w-full rounded-xl border border-[#e8e9e3] bg-[#fdfcf8] hover:border-[#c2c9c0] focus:bg-white px-4 py-2.5 text-[14px] text-[#0f2214] placeholder:text-[#8d9d94] outline-none focus:border-[#143620] focus:ring-4 focus:ring-[#143620]/10 transition-all duration-200" />
           </Field>
 
           <Field label="Description" icon={Building2}>
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4}
-              className="w-full rounded-xl border border-[#e5e7eb] bg-[#fafafa] hover:border-[#d4d4d8] focus:bg-white px-4 py-2.5 text-[14px] text-[#0a0a0a] placeholder:text-[#9ca3af] outline-none focus:border-[#4f46e5] focus:ring-4 focus:ring-[#4f46e5]/10 transition-all duration-200 resize-none" />
+              className="w-full rounded-xl border border-[#e8e9e3] bg-[#fdfcf8] hover:border-[#c2c9c0] focus:bg-white px-4 py-2.5 text-[14px] text-[#0f2214] placeholder:text-[#8d9d94] outline-none focus:border-[#143620] focus:ring-4 focus:ring-[#143620]/10 transition-all duration-200 resize-none" />
           </Field>
 
           <Field label="Industry" icon={Briefcase}>
             <select value={industry} onChange={(e) => setIndustry(e.target.value)}
-              className="w-full rounded-xl border border-[#e5e7eb] bg-[#fafafa] hover:border-[#d4d4d8] focus:bg-white px-4 py-2.5 text-[14px] text-[#0a0a0a] outline-none focus:border-[#4f46e5] focus:ring-4 focus:ring-[#4f46e5]/10 transition-all duration-200">
+              className="w-full rounded-xl border border-[#e8e9e3] bg-[#fdfcf8] hover:border-[#c2c9c0] focus:bg-white px-4 py-2.5 text-[14px] text-[#0f2214] outline-none focus:border-[#143620] focus:ring-4 focus:ring-[#143620]/10 transition-all duration-200">
               {INDUSTRIES.map((i) => <option key={i} value={i}>{i}</option>)}
             </select>
           </Field>
@@ -169,7 +169,7 @@ function CompanyTab() {
               {TONES.map((t) => (
                 <button key={t} type="button" onClick={() => setTone(t)}
                   className={`flex-1 rounded-xl border px-4 py-2.5 text-[13px] font-medium capitalize transition-all duration-200 ${
-                    tone === t ? "border-[#4f46e5] bg-[#eef2ff] text-[#4f46e5] shadow-sm ring-1 ring-[#4f46e5]/20" : "border-[#e5e7eb] text-[#6b7280] bg-white hover:border-[#d4d4d8] hover:-translate-y-0.5 hover:shadow-sm"
+                    tone === t ? "border-[#143620] bg-[#eaf0e8] text-[#143620] shadow-sm ring-1 ring-[#143620]/20" : "border-[#e8e9e3] text-[#5f6f63] bg-white hover:border-[#c2c9c0] hover:-translate-y-0.5 hover:shadow-sm"
                   }`}>
                   {t}
                 </button>
@@ -218,17 +218,17 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="relative bg-white w-full max-w-4xl h-[650px] max-h-[85vh] rounded-2xl shadow-2xl flex flex-col sm:flex-row overflow-hidden border border-[#e5e7eb]"
+            className="relative bg-white w-full max-w-4xl h-[650px] max-h-[85vh] rounded-2xl shadow-2xl flex flex-col sm:flex-row overflow-hidden border border-[#e8e9e3]"
           >
             {/* Left Sidebar */}
-            <div className="w-full sm:w-[240px] bg-[#fafafa] border-r border-[#e5e7eb] p-4 flex flex-col gap-1 shrink-0">
+            <div className="w-full sm:w-[240px] bg-[#fdfcf8] border-r border-[#e8e9e3] p-4 flex flex-col gap-1 shrink-0">
               <div className="mb-2 px-2">
-                <h3 className="text-xs font-semibold text-[#9ca3af] uppercase tracking-wider">Settings</h3>
+                <h3 className="text-xs font-semibold text-[#8d9d94] uppercase tracking-wider">Settings</h3>
               </div>
               <button
                 onClick={() => setActiveTab("general")}
                 className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[14px] font-medium transition-all ${
-                  activeTab === 'general' ? 'bg-white shadow-sm border border-[#e5e7eb] text-[#0a0a0a]' : 'text-[#6b7280] hover:bg-[#f3f4f6] border border-transparent'
+                  activeTab === 'general' ? 'bg-white shadow-sm border border-[#e8e9e3] text-[#0f2214]' : 'text-[#5f6f63] hover:bg-[#f6f5ef] border border-transparent'
                 }`}
               >
                 <SettingsIcon className="w-4 h-4" /> General
@@ -236,7 +236,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
               <button
                 onClick={() => setActiveTab("company")}
                 className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[14px] font-medium transition-all ${
-                  activeTab === 'company' ? 'bg-white shadow-sm border border-[#e5e7eb] text-[#0a0a0a]' : 'text-[#6b7280] hover:bg-[#f3f4f6] border border-transparent'
+                  activeTab === 'company' ? 'bg-white shadow-sm border border-[#e8e9e3] text-[#0f2214]' : 'text-[#5f6f63] hover:bg-[#f6f5ef] border border-transparent'
                 }`}
               >
                 <Building2 className="w-4 h-4" /> Company
@@ -247,7 +247,7 @@ export default function SettingsModal({ isOpen, onClose }: { isOpen: boolean; on
             <div className="flex-1 overflow-y-auto bg-white p-6 sm:p-8 relative">
               <button
                 onClick={onClose}
-                className="absolute top-4 right-4 sm:top-6 sm:right-6 p-2 rounded-lg hover:bg-[#f3f4f6] text-[#9ca3af] hover:text-[#374151] transition-colors"
+                className="absolute top-4 right-4 sm:top-6 sm:right-6 p-2 rounded-lg hover:bg-[#f6f5ef] text-[#8d9d94] hover:text-[#2f3e32] transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>

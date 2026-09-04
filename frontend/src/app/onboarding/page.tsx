@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { API_BASE_URL, readApiError } from "@/lib/api";
 import { getSession, setOnboardingComplete, type CofounderSession } from "@/lib/session";
 
-const ACCENT = "#4f46e5";
+const ACCENT = "#143620";
 
 type OnboardingForm = {
   fullName: string;
@@ -184,16 +184,16 @@ export default function OnboardingPage() {
 
   if (!session || session.onboardingComplete) {
     return (
-      <main className="min-h-screen bg-[#fafafa] flex items-center justify-center">
+      <main className="min-h-screen bg-[#fdfcf8] flex items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin" style={{ color: ACCENT }} />
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#fafafa] flex text-[#0a0a0a]">
+    <main className="min-h-screen bg-[#fdfcf8] flex text-[#0f2214]">
       {/* ── Left: brand panel ── */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col relative px-14 py-12 overflow-hidden bg-[#0a0a0a]">
+      <div className="hidden lg:flex lg:w-1/2 flex-col relative px-14 py-12 overflow-hidden bg-[#08130d]">
         <div
           className="absolute inset-0 opacity-[0.12] pointer-events-none"
           style={{
@@ -202,14 +202,14 @@ export default function OnboardingPage() {
             backgroundSize: "56px 56px",
           }}
         />
-        <div className="absolute -bottom-32 -left-24 w-[480px] h-[480px] bg-[#4f46e5]/25 rounded-full blur-[140px] pointer-events-none" />
+        <div className="absolute -bottom-32 -left-24 w-[480px] h-[480px] bg-[#143620]/25 rounded-full blur-[140px] pointer-events-none" />
 
         <Link href="/" className="flex items-center gap-2.5 relative z-10">
           <div className="w-8 h-8 rounded-lg bg-white/10 border border-white/15 flex items-center justify-center overflow-hidden">
             <Image src="/icon.png" alt="Co-Founder AI" width={24} height={24} className="w-6 h-6 object-contain" />
           </div>
           <span className="font-semibold text-[15px] tracking-tight text-white">
-            Co-Founder<span style={{ color: "#8b85ff" }}> AI</span>
+            Co-Founder<span style={{ color: "#7cc99a" }}> AI</span>
           </span>
         </Link>
 
@@ -220,14 +220,14 @@ export default function OnboardingPage() {
             transition={{ duration: 0.5 }}
             className="text-[clamp(2rem,3.4vw,3.1rem)] font-semibold leading-[1.12] tracking-tight text-white"
           >
-            Tell us the basics. <span className="text-[#8b85ff]">We&apos;ll tune your team.</span>
+            Tell us the basics. <span className="text-[#7cc99a]">We&apos;ll tune your team.</span>
           </motion.h1>
 
           <motion.p
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.12 }}
-            className="mt-5 text-[15px] text-[#a1a1aa] leading-relaxed"
+            className="mt-5 text-[15px] text-[#aab8b0] leading-relaxed"
           >
             Answer a few quick questions so our AI agents can personalize your
             experience. Takes less than 2 minutes.
@@ -250,15 +250,15 @@ export default function OnboardingPage() {
                       done
                         ? "bg-emerald-500 border-emerald-500 text-white"
                         : active
-                          ? "border-[#8b85ff] bg-[#8b85ff]/15 text-[#8b85ff]"
-                          : "border-white/15 text-[#71717a]"
+                          ? "border-[#7cc99a] bg-[#7cc99a]/15 text-[#7cc99a]"
+                          : "border-white/15 text-[#8d9d94]"
                     }`}
                   >
                     {done ? <Check className="w-3.5 h-3.5" /> : i + 1}
                   </div>
                   <span
                     className={`text-sm font-medium transition-colors ${
-                      active ? "text-white" : done ? "text-[#a1a1aa]" : "text-[#71717a]"
+                      active ? "text-white" : done ? "text-[#aab8b0]" : "text-[#8d9d94]"
                     }`}
                   >
                     {step.label}
@@ -269,7 +269,7 @@ export default function OnboardingPage() {
           </motion.div>
         </div>
 
-        <p className="relative z-10 text-xs text-[#71717a]">
+        <p className="relative z-10 text-xs text-[#8d9d94]">
           © 2026 Co-Founder AI — All rights reserved.
         </p>
       </div>
@@ -284,21 +284,21 @@ export default function OnboardingPage() {
         >
           {/* Mobile logo */}
           <Link href="/" className="flex items-center justify-center gap-2.5 mb-10 lg:hidden">
-            <div className="w-9 h-9 rounded-lg bg-white border border-[#e5e7eb] flex items-center justify-center overflow-hidden">
+            <div className="w-9 h-9 rounded-lg bg-white border border-[#e8e9e3] flex items-center justify-center overflow-hidden">
               <Image src="/icon.png" alt="Co-Founder AI" width={26} height={26} className="w-7 h-7 object-contain" />
             </div>
-            <span className="font-semibold text-lg tracking-tight text-[#0a0a0a]">
+            <span className="font-semibold text-lg tracking-tight text-[#0f2214]">
               Co-Founder<span style={{ color: ACCENT }}> AI</span>
             </span>
           </Link>
 
           {/* Progress */}
           <div className="mb-9">
-            <div className="flex justify-between text-xs font-medium text-[#6b7280] mb-2.5">
+            <div className="flex justify-between text-xs font-medium text-[#5f6f63] mb-2.5">
               <span>Step {stepIndex + 1} of {steps.length}</span>
               <span>{Math.round(((stepIndex + 1) / steps.length) * 100)}%</span>
             </div>
-            <div className="h-1.5 w-full bg-[#e5e7eb] rounded-full overflow-hidden">
+            <div className="h-1.5 w-full bg-[#e8e9e3] rounded-full overflow-hidden">
               <motion.div
                 className="h-full rounded-full"
                 style={{ background: ACCENT }}
@@ -336,10 +336,10 @@ export default function OnboardingPage() {
                   <p className="text-xs font-semibold mb-2 uppercase tracking-widest" style={{ color: ACCENT }}>
                     {currentStep.label}
                   </p>
-                  <h1 className="text-2xl font-semibold tracking-tight text-[#0a0a0a]">
+                  <h1 className="text-2xl font-semibold tracking-tight text-[#0f2214]">
                     {currentStep.title}
                   </h1>
-                  <p className="mt-1.5 text-sm text-[#6b7280]">{currentStep.helper}</p>
+                  <p className="mt-1.5 text-sm text-[#5f6f63]">{currentStep.helper}</p>
                 </div>
 
                 {currentStep.key === "smallDescription" ? (
@@ -353,7 +353,7 @@ export default function OnboardingPage() {
                       className="input px-3.5 py-3 text-sm resize-none"
                       placeholder="We help early-stage founders..."
                     />
-                    <div className={`mt-2 text-right text-xs font-medium ${descriptionWords > 500 ? "text-red-500" : "text-[#9ca3af]"}`}>
+                    <div className={`mt-2 text-right text-xs font-medium ${descriptionWords > 500 ? "text-red-500" : "text-[#8d9d94]"}`}>
                       {descriptionWords}/500 words
                     </div>
                   </div>
@@ -368,17 +368,17 @@ export default function OnboardingPage() {
                           onClick={() => updateField("tone", opt.value)}
                           className={`w-full text-left px-4 py-3.5 rounded-xl border transition-all ${
                             active
-                              ? "border-[#4f46e5] bg-[#eef2ff] ring-1 ring-[#4f46e5]/30"
-                              : "border-[#e5e7eb] bg-white hover:border-[#d4d4d8]"
+                              ? "border-[#143620] bg-[#eaf0e8] ring-1 ring-[#143620]/30"
+                              : "border-[#e8e9e3] bg-white hover:border-[#c2c9c0]"
                           }`}
                         >
                           <div className="flex items-center justify-between">
-                            <span className={`text-sm font-semibold ${active ? "text-[#0a0a0a]" : "text-[#374151]"}`}>
+                            <span className={`text-sm font-semibold ${active ? "text-[#0f2214]" : "text-[#2f3e32]"}`}>
                               {opt.label}
                             </span>
                             {active && <Check className="w-4 h-4" style={{ color: ACCENT }} />}
                           </div>
-                          <p className="mt-0.5 text-xs text-[#6b7280]">{opt.desc}</p>
+                          <p className="mt-0.5 text-xs text-[#5f6f63]">{opt.desc}</p>
                         </button>
                       );
                     })}
@@ -409,7 +409,7 @@ export default function OnboardingPage() {
                 <button
                   type="button"
                   onClick={() => { setStepIndex((c) => c - 1); setError(""); }}
-                  className="btn-ghost px-4 py-2.5 text-sm border border-[#e5e7eb] bg-white"
+                  className="btn-ghost px-4 py-2.5 text-sm border border-[#e8e9e3] bg-white"
                 >
                   <ChevronLeft className="w-4 h-4" />
                   Back

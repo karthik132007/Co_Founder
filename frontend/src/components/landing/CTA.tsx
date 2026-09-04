@@ -58,13 +58,15 @@ export function CTA() {
   }, []);
 
   return (
-    <section ref={root} id="cta" className="relative overflow-hidden pt-40 pb-0 md:pt-56 md:pb-0">
+    <section ref={root} id="cta" className="relative overflow-hidden pt-24 md:pt-32 pb-0" style={{ isolation: "isolate" }}>
+      <div className="pointer-events-none absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-black/[0.04] to-transparent" />
+      <div className="pointer-events-none absolute top-0 inset-x-0 h-[36px] md:h-[48px] bg-gradient-to-b from-[var(--color-bg)] to-transparent opacity-30" />
       {/* distortion gradient */}
       <div
-        className="pointer-events-none absolute inset-0 opacity-60"
+        className="pointer-events-none absolute inset-0 opacity-40"
         style={{
           background:
-            "radial-gradient(60% 50% at 50% 50%, rgba(124,140,255,0.18), transparent 70%), radial-gradient(40% 40% at 30% 80%, rgba(179,136,255,0.12), transparent 70%)",
+            "radial-gradient(60% 50% at 50% 50%, rgba(20,54,32,0.07), transparent 70%), radial-gradient(40% 40% at 30% 80%, rgba(34,85,50,0.05), transparent 70%)",
         }}
       />
 
@@ -78,8 +80,8 @@ export function CTA() {
             top: `${(i * 53) % 100}%`,
             width: `${2 + (i % 3)}px`,
             height: `${2 + (i % 3)}px`,
-            background: i % 2 ? "#7c8cff" : "#b388ff",
-            opacity: 0.4,
+            background: i % 2 ? "#143620" : "#2a5a3a",
+            opacity: 0.24,
             boxShadow: "0 0 8px currentColor",
           }}
         />

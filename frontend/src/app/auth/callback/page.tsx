@@ -9,7 +9,7 @@ import { getSupabase } from "@/lib/supabase";
 import { API_BASE_URL, readApiError } from "@/lib/api";
 import { parseSessionUser, saveSession } from "@/lib/session";
 
-const ACCENT = "#4f46e5";
+const ACCENT = "#143620";
 const WAIT_TIMEOUT_MS = 15_000;
 const SESSION_POLL_MS = 300;
 
@@ -164,12 +164,12 @@ export default function AuthCallbackPage() {
   }, [router]);
 
   return (
-    <main className="min-h-screen bg-[#fafafa] flex items-center justify-center text-[#0a0a0a]">
-      <div className="w-full max-w-sm mx-4 rounded-2xl border border-[#e5e7eb] bg-white p-8 text-center shadow-sm">
+    <main className="min-h-screen bg-[#fdfcf8] flex items-center justify-center text-[#0f2214]">
+      <div className="w-full max-w-sm mx-4 rounded-2xl border border-[#e8e9e3] bg-white p-8 text-center shadow-sm">
         {error ? (
           <>
             <h1 className="text-lg font-semibold tracking-tight">Sign-in failed</h1>
-            <p className="mt-2 text-sm text-[#6b7280]">{error}</p>
+            <p className="mt-2 text-sm text-[#5f6f63]">{error}</p>
             <Link
               href="/auth"
               className="mt-6 inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90"
@@ -182,7 +182,7 @@ export default function AuthCallbackPage() {
           <>
             <Loader2 className="mx-auto h-6 w-6 animate-spin" style={{ color: ACCENT }} />
             <h1 className="mt-4 text-lg font-semibold tracking-tight">Completing sign-in…</h1>
-            <p className="mt-1.5 text-sm text-[#6b7280]">Verifying your Google account.</p>
+            <p className="mt-1.5 text-sm text-[#5f6f63]">Verifying your Google account.</p>
           </>
         ) : null}
       </div>

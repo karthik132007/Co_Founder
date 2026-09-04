@@ -16,7 +16,7 @@ import type { ToolRun } from "@/lib/observability";
 import type { ConnectionStatus } from "@/lib/observability";
 import { TraceRow } from "./AgentTimeline";
 
-const ACCENT = "#4f46e5";
+const ACCENT = "#143620";
 
 export type AgentTracePanelProps = {
   runs: ToolRun[];
@@ -98,8 +98,8 @@ export default function AgentTracePanel({
         aria-expanded={open}
         className={`group flex items-center gap-1.5 rounded-xl border px-2.5 py-2 text-xs font-semibold transition-all duration-200 ${
           open || isStreaming
-            ? "border-[#4f46e5]/40 bg-[#eef2ff] text-[#4f46e5]"
-            : "border-[#e5e7eb] bg-[#f9fafb] text-[#6b7280] hover:border-[#4f46e5]/40 hover:text-[#4f46e5]"
+            ? "border-[#143620]/40 bg-[#eaf0e8] text-[#143620]"
+            : "border-[#e8e9e3] bg-[#fdfcf8] text-[#5f6f63] hover:border-[#143620]/40 hover:text-[#143620]"
         }`}
       >
         <Terminal className="w-3.5 h-3.5" />
@@ -126,15 +126,15 @@ export default function AgentTracePanel({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.97 }}
             transition={{ duration: 0.16, ease: "easeOut" }}
-            className="absolute bottom-full right-0 z-50 mb-2 w-[min(92vw,440px)] overflow-hidden rounded-2xl border border-[#e5e7eb] bg-white shadow-[0_18px_50px_-12px_rgba(0,0,0,0.25)]"
+            className="absolute bottom-full right-0 z-50 mb-2 w-[min(92vw,440px)] overflow-hidden rounded-2xl border border-[#e8e9e3] bg-white shadow-[0_18px_50px_-12px_rgba(0,0,0,0.25)]"
           >
               {/* Dropdown arrow */}
-              <div className="absolute -bottom-1 right-6 h-2.5 w-2.5 rotate-45 border-b border-r border-[#e5e7eb] bg-white" />
+              <div className="absolute -bottom-1 right-6 h-2.5 w-2.5 rotate-45 border-b border-r border-[#e8e9e3] bg-white" />
 
               {/* Header */}
-              <div className="flex items-center gap-2 border-b border-[#f3f4f6] bg-[#fafafa] px-3.5 py-2.5">
-                <Terminal className="h-3.5 w-3.5 text-[#6b7280]" />
-                <span className="text-[11px] font-semibold uppercase tracking-wide text-[#374151]">
+              <div className="flex items-center gap-2 border-b border-[#f6f5ef] bg-[#fdfcf8] px-3.5 py-2.5">
+                <Terminal className="h-3.5 w-3.5 text-[#5f6f63]" />
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-[#2f3e32]">
                   Agent Trace
                 </span>
                 <span
@@ -149,7 +149,7 @@ export default function AgentTracePanel({
                     type="button"
                     onClick={onClear}
                     aria-label="Clear trace"
-                    className="rounded-md p-1 text-[#9ca3af] transition-colors hover:bg-[#f3f4f6] hover:text-[#ef4444]"
+                    className="rounded-md p-1 text-[#8d9d94] transition-colors hover:bg-[#f6f5ef] hover:text-[#ef4444]"
                   >
                     <Trash2 className="h-3 w-3" />
                   </button>
@@ -164,13 +164,13 @@ export default function AgentTracePanel({
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
-                      className="border-b border-[#f3f4f6] bg-[#fafafa]/60 px-3.5 py-2.5"
+                      className="border-b border-[#f6f5ef] bg-[#fdfcf8]/60 px-3.5 py-2.5"
                     >
-                      <p className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-[#4f46e5]">
+                      <p className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-[#143620]">
                         <Loader2 className="h-2.5 w-2.5 animate-spin" />
                         Streaming response
                       </p>
-                      <p className="max-h-32 overflow-y-auto whitespace-pre-wrap break-words text-[12px] leading-relaxed text-[#374151]">
+                      <p className="max-h-32 overflow-y-auto whitespace-pre-wrap break-words text-[12px] leading-relaxed text-[#2f3e32]">
                         {streamingText}
                         <span
                           className="ml-0.5 inline-block h-3.5 w-[2px] animate-pulse rounded-full align-middle"
@@ -185,7 +185,7 @@ export default function AgentTracePanel({
                 {showWaiting && (
                   <div className="flex flex-col items-center justify-center gap-2 px-4 py-6 text-center">
                     <Loader2 className="h-4 w-4 animate-spin" style={{ color: ACCENT }} />
-                    <p className="text-[11px] text-[#9ca3af]">
+                    <p className="text-[11px] text-[#8d9d94]">
                       {connectionStatus === "connecting"
                         ? "Connecting to agent stream…"
                         : "Waiting for the CEO agent to start…"}
@@ -197,7 +197,7 @@ export default function AgentTracePanel({
                 {runs.length > 0 && (
                   <div className="py-1">
                     {isStreaming && runningCount > 0 && (
-                      <p className="px-3.5 pt-1.5 text-[10px] font-medium text-[#4f46e5]">
+                      <p className="px-3.5 pt-1.5 text-[10px] font-medium text-[#143620]">
                         {runningCount} tool{runningCount !== 1 ? "s" : ""} running…
                       </p>
                     )}
@@ -210,8 +210,8 @@ export default function AgentTracePanel({
                 {/* Empty + idle */}
                 {!isStreaming && runs.length === 0 && !showLiveResponse && (
                   <div className="px-4 py-6 text-center">
-                    <RefreshCw className="mx-auto mb-2 h-4 w-4 text-[#d4d4d8]" />
-                    <p className="text-[11px] text-[#9ca3af]">
+                    <RefreshCw className="mx-auto mb-2 h-4 w-4 text-[#c2c9c0]" />
+                    <p className="text-[11px] text-[#8d9d94]">
                       Send a message and the CEO agent&apos;s tool calls will appear here in real time.
                     </p>
                   </div>
