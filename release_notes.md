@@ -1,4 +1,33 @@
 
+## Changelog (v0.9.15 → v0.9.16)
+
+### Credit System & Usage Tracking
+- **Company credit balances**: added credit balance storage, CRUD operations, balance checks, deductions, Redis caching, and insufficient-credit handling
+- **Model usage pricing**: added per-model input/output token and image pricing, usage aggregation, markup and INR conversion, and automatic charging after a chat completes
+- **Kafka credit processing**: added the `manage_credits` producer/consumer flow with idempotency protection and a dedicated Docker Compose consumer
+- **Per-chat credit usage**: chat sessions now store credits used, and the dashboard displays usage for recent chats
+- **Usage safeguards**: chat requests now check the company balance before starting and return a clear error when credits are insufficient
+
+### Razorpay Billing & Payment History
+- **Razorpay checkout**: added order creation and payment verification with signature validation, server-side amount verification, and duplicate-payment protection
+- **Billing page**: added credit balance display, preset and custom top-up amounts, currency conversion, checkout states, and payment success/error handling
+- **Payment history**: added payment history storage, migration, backend API routes, and billing-page history display
+- **Live payment configuration**: wired the production Razorpay key and added the required frontend payment assets
+
+### Frontend Refresh
+- Refreshed the dashboard with updated cards, recent chats, credit usage, navigation, and responsive layouts
+- Redesigned the billing, chat, drive, plugins, profile, authentication, onboarding, and landing-page experiences
+- Added a consolidated settings modal and removed the old standalone settings routes
+- Added updated integration and payment assets for Razorpay, Google, Meta, Instagram, Shopify, and related services
+- Simplified the landing page by removing unused 3D, scramble-text, theme-toggle, and mouse-interaction components
+
+### Backend & Deployment Fixes
+- Added payment and credit routers, database modules, schemas, and migrations
+- Threaded session identifiers through chat usage charging and credit persistence
+- Added the credits consumer to the Docker Compose deployment and updated Kafka consumer orchestration
+- Fixed session and credit refresh behavior in the frontend after billing actions
+- Applied assorted UI, API, and production bug fixes across the chat, dashboard, profile, and billing flows
+
 ## Changelog (v0.9.14 → v0.9.15)
 
 ### Agent Trace — fixed in production + real-time LLM streaming

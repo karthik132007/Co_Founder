@@ -1,10 +1,11 @@
-# Co_Founder — v0.9.16 (Live Billing)
+# Co_Founder — AI Co-Founder Platform v0.9.16
 
-> **📘 For complete system context and understanding, please refer to [`Agents_rules.md`](Agents_rules.md) before contributing or making changes.**
+> **For complete system context and contributor expectations, read [`Agents_rules.md`](Agents_rules.md) before changing agent behavior.**
 
 ## Contents
-- [TL;DR For The Lazy](#tldr-for-the-lazy)
+- [TLDR](#tldr)
 - [Overview](#overview)
+- [Interviewer's Map](#interviewers-map)
 - [Architecture](#architecture)
 - [Evals & Benchmarks](#evals--benchmarks)
 - [Performance Improvements](#performance-improvements)
@@ -19,22 +20,35 @@
 - [Logging & Observability](#logging--observability)
 - [Status](#status)
 
-## TL;DR For The Lazy
+## TLDR
 
-- This is a Dockerized multi-agent AI co-founder website, not a tiny demo.
-- The CEO agent routes work to Researcher, Writer, CMO, Data Analyst, Graphic Designer, Judge, and memory/title helpers.
-- Chat uses a shared RAG + chat memory system, plus Kafka-backed async persistence for messages, memories, and session titles.
-- **v0.9.15 — trace fixed + streaming**: `SessionEventBus` now buffers events and replays them when the WebSocket connects (no more invisible trace in prod); the CEO streams via `agent.stream()` — tokens batched (~24 / 60ms) as `llm_token` events with a live answer and an `AgentTracePanel` popover beside the chat bar.
-- **v0.9.16 — live billing**: Razorpay Standard Checkout is live (`RAZORPAY_KEY_ID` `rzp_live_…`), minimum top-up **₹100** (10000 paise), HMAC-SHA256 signature verification, authoritative `order.fetch` amount, Redis idempotency guard (`razorpay_paid:{payment_id}` 24h), and an invoice-style `payment_history` table surfaced on a redesigned `/billing` page (presets, custom amount, INR/USD toggle with live FX, order summary, per-side effects for `cofounder:credits-updated`). See [Credits & Billing](#credits--billing).
-- Landing was reworked: sticky pill `Nav` (`frontend/src/components/landing/Nav.tsx:1`), editorial serif + mono fonts (`Instrument_Serif`, `JetBrains_Mono` via `frontend/src/app/layout.tsx:1`), cinematic `landing.css` theme (forest/cream), continuous `bg-grid` backdrop, and `SectionBridge` separators (`comet`/`aurora`/`orbit` with GSAP ScrollTrigger) between every fold; `Demo` section removed.
-- `evals/` contains the current evaluation scripts; the latest RAG benchmark hit 95.00% pass rate, 0.950 Average Recall@5, and 0.883 Average MRR.
-- **CEO end-to-end eval is live**: 27 runs / 81 judge verdicts across 5 tasks, 6 prompt tweaks, and 2 effort modes — `normal` prompt + `flash` mode currently leads (8.62 overall) (see [Evals & Benchmarks](#evals--benchmarks) and [`docs/eval_report.md`](docs/eval_report.md)).
+Co_Founder is a full-stack AI co-founder app: a founder chats with a CEO agent, and that CEO delegates work to specialist agents for research, writing, marketing, data analysis, graphic design, judging, memory, and session titles.
+
+The important bits:
+- **Product:** conversational startup assistant with onboarding, chat, file upload, dashboard, billing, and a polished landing page.
+- **AI system:** LangChain CEO orchestrator, shared RAG over company documents, chat memory retrieval, effort modes, sub-agent delegation, MCQ clarification cards, and LLM-as-judge refinement.
+- **Backend:** FastAPI, Supabase Postgres/pgvector, Redis caching, Kafka background jobs, e2b sandbox execution, Google OAuth, Argon2id password hashing, and signed cookie sessions.
+- **Frontend:** Next.js 16, React 19, Tailwind v4, live agent trace UI, streaming answer bubble, billing page, and cinematic landing experience.
+- **Billing:** live Razorpay Standard Checkout with ₹100 minimum top-up, HMAC-SHA256 verification, authoritative `order.fetch`, Redis idempotency, company credits, and invoice-style payment history.
+- **Observability:** buffered WebSocket trace replay fixed the production race where agent traces could disappear; CEO responses now stream token-by-token through `agent.stream()`.
+- **Benchmarks:** latest RAG benchmark: 95.00% pass rate, 0.950 Average Recall@5, 0.883 Average MRR. CEO e2e eval: 27 runs / 81 judge verdicts; `normal` prompt + `flash` mode currently leads at 8.62 overall.
 
 ## Overview
 
-AI Co-Founder is a multi-agent AI platform that replaces a human founding team with a CEO orchestrator agent and specialized sub-agents. Founders describe their business idea through a conversational chat interface, and the agents collaboratively handle strategy, market research, content writing, data analysis, and knowledge management via a shared RAG + chat memory backbone.
+AI Co-Founder is a multi-agent platform that simulates an early founding team around a CEO orchestrator. A founder describes the business through chat; the CEO decides whether to answer directly, ask a clarification question, retrieve company knowledge, or delegate to a specialist agent.
 
-This v0.9.16 production test ships the full Dockerized stack, async Kafka persistence, effort-based agent routing, **buffered WebSocket observability with real-time LLM streaming**, Argon2id password hashing, Google OAuth + cookie session auth, env-driven CORS/rate limiting, and **live Razorpay billing** (Standard Checkout, 1 credit == ₹1, `company_credits` + `payment_history` with Redis caching/idempotency). The app is usable end-to-end. The v0.9.15 highlight is a production fix for the invisible agent trace (race between `POST /chat` threadpool and WebSocket upgrade) plus token-by-token answer streaming via `agent.stream()`; v0.9.16 wires that into a real money path (₹100 minimum) and a polished billing/landing shell.
+This v0.9.16 production test includes the complete Dockerized stack, async Kafka persistence, effort-based routing, **buffered WebSocket observability with real-time LLM streaming**, Argon2id password hashing, Google OAuth + cookie session auth, env-driven CORS/rate limiting, and **live Razorpay billing**. Credits are modeled as `1 credit == ₹1`, backed by `company_credits`, `payment_history`, Redis caching, and payment idempotency. The app is usable end-to-end, with known gaps documented in [Status](#status).
+
+## Interviewer's Map
+
+If you are reviewing this project, these are the engineering decisions worth looking at first:
+
+- **Agent orchestration:** `agents/CEO/CEO.py` and `agents/CEO/ceo_agent_tools.py` show how one CEO agent routes to specialist agents while preserving tool-based reasoning.
+- **Retrieval quality:** `RAG_Engine/` combines semantic search, keyword search, fusion, reranking, document chunks, and separate chat-memory retrieval.
+- **Streaming observability:** `backend/api/connection_manager.py`, `backend/api/observability_events.py`, `frontend/src/lib/observability.ts`, and `frontend/src/components/AgentTracePanel.tsx` solve the production race between `POST /chat` and WebSocket connection startup.
+- **Async product behavior:** `backend/kafka_jobs/` moves chat message persistence, memory extraction, and title generation out of the request path.
+- **Real billing path:** `backend/api/payments.py`, `backend/db/credits.py`, `backend/db/payment_history.py`, and `frontend/src/app/(app)/billing/page.tsx` cover checkout, verification, idempotency, balance updates, and invoice history.
+- **Evaluation culture:** `evals/`, [Evals & Benchmarks](#evals--benchmarks), and [`docs/eval_report.md`](docs/eval_report.md) capture both the RAG numbers and CEO e2e judge results, including limitations and confounders.
 
 ## Architecture
 
@@ -568,6 +582,6 @@ This project is licensed under the GNU Affero General Public License v3.0 (AGPL-
 
 See the LICENSE file for details.
 
-## Notes For The Sleepy Reader
+## Final Skim
 
-If you only skimmed this far: the app is production-test ready (v0.9.16), the frontend is a Next.js chat/product shell with a cinematic landing (SectionBridge separators, editorial fonts) and a live billing page (Razorpay, ₹100 floor, INR/USD), the backend is FastAPI with Kafka, Redis (credits + Razorpay idempotency), Supabase pgvector, login via email/password or Google with a browser session cookie, the agent trace now reliably streams in production (buffered EventBus + `agent.stream()` tokens + `AgentTracePanel` popover), and the main caveat is that protected endpoints still trust the `user_id` query param when no httpOnly cookie is present. The rest of the README mostly exists so future-me can remember what past-me was doing.
+Co_Founder is a production-test multi-agent SaaS app with a Next.js frontend, FastAPI backend, Supabase pgvector RAG, Redis caching, Kafka async jobs, e2b code execution, live WebSocket agent tracing, Google/email auth, and Razorpay billing. The strongest parts to review are the CEO orchestration loop, RAG pipeline, streaming observability fix, async persistence, billing verification, and evaluation suite. The main caveat is still security hardening: some protected endpoints trust `user_id` when no httpOnly cookie is present.
