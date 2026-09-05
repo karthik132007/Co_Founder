@@ -3,6 +3,7 @@ Database write operations using Supabase REST API (HTTPS).
 Replaces SQLAlchemy direct PostgreSQL connections which require IPv6.
 """
 import logging
+from decimal import Decimal, ROUND_HALF_UP
 
 from postgrest.exceptions import APIError
 
@@ -557,6 +558,46 @@ def update_chat_session_title(session_id: str, title: str) -> Optional[_ChatSess
         )
     logger.warning("Chat session %s not found for title update", session_id)
     return None
+
+
+def add_credits_to_session(session_id: str, amount: float) -> None:
+    """Increment a chat session's ``credits_used`` by *amount*.
+
+    Called by the ``manage_credits`` consumer after a successful deduction so
+    the dashboard overview can show how many credits each chat/session used.
+    Reads the current value and writes the new total back — safe at the low
+    write concurrency this app sees per session.
+    """
+    if not session_id or amount <= 0:
+        return
+
+    response = (
+        _client.table("chat_sessions")
+        .select("session_id, company_id, credits_used")
+        .eq("session_id", session_id)
+        .execute()
+    )
+    rows = response.data or []
+    if not rows:
+        logger.warning("add_credits_to_session: session %s not found", session_id)
+        return
+
+    row = rows[0]
+    current = Decimal(str(row.get("credits_used") or 0))
+    new_total = (current + Decimal(str(amount))).quantize(
+        Decimal("0.0001"), rounding=ROUND_HALF_UP
+    )
+
+    _client.table("chat_sessions").update(
+        {"credits_used": str(new_total)}
+    ).eq("session_id", session_id).execute()
+
+    invalidate_chat_sessions(row.get("company_id"))
+    logger.info(
+        "Session credits updated — session_id=%s, credits_used=%s",
+        session_id,
+        new_total,
+    )
 
 
 def add_message_to_session(session_id: str, role: str, message: str) -> _ChatMessageResult:

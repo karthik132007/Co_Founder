@@ -14,14 +14,8 @@ import {
   Megaphone,
   Palette,
   Bot,
-  Terminal,
 } from "lucide-react";
 import type { ToolRun } from "@/lib/observability";
-
-export type AgentTraceInlineProps = {
-  runs: ToolRun[];
-  isStreaming?: boolean;
-};
 
 export const SUBAGENT_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   Researcher: Search,
@@ -40,7 +34,7 @@ export const SUBAGENT_COLORS: Record<string, string> = {
 };
 
 export function subagentIcon(name: string) { return SUBAGENT_ICONS[name] ?? Bot; }
-export function subagentColor(name: string) { return SUBAGENT_COLORS[name] ?? "#6b7280"; }
+export function subagentColor(name: string) { return SUBAGENT_COLORS[name] ?? "#5f6f63"; }
 
 export function formatDuration(ms: number | null): string {
   if (ms === null) return "";
@@ -53,24 +47,24 @@ export function TraceRow({ run }: { run: ToolRun }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="border-b border-gray-100 last:border-b-0">
+    <div className="border-b border-[rgba(15,34,20,0.06)] last:border-b-0">
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
-        className="w-full flex items-center gap-2 px-2.5 py-1.5 text-left hover:bg-gray-50/80 transition-colors group"
+        className="w-full flex items-center gap-2 px-2.5 py-1.5 text-left hover:bg-[rgba(16,36,24,0.04)] transition-colors group"
       >
         <ChevronRight
-          className={"w-3 h-3 text-gray-400 transition-transform shrink-0 " + (expanded ? "rotate-90" : "")}
+          className={"w-3 h-3 text-[#8d9d94] transition-transform shrink-0 " + (expanded ? "rotate-90" : "")}
         />
-        <Cpu className="w-3 h-3 text-gray-400 shrink-0" />
-        <span className="text-[11px] font-semibold text-gray-700 truncate flex-1">
+        <Cpu className="w-3 h-3 text-[#8d9d94] shrink-0" />
+        <span className="text-[11px] font-semibold text-[#2f3e32] truncate flex-1">
           {run.toolName}
         </span>
-        {run.status === "running" && <Loader2 className="w-3 h-3 animate-spin text-blue-500 shrink-0" />}
+        {run.status === "running" && <Loader2 className="w-3 h-3 animate-spin text-[#143620] shrink-0" />}
         {run.status === "ok" && <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />}
         {run.status === "error" && <XCircle className="w-3 h-3 text-red-500 shrink-0" />}
         {run.durationMs !== null && (
-          <span className="text-[10px] text-gray-400 font-mono tabular-nums shrink-0">
+          <span className="text-[10px] text-[#8d9d94] font-mono tabular-nums shrink-0">
             {formatDuration(run.durationMs)}
           </span>
         )}
@@ -88,14 +82,14 @@ export function TraceRow({ run }: { run: ToolRun }) {
             <div className="px-2.5 pb-2 space-y-1.5">
               {run.toolInput && (
                 <div className="pl-5">
-                  <code className="block text-[10px] text-gray-500 bg-gray-50 rounded-md px-2 py-1 break-all font-mono leading-relaxed">
+                  <code className="block text-[10px] text-[#5f6f63] bg-[#fdfcf8] border border-[rgba(15,34,20,0.06)] rounded-md px-2 py-1 break-all font-mono leading-relaxed">
                     {run.toolInput}
                   </code>
                 </div>
               )}
               {run.toolOutput && (
                 <div className="pl-5">
-                  <p className="text-[10px] text-gray-500 bg-gray-50 rounded-md px-2 py-1 leading-relaxed max-h-16 overflow-y-auto">
+                  <p className="text-[10px] text-[#5f6f63] bg-[#fdfcf8] border border-[rgba(15,34,20,0.06)] rounded-md px-2 py-1 leading-relaxed max-h-16 overflow-y-auto">
                     {run.toolOutput}
                   </p>
                 </div>
@@ -118,7 +112,7 @@ export function TraceRow({ run }: { run: ToolRun }) {
                     {run.subagent.name}
                   </span>
                   {run.subagent.durationMs !== null && (
-                    <span className="text-[10px] text-gray-400 font-mono ml-auto">
+                    <span className="text-[10px] text-[#8d9d94] font-mono ml-auto">
                       {formatDuration(run.subagent.durationMs)}
                     </span>
                   )}
@@ -129,76 +123,6 @@ export function TraceRow({ run }: { run: ToolRun }) {
                 </div>
               )}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-export default function AgentTraceInline({ runs, isStreaming }: AgentTraceInlineProps) {
-  const [collapsed, setCollapsed] = useState(false);
-
-  // Show nothing only when not streaming and no runs at all
-  if (runs.length === 0 && !isStreaming) return null;
-
-  return (
-    <div className="mt-2 rounded-xl border border-gray-200 bg-gray-50/60 overflow-hidden">
-      {/* Header — click to collapse */}
-      <button
-        type="button"
-        onClick={() => setCollapsed((v) => !v)}
-        className="w-full flex items-center gap-2 px-3 py-2 border-b border-gray-100 hover:bg-gray-100/50 transition-colors"
-      >
-        <ChevronRight
-          className={`w-3 h-3 text-gray-400 transition-transform shrink-0 ${collapsed ? "" : "rotate-90"}`}
-        />
-        <Terminal className="w-3 h-3 text-gray-500" />
-        <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
-          Agent Trace
-        </span>
-        {isStreaming && runs.length === 0 && (
-          <span className="inline-flex items-center gap-1 text-[10px] text-blue-500 font-medium ml-auto">
-            <Loader2 className="w-2.5 h-2.5 animate-spin" />
-            Waiting for agent…
-          </span>
-        )}
-        {isStreaming && runs.length > 0 && (
-          <span className="inline-flex items-center gap-1 text-[10px] text-blue-500 font-medium ml-auto">
-            <Loader2 className="w-2.5 h-2.5 animate-spin" />
-            {runs.length} tool{runs.length !== 1 ? "s" : ""}
-          </span>
-        )}
-        {!isStreaming && runs.length > 0 && (
-          <span className="text-[10px] text-gray-400 font-medium ml-auto">
-            {runs.length} tool{runs.length !== 1 ? "s" : ""}
-          </span>
-        )}
-      </button>
-
-      {/* Collapsible body */}
-      <AnimatePresence initial={false}>
-        {!collapsed && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="overflow-hidden"
-          >
-            {runs.length === 0 && isStreaming ? (
-              <div className="flex items-center justify-center py-4 text-center px-4">
-                <p className="text-[11px] text-gray-400">
-                  Listening for tool calls from the CEO agent…
-                </p>
-              </div>
-            ) : (
-              <div className="max-h-[300px] overflow-y-auto overscroll-contain">
-                {runs.map((run) => (
-                  <TraceRow key={run.runId} run={run} />
-                ))}
-              </div>
-            )}
           </motion.div>
         )}
       </AnimatePresence>

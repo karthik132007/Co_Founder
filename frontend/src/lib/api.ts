@@ -11,6 +11,13 @@ export async function readApiError(response: Response, fallback: string) {
         .map((e) => e.msg)
         .join("; ");
     }
+    // Structured error detail: { code, message } (e.g. 402 insufficient_credits)
+    if (typeof data.detail === "object" && data.detail !== null) {
+      const d = data.detail as { message?: unknown; code?: unknown };
+      if (typeof d.message === "string" && d.message) return d.message;
+      if (typeof d.code === "string" && d.code) return d.code;
+      return fallback;
+    }
     return String(data.detail);
   } catch {
     return fallback;
@@ -53,6 +60,129 @@ export async function logoutUser(): Promise<void> {
   } catch {
     // The local session is cleared by the caller regardless.
   }
+}
+
+/* ── Credits / Billing ── */
+
+export type CreditBalanceResponse = {
+  company_id: number;
+  balance: number;
+};
+
+/** Current credit balance for a company (1 credit = ₹1 of selling value). */
+export async function fetchCreditBalance(
+  companyId: number,
+): Promise<CreditBalanceResponse> {
+  const res = await fetch(`${API_BASE_URL}/credits/${companyId}`);
+  if (!res.ok) {
+    throw new Error(await readApiError(res, "Failed to load credit balance"));
+  }
+  return res.json() as Promise<CreditBalanceResponse>;
+}
+
+/* ── Payments (Razorpay) ── */
+
+export type CreateOrderResponse = {
+  order_id: string;
+  amount: number;
+  currency: string;
+};
+
+export type VerifyPaymentResponse = {
+  status: string;
+  amount: number;
+  balance: number;
+  duplicate?: boolean;
+};
+
+/** Create a Razorpay order for `amount` INR of credits for a company. */
+export async function createRazorpayOrder(
+  companyId: number,
+  userId: number,
+  amount: number,
+): Promise<CreateOrderResponse> {
+  const res = await fetch(`${API_BASE_URL}/payments/create-order`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({
+      user_id: userId,
+      company_id: companyId,
+      amount,
+      currency: "INR",
+    }),
+  });
+  if (!res.ok) {
+    throw new Error(await readApiError(res, "Failed to create payment order"));
+  }
+  return res.json() as Promise<CreateOrderResponse>;
+}
+
+/** Verify the Razorpay signature after a successful checkout. */
+export async function verifyRazorpayPayment(
+  companyId: number,
+  userId: number,
+  payload: {
+    razorpay_payment_id: string;
+    razorpay_order_id: string;
+    razorpay_signature: string;
+  },
+): Promise<VerifyPaymentResponse> {
+  const res = await fetch(`${API_BASE_URL}/payments/verify-payment`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({
+      user_id: userId,
+      company_id: companyId,
+      ...payload,
+    }),
+  });
+  if (!res.ok) {
+    throw new Error(await readApiError(res, "Failed to verify payment"));
+  }
+  return res.json() as Promise<VerifyPaymentResponse>;
+}
+
+/* ── Payment history ── */
+
+export type PaymentStatus = "pending" | "completed" | "failed" | "refunded";
+
+export type PaymentHistoryEntry = {
+  id: number;
+  company_id: number;
+  amount: number | string;
+  status: PaymentStatus;
+  payment_date: string;
+  created_at: string;
+};
+
+export type PaymentHistoryResponse = {
+  payments: PaymentHistoryEntry[];
+  total: number;
+  limit: number;
+  offset: number;
+};
+
+/** List a company's payment history (invoice-style), newest first. */
+export async function fetchPaymentHistory(
+  companyId: number,
+  limit = 100,
+  offset = 0,
+): Promise<PaymentHistoryResponse> {
+  const params = new URLSearchParams({
+    company_id: String(companyId),
+    limit: String(limit),
+    offset: String(offset),
+  });
+  const res = await fetch(
+    `${API_BASE_URL}/payment-history?${params.toString()}`,
+    { credentials: "include" },
+  );
+  if (!res.ok) {
+    throw new Error(await readApiError(res, "Failed to load payment history"));
+  }
+  return res.json() as Promise<PaymentHistoryResponse>;
 }
 
 /* ── Dashboard ── */
@@ -226,6 +356,7 @@ export type ChatSession = {
   session_id: string;
   title: string;
   created_at: string | null;
+  credits_used?: number;
 };
 
 export type ChatSessionsResponse = {

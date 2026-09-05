@@ -141,6 +141,19 @@ def chat_with_user(
         # Safe to call even if nobody is listening on the WS for this session.
         event_bus.send_sentinel(session_id)
 
+    # chat() may short-circuit with an error (e.g. insufficient credits).
+    # Surface it as a structured 402 so the frontend can show the message and
+    # branch on the machine-readable code (e.g. offer a top-up CTA).
+    if isinstance(reply, dict) and reply.get("error"):
+        logger.warning("chat() returned error for session_id=%s: %s", session_id, reply["error"])
+        raise HTTPException(
+            status_code=402,
+            detail={
+                "code": "insufficient_credits",
+                "message": reply["error"],
+            },
+        )
+
     # CEO may return a clarification request (MCQ) instead of a text reply.
     if isinstance(reply, dict) and reply.get("type") == "clarification_request":
         logger.info("CEO returned clarification request for session_id=%s", session_id)
@@ -206,6 +219,11 @@ def chat_with_user(
             response["is_new_session"] = True
         return response
 
+    # Any other dict shape is unexpected — refuse to persist it as a message.
+    if isinstance(reply, dict):
+        logger.error("CEO returned unexpected dict reply for session_id=%s: %s", session_id, reply)
+        raise HTTPException(status_code=500, detail="Unexpected response from CEO agent")
+
     add_message_to_session(session_id, "assistant", reply)
     
     queue_chat_memory(company_id, message, reply)
@@ -241,6 +259,7 @@ def list_chat_sessions(user_id: int = Query(..., description="User ID")):
                 "session_id": s["session_id"],
                 "title": s.get("title", "Untitled Chat"),
                 "created_at": s.get("created_at"),
+                "credits_used": s.get("credits_used", 0),
             }
             for s in sessions
         ]

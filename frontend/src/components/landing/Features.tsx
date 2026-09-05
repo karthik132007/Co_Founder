@@ -16,42 +16,42 @@ const FEATURES = [
     icon: Brain,
     title: "Remembers everything",
     tag: "Never re-explain your business.",
-    color: "#4f46e5",
+    color: "#143620",
   },
   {
     n: "02",
     icon: BadgeCheck,
     title: "Checks its own work",
     tag: "Polished before you see it.",
-    color: "#10b981",
+    color: "#1e4d30",
   },
   {
     n: "03",
     icon: BarChart3,
     title: "Does the real math",
     tag: "Numbers you can trust.",
-    color: "#0ea5e9",
+    color: "#2f5d3a",
   },
   {
     n: "04",
     icon: MessageSquare,
     title: "Asks only when it matters",
     tag: "A quick question, then done.",
-    color: "#f59e0b",
+    color: "#5a7247",
   },
   {
     n: "05",
     icon: Zap,
     title: "Fast when you need it",
     tag: "Speed, balanced for you.",
-    color: "#8b5cf6",
+    color: "#3d5a40",
   },
   {
     n: "06",
     icon: Rocket,
     title: "Ready to launch",
     tag: "Work you can ship today.",
-    color: "#f43f5e",
+    color: "#6b7c5a",
   },
 ];
 
@@ -76,7 +76,9 @@ export function Features() {
   }, []);
 
   return (
-    <section ref={root} id="features" className="relative py-32 md:py-48 overflow-hidden">
+    <section ref={root} id="features" className="relative py-24 md:py-32 overflow-hidden" style={{ isolation: "isolate" }}>
+      <div className="pointer-events-none absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-black/[0.04] to-transparent" />
+      <div className="pointer-events-none absolute top-0 inset-x-0 h-[36px] md:h-[48px] bg-gradient-to-b from-[var(--color-bg)] to-transparent opacity-30" />
       <SectionBackground variant="warm" />
       <div className="relative mx-auto max-w-7xl px-6">
         <div className="mb-20 max-w-3xl">

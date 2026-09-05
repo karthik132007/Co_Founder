@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+from uuid import uuid4
 
 from confluent_kafka import Producer
 
@@ -22,16 +23,26 @@ def _get_producer() -> Producer:
 
 # ── internal helper ──────────────────────────────────────────────────────────
 
-def _produce(topic: str, payload: dict) -> None:
+def _produce(topic: str, payload: dict) -> dict:
     """Serialize *payload* to JSON and produce a Kafka message on *topic*."""
     data = json.dumps(payload).encode("utf-8")
     try:
         _get_producer().produce(topic=topic, value=data)
         _get_producer().flush()
         logger.debug("Kafka message produced — topic=%s", topic)
+        return {
+            "status": "success",
+            "topic": topic,
+            "payload": payload,
+        }
     except Exception:
         logger.exception("Failed to produce Kafka message — topic=%s", topic)
         raise
+        return {
+            "status": "error",
+            "topic": topic,
+            "payload": payload,
+        }
 
 # ── public helpers — each matches a consumer job ─────────────────────────────
 
@@ -42,12 +53,14 @@ def queue_session_message(
     message: str,
 ) -> None:
     """Queue a message to be persisted into a chat session (add_message_to_session job)."""
-    _produce("add_message_to_session", {
+    result = _produce("add_message_to_session", {
         "session_id": session_id,
         "company_id": company_id,
         "role": role,
         "message": message,
     })
+    
+    
 
 def queue_chat_memory(
     company_id: int,
@@ -68,3 +81,33 @@ def queue_title_creation(session_id: str, query: str) -> None:
         "query": query,
     })
 
+def queue_credit_management(
+    company_id: int,
+    usage: list[dict],
+    no_of_images: int = 0,
+    session_id: str | None = None,
+) -> dict:
+    """Queue a credit management request (manage_credits job).
+
+    ``usage`` is the per-model token breakdown collected from the CEO run::
+
+        [
+            {"model": "deepseek/deepseek-v4-flash",
+             "input_tokens": 1200, "output_tokens": 340},
+            {"model": "x-ai/grok-imagine-image-2.0",
+             "input_tokens": 0, "output_tokens": 0, "image_count": 2},
+        ]
+
+    A ``message_id`` is included so the consumer can deduplicate redeliveries
+    and never charge a company twice for the same request. ``session_id``
+    (when present) lets the consumer record per-session credit usage.
+    """
+    payload = {
+        "message_id": str(uuid4()),
+        "company_id": company_id,
+        "usage": usage,
+        "no_of_images": no_of_images,
+    }
+    if session_id:
+        payload["session_id"] = session_id
+    return _produce("manage_credits", payload)

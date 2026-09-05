@@ -10,6 +10,7 @@ CONSUMERS = [
     "backend/kafka_jobs/consumers/add_message_to_session_job.py",
     "backend/kafka_jobs/consumers/chat_memory_job.py",
     "backend/kafka_jobs/consumers/session_title_creation_job.py",
+    "backend/kafka_jobs/consumers/manage_credits.py",
 ]
 
 procs = []

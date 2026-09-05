@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { getSession } from "@/lib/session";
 import Chat from "@/components/Chat";
@@ -8,7 +8,6 @@ import Chat from "@/components/Chat";
 export default function ChatPage() {
   const session = getSession();
   const router = useRouter();
-  const [chatKey, setChatKey] = useState(0);
 
   const handleSessionCreated = useCallback((sessionId: string, _title: string) => {
     router.replace(`/${sessionId}`);
@@ -18,7 +17,6 @@ export default function ChatPage() {
 
   return (
     <Chat
-        key={chatKey}
         user={session.user}
         initialSessionId={null}
         initialTitle={null}

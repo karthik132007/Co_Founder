@@ -14,6 +14,11 @@ import {
   Copy,
   Check,
   ChevronDown,
+  Search,
+  PenLine,
+  Palette,
+  BarChart3,
+  ArrowUpRight,
 } from "lucide-react";
 import { fetchSessionMessages, sendChatMessage } from "@/lib/api";
 import type { Clarification } from "@/lib/api";
@@ -22,7 +27,7 @@ import { useObservability } from "@/lib/observability";
 import type { ToolRun } from "@/lib/observability";
 import AgentTracePanel from "@/components/AgentTracePanel";
 
-const ACCENT = "#4f46e5";
+const ACCENT = "#143620";
 
 /**
  * Generate a UUID for client-only message keys and a newly-created chat
@@ -80,17 +85,17 @@ const markdownComponents: Components = {
     <p className="mb-3 last:mb-0 leading-relaxed">{children}</p>
   ),
   h1: ({ children }) => (
-    <h1 className="mb-3 mt-1 text-base font-semibold leading-snug text-[#0a0a0a]">
+    <h1 className="mb-3 mt-1 text-base font-semibold leading-snug text-[#0f2214]">
       {children}
     </h1>
   ),
   h2: ({ children }) => (
-    <h2 className="mb-2.5 mt-4 text-[15px] font-semibold leading-snug text-[#0a0a0a] first:mt-0">
+    <h2 className="mb-2.5 mt-4 text-[15px] font-semibold leading-snug text-[#0f2214] first:mt-0">
       {children}
     </h2>
   ),
   h3: ({ children }) => (
-    <h3 className="mb-2 mt-3 text-sm font-semibold leading-snug text-[#0a0a0a] first:mt-0">
+    <h3 className="mb-2 mt-3 text-sm font-semibold leading-snug text-[#0f2214] first:mt-0">
       {children}
     </h3>
   ),
@@ -106,18 +111,18 @@ const markdownComponents: Components = {
       href={href}
       target="_blank"
       rel="noreferrer"
-      className="font-medium text-[#4f46e5] underline decoration-[#4f46e5]/30 underline-offset-2 hover:decoration-[#4f46e5]"
+      className="font-medium text-[#143620] underline decoration-[#143620]/30 underline-offset-2 hover:decoration-[#143620]"
     >
       {children}
     </a>
   ),
   blockquote: ({ children }) => (
-    <blockquote className="mb-3 border-l-2 border-[#4f46e5]/30 pl-3 text-[#4b5563] last:mb-0">
+    <blockquote className="mb-3 border-l-2 border-[#143620]/30 pl-3 text-[#3a4a3d] last:mb-0">
       {children}
     </blockquote>
   ),
   strong: ({ children }) => (
-    <strong className="font-semibold text-[#0a0a0a]">{children}</strong>
+    <strong className="font-semibold text-[#0f2214]">{children}</strong>
   ),
   code: ({ children, className, ...props }) => {
     const isInline = !className?.includes("language-");
@@ -125,7 +130,7 @@ const markdownComponents: Components = {
       <code
         className={
           isInline
-            ? "rounded-md bg-[#f3f4f6] border border-[#e5e7eb] px-1.5 py-0.5 text-[0.85em] font-medium text-[#ef4444]"
+            ? "rounded-md bg-[#f6f5ef] border border-[#e8e9e3] px-1.5 py-0.5 text-[0.85em] font-medium text-[#ef4444]"
             : className
         }
         {...props}
@@ -155,18 +160,18 @@ const markdownComponents: Components = {
     </table>
   ),
   th: ({ children }) => (
-    <th className="border border-[#e5e7eb] bg-[#f9fafb] px-3 py-2 font-semibold text-[#0a0a0a]">
+    <th className="border border-[#e8e9e3] bg-[#fdfcf8] px-3 py-2 font-semibold text-[#0f2214]">
       {children}
     </th>
   ),
   td: ({ children }) => (
-    <td className="border border-[#e5e7eb] px-3 py-2 align-top">{children}</td>
+    <td className="border border-[#e8e9e3] px-3 py-2 align-top">{children}</td>
   ),
 };
 
 function MarkdownMessage({ content }: { content: string }) {
   return (
-    <div className="overflow-x-auto text-sm leading-relaxed break-words text-[#374151]">
+    <div className="overflow-x-auto text-sm leading-relaxed break-words text-[#2f3e32]">
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
         {content}
       </ReactMarkdown>
@@ -181,7 +186,7 @@ function GeneratedImage({ imageDataUrl }: { imageDataUrl: string }) {
     <img
       src={imageDataUrl}
       alt="Generated graphic"
-      className="mt-3 max-h-[420px] w-auto max-w-full rounded-xl border border-[#e5e7eb] bg-white object-contain"
+      className="mt-3 max-h-[420px] w-auto max-w-full rounded-xl border border-[#e8e9e3] bg-white object-contain"
     />
   );
 }
@@ -217,7 +222,7 @@ function AssistantMessage({ content }: { content: string }) {
       <button
         type="button"
         onClick={handleCopy}
-        className="absolute -right-1 -top-1 z-10 rounded-lg p-1.5 text-[#9ca3af] opacity-0 transition-all hover:bg-[#f3f4f6] hover:text-[#4f46e5] group-hover:opacity-100"
+        className="absolute -right-1 -top-1 z-10 rounded-lg p-1.5 text-[#8d9d94] opacity-0 transition-all hover:bg-[#f6f5ef] hover:text-[#143620] group-hover:opacity-100"
         aria-label={copied ? "Copied" : "Copy message"}
       >
         {copied ? (
@@ -226,7 +231,7 @@ function AssistantMessage({ content }: { content: string }) {
           <Copy className="h-3.5 w-3.5" />
         )}
       </button>
-      <div className="overflow-x-auto text-sm leading-relaxed break-words text-[#374151]">
+      <div className="overflow-x-auto text-sm leading-relaxed break-words text-[#2f3e32]">
         <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
           {content}
         </ReactMarkdown>
@@ -282,7 +287,7 @@ function CodeBlock({
           <Copy className="h-3.5 w-3.5" />
         )}
       </button>
-      <pre className="overflow-x-auto rounded-xl bg-[#09090b] border border-[#27272a] shadow-[0_8px_30px_rgb(0,0,0,0.12)] px-4 py-3.5 pr-12 text-[13px] leading-relaxed text-[#e4e4e7] font-mono">
+      <pre className="overflow-x-auto rounded-xl bg-[#09090b] border border-[#1a4a2b] shadow-[0_8px_30px_rgb(0,0,0,0.12)] px-4 py-3.5 pr-12 text-[13px] leading-relaxed text-[#e4e4e7] font-mono">
         {children}
       </pre>
     </div>
@@ -315,12 +320,12 @@ function McqCard({
   };
 
   return (
-    <div className="rounded-2xl border border-[#e5e7eb] bg-white p-4 shadow-sm">
-      <p className="text-sm font-semibold text-[#0a0a0a] leading-snug">
+    <div className="rounded-2xl border border-[#e8e9e3] bg-white p-4 shadow-sm">
+      <p className="text-sm font-semibold text-[#0f2214] leading-snug">
         {clarification.question}
       </p>
       {multi && (
-        <p className="mt-1 text-xs font-medium text-[#4f46e5]">
+        <p className="mt-1 text-xs font-medium text-[#143620]">
           You can select multiple options.
         </p>
       )}
@@ -336,8 +341,8 @@ function McqCard({
               onClick={() => (multi ? toggleOption(option) : onAnswer(option))}
               className={`rounded-xl border px-3.5 py-2.5 text-left text-sm font-medium transition-all duration-200 ${
                 isChosen
-                  ? "border-[#4f46e5] bg-[#eef2ff] text-[#4f46e5] shadow-sm ring-1 ring-[#4f46e5]/20"
-                  : "border-[#e5e7eb] text-[#374151] hover:border-[#4f46e5]/40 hover:bg-[#fafafa] hover:shadow-sm hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:border-[#e5e7eb] disabled:hover:bg-transparent disabled:hover:translate-y-0 disabled:hover:shadow-none"
+                  ? "border-[#143620] bg-[#eaf0e8] text-[#143620] shadow-sm ring-1 ring-[#143620]/20"
+                  : "border-[#e8e9e3] text-[#2f3e32] hover:border-[#143620]/40 hover:bg-[#fdfcf8] hover:shadow-sm hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:border-[#e8e9e3] disabled:hover:bg-transparent disabled:hover:translate-y-0 disabled:hover:shadow-none"
               }`}
             >
               {option}
@@ -374,7 +379,7 @@ function McqCard({
             onChange={(e) => setCustom(e.target.value)}
             placeholder="Or type your own answer…"
             disabled={locked}
-            className="flex-1 rounded-xl border border-[#e5e7eb] px-3.5 py-2 text-sm text-[#0a0a0a] placeholder:text-[#9ca3af] focus:border-[#4f46e5] focus:outline-none disabled:opacity-50"
+            className="flex-1 rounded-xl border border-[#e8e9e3] px-3.5 py-2 text-sm text-[#0f2214] placeholder:text-[#8d9d94] focus:border-[#143620] focus:outline-none disabled:opacity-50"
           />
           <button
             type="submit"
@@ -388,8 +393,8 @@ function McqCard({
       )}
 
       {answered && !clarification.options.includes(answered) && (
-        <p className="mt-3 text-xs text-[#6b7280]">
-          Custom answer: <span className="font-medium text-[#0a0a0a]">{answered}</span>
+        <p className="mt-3 text-xs text-[#5f6f63]">
+          Custom answer: <span className="font-medium text-[#0f2214]">{answered}</span>
         </p>
       )}
     </div>
@@ -628,7 +633,7 @@ export default function Chat({
   }, [input, sending, sendToBackend]);
 
   const handleMcqAnswer = useCallback(
-    async (messageId: string, question: string, answer: string) => {
+    async (messageId: string, _question: string, answer: string) => {
       if (sending) return;
 
       // Mark this MCQ as answered (locks the buttons)
@@ -672,21 +677,23 @@ export default function Chat({
 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)]">
-      {/* Header */}
-      <div className="flex items-center shrink-0 pb-3">
-        {chatTitle ? (
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-[#eef2ff] flex items-center justify-center shrink-0">
-              <MessageSquare className="w-4 h-4" style={{ color: ACCENT }} />
+      {/* Header — hidden when empty; hero empty state owns the title */}
+      {!isEmpty && (
+        <div className="flex items-center shrink-0 pb-3">
+          {chatTitle ? (
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-lg bg-[#eaf0e8] flex items-center justify-center shrink-0">
+                <MessageSquare className="w-4 h-4" style={{ color: ACCENT }} />
+              </div>
+              <span className="text-sm font-semibold text-[#0f2214] truncate">
+                {chatTitle}
+              </span>
             </div>
-            <span className="text-sm font-semibold text-[#0a0a0a] truncate">
-              {chatTitle}
-            </span>
-          </div>
-        ) : (
-          <span className="text-sm font-medium text-[#9ca3af]">New Chat</span>
-        )}
-      </div>
+          ) : (
+            <span className="text-sm font-medium text-[#8d9d94]">New conversation</span>
+          )}
+        </div>
+      )}
 
       {loadingMessages && (
         <div className="flex items-center justify-center py-4">
@@ -696,50 +703,67 @@ export default function Chat({
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-1 pb-4">
-        {/* Empty state */}
+        {/* Empty state — editorial, landing-aligned */}
         {isEmpty && (
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4, ease: "easeOut" }} className="h-full flex flex-col items-center justify-center text-center py-10 px-4">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-[#4f46e5]/20"
-              style={{ background: `linear-gradient(135deg, ${ACCENT}, #818cf8)` }}>
-              <Sparkles className="w-6 h-6 text-white" />
+          <motion.div
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+            className="relative flex min-h-[62vh] flex-col items-center justify-center overflow-hidden rounded-[28px] border border-[rgba(15,34,20,0.06)] bg-white/60 px-6 py-10 text-center backdrop-blur-[1px] md:min-h-[64vh] md:px-8 md:py-12"
+          >
+            {/* subtle backdrop — grid + forest orbs */}
+            <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-[inherit]">
+              <div className="absolute inset-0 bg-grid opacity-[0.38]" />
+              <div className="glow-orb -right-32 -top-28 h-[520px] w-[520px] bg-[#7cc99a]/[0.08]" />
+              <div className="glow-orb -bottom-28 -left-32 h-[440px] w-[440px] bg-[#143620]/[0.06]" />
+              <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[rgba(15,34,20,0.06)] to-transparent" />
             </div>
-            <h3 className="text-xl font-bold text-[#0a0a0a] tracking-tight">
-              Your AI co-founder is ready
-            </h3>
-            <p className="mt-2 text-[15px] text-[#6b7280] max-w-md leading-relaxed">
-              I delegate to a team of specialist agents — research, writing, design,
-              data analysis, and marketing. Tell me what you need shipped.
-            </p>
 
-            {/* Quick-start suggestions */}
-            <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-md">
+            <h3 className="hero-serif text-[clamp(2.2rem,5.2vw,3.5rem)] leading-[0.9] tracking-[-0.04em] text-[#0f2214] [text-wrap:balance]">
+              What should we
+              <span className="block italic font-[400] tracking-[-0.03em] text-[#1a4a2b]">build today?</span>
+            </h3>
+
+            <div className="mt-8 grid w-full max-w-[640px] grid-cols-1 gap-3.5 sm:grid-cols-2">
               {[
-                { label: "Write a marketing email", desc: "Campaigns, launches, newsletters" },
-                { label: "Create an Instagram post", desc: "Captions, visuals, brand copy" },
-                { label: "Analyze my sales data", desc: "EDA, charts, executive summary" },
-                { label: "Research my competitors", desc: "Market landscape, positioning" },
+                { n: "01", icon: Search, label: "Research competitors", desc: "Landscape, positioning & gaps", prompt: "Research my competitors in " },
+                { n: "02", icon: PenLine, label: "Draft a strategy memo", desc: "Clear, investor-ready narrative", prompt: "Draft a strategy memo for " },
+                { n: "03", icon: Palette, label: "Design Instagram post", desc: "On-brand visual + caption", prompt: "Create an Instagram post for " },
+                { n: "04", icon: BarChart3, label: "Analyze sales data", desc: "Charts, EDA & executive summary", prompt: "Analyze my sales data: " },
               ].map((chip, idx) => (
                 <motion.button
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 14 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.1 + 0.2 }}
+                  transition={{ delay: idx * 0.07 + 0.18, duration: 0.45, ease: "easeOut" as const }}
                   key={chip.label}
                   type="button"
                   onClick={() => {
-                    setInput(chip.label);
+                    setInput(chip.prompt);
                     inputRef.current?.focus();
                   }}
-                  className="group flex flex-col items-start gap-1 rounded-xl border border-[#e5e7eb] bg-white px-4 py-3.5 text-left transition-all duration-300 hover:border-[#4f46e5]/40 hover:shadow-[0_8px_24px_-8px_rgba(79,70,229,0.15)] hover:-translate-y-0.5"
+                  className="group relative flex items-start gap-3.5 overflow-hidden rounded-2xl border border-[rgba(15,34,20,0.07)] bg-white p-[1px] text-left transition-all duration-300 hover:border-[rgba(15,34,20,0.11)] hover:shadow-[0_12px_28px_-16px_rgba(15,34,20,0.18)]"
                 >
-                  <span className="text-[13px] font-semibold text-[#374151] group-hover:text-[#4f46e5] transition-colors">
-                    {chip.label}
-                  </span>
-                  <span className="text-[11px] text-[#9ca3af] leading-tight">
-                    {chip.desc}
+                  <span className="absolute inset-[1px] rounded-[15px] bg-white transition-colors group-hover:bg-[#fdfcf8]" />
+                  <span className="relative flex w-full items-start gap-3.5 rounded-[15px] px-4 py-4">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[rgba(15,34,20,0.07)] bg-[rgba(20,54,32,0.06)] transition-transform duration-300 group-hover:scale-[1.02]">
+                      <chip.icon className="h-[18px] w-[18px] text-[#143620]" strokeWidth={1.75} />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center gap-1.5">
+                        <span className="text-[13px] font-semibold tracking-tight text-[#0f2214]">{chip.label}</span>
+                        <ArrowUpRight className="h-3 w-3 translate-y-px text-[#aab8b0] opacity-0 transition-all group-hover:translate-x-0.5 group-hover:text-[#143620] group-hover:opacity-100" />
+                      </span>
+                      <span className="mt-1 block text-[12px] leading-relaxed text-[#5f6f63]">{chip.desc}</span>
+                    </span>
+                    <span className="shrink-0 font-mono text-[10px] tracking-wide text-[#aab8b0]">{chip.n}</span>
                   </span>
                 </motion.button>
               ))}
             </div>
+
+            <p className="mt-7 font-mono text-[10px] tracking-[0.16em] uppercase text-[#8d9d94]">
+              Press Enter to send · Shift + Enter for new line
+            </p>
           </motion.div>
         )}
 
@@ -765,7 +789,7 @@ export default function Chat({
                 <div
                   className={`min-w-0 ${
                     msg.role === "user"
-                      ? "max-w-[75%] bg-[#0a0a0a] text-white rounded-[20px] rounded-tr-[4px] px-5 py-3 shadow-md shadow-black/5"
+                      ? "max-w-[75%] bg-[#0f2214] text-white rounded-[20px] rounded-tr-[4px] px-5 py-3 shadow-md shadow-black/5"
                       : "max-w-[85%] py-1.5"
                   }`}
                 >
@@ -795,7 +819,7 @@ export default function Chat({
                   )}
                   <span
                     className={`text-[10px] mt-1.5 block font-medium ${
-                      msg.role === "user" ? "text-white/50" : "text-[#9ca3af]"
+                      msg.role === "user" ? "text-white/50" : "text-[#8d9d94]"
                     }`}
                   >
                     {formatTime(msg.timestamp)}
@@ -803,8 +827,8 @@ export default function Chat({
                 </div>
 
                 {msg.role === "user" && (
-                  <div className="w-8 h-8 rounded-lg bg-[#e5e7eb] flex items-center justify-center shrink-0 mt-0.5">
-                    <User className="w-4 h-4 text-[#6b7280]" />
+                  <div className="w-8 h-8 rounded-lg bg-[#e8e9e3] flex items-center justify-center shrink-0 mt-0.5">
+                    <User className="w-4 h-4 text-[#5f6f63]" />
                   </div>
                 )}
               </motion.div>
@@ -830,7 +854,7 @@ export default function Chat({
                   {[0, 150, 300].map((delay) => (
                     <span
                       key={delay}
-                      className="w-1.5 h-1.5 rounded-full bg-[#4f46e5] animate-bounce"
+                      className="w-1.5 h-1.5 rounded-full bg-[#143620] animate-bounce"
                       style={{ animationDelay: `${delay}ms` }}
                     />
                   ))}
@@ -855,8 +879,8 @@ export default function Chat({
                   <Sparkles className="w-4 h-4 text-white" />
                 </div>
                 <div className="min-w-0 max-w-[85%] py-1.5 flex-1">
-                  <div className="rounded-[20px] rounded-tl-[4px] border border-[#e5e7eb] bg-white px-4 py-3 shadow-sm">
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap break-words text-[#374151]">
+                  <div className="rounded-[20px] rounded-tl-[4px] border border-[#e8e9e3] bg-white px-4 py-3 shadow-sm">
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap break-words text-[#2f3e32]">
                       {streamingText}
                       <span
                         className="ml-0.5 inline-block h-3.5 w-[2px] animate-pulse rounded-full align-middle"
@@ -895,21 +919,21 @@ export default function Chat({
       </div>
 
       {/* Input */}
-      <div className="shrink-0 pt-4 pb-2 relative z-10 before:absolute before:inset-0 before:bg-gradient-to-t before:from-[#fafafa] before:via-[#fafafa]/90 before:to-transparent before:-z-10 before:pointer-events-none">
-        <div className="bg-white border border-[#e5e7eb] rounded-2xl px-4 py-2.5 flex items-center gap-3 focus-within:border-[#4f46e5] focus-within:ring-4 focus-within:ring-[#4f46e5]/10 transition-all shadow-[0_2px_12px_-4px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)]">
+      <div className="shrink-0 pt-4 pb-2 relative z-10 before:absolute before:inset-0 before:bg-gradient-to-t before:from-[#fdfcf8] before:via-[#fdfcf8]/90 before:to-transparent before:-z-10 before:pointer-events-none">
+        <div className="bg-white border border-[#e8e9e3] rounded-2xl px-4 py-2.5 flex items-center gap-3 focus-within:border-[#143620] focus-within:ring-4 focus-within:ring-[#143620]/10 transition-all shadow-[0_2px_12px_-4px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)]">
           {/* Effort dropdown */}
           <div className="relative shrink-0">
             <select
               value={effort}
               onChange={(e) => setEffort(e.target.value as Effort)}
               disabled={sending}
-              className="appearance-none bg-[#f9fafb] border border-[#e5e7eb] rounded-xl pl-3 pr-8 py-2 text-xs font-semibold text-[#374151] cursor-pointer outline-none focus:border-[#4f46e5] hover:border-[#4f46e5]/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="appearance-none bg-[#fdfcf8] border border-[#e8e9e3] rounded-xl pl-3 pr-8 py-2 text-xs font-semibold text-[#2f3e32] cursor-pointer outline-none focus:border-[#143620] hover:border-[#143620]/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <option value="flash">⚡ Flash</option>
               <option value="mid">⚖️ Mid</option>
               <option value="max">🎯 Max</option>
             </select>
-            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-[#9ca3af] pointer-events-none" />
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-[#8d9d94] pointer-events-none" />
           </div>
           <input
             ref={inputRef}
@@ -919,7 +943,7 @@ export default function Chat({
             onKeyDown={handleKeyDown}
             placeholder="Message your CEO agent…"
             disabled={sending}
-            className="flex-1 bg-transparent text-[15px] text-[#0a0a0a] placeholder-[#9ca3af] outline-none py-1.5 disabled:opacity-50"
+            className="flex-1 bg-transparent text-[15px] text-[#0f2214] placeholder-[#8d9d94] outline-none py-1.5 disabled:opacity-50"
             autoFocus
           />
           {/* Agent trace dropdown — sits beside the chat bar */}
@@ -939,9 +963,9 @@ export default function Chat({
             disabled={!input.trim() || sending}
             className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-60"
             style={{
-              background: input.trim() && !sending ? ACCENT : "#f3f4f6",
-              color: input.trim() && !sending ? "#fff" : "#9ca3af",
-              boxShadow: input.trim() && !sending ? "0 4px 12px -4px rgba(79, 70, 229, 0.4)" : "none",
+              background: input.trim() && !sending ? ACCENT : "#f6f5ef",
+              color: input.trim() && !sending ? "#fff" : "#8d9d94",
+              boxShadow: input.trim() && !sending ? "0 4px 12px -4px rgba(20, 54, 32, 0.4)" : "none",
             }}
           >
             {sending ? (
@@ -951,7 +975,7 @@ export default function Chat({
             )}
           </button>
         </div>
-        <p className="text-[11px] text-[#9ca3af] text-center mt-3">
+        <p className="text-[11px] text-[#8d9d94] text-center mt-3">
           {effort === "flash"
             ? "Flash — instant responses, no reflections. Best for quick tasks."
             : effort === "mid"

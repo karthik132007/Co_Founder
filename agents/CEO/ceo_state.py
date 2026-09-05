@@ -11,10 +11,13 @@ from __future__ import annotations
 
 import contextvars
 import json
+import logging
 import uuid
 from typing import Any
 
 from backend.db.redis_client import get_redis_client
+
+logger = logging.getLogger(__name__)
 
 _REQUEST_TTL = 300  # 5 minutes — covers the longest possible agent run
 
@@ -49,6 +52,39 @@ def get_effort() -> str:
     """Return the effort level for the current request, default 'flash'."""
     state = _read_state()
     return state.get("effort", "flash") if state else "flash"
+
+
+# ── Usage accounting ─────────────────────────────────────────────────────────
+# talk_to_ceo records the per-model token usage for a session here, and
+# main.chat pops it afterwards to queue the credit-management Kafka job.
+_USAGE_TTL = 600  # 10 minutes
+
+
+def record_usage(session_id: str, usage: dict) -> None:
+    """Store the LLM usage breakdown for a session (best-effort)."""
+    if not session_id:
+        return
+    try:
+        get_redis_client().setex(
+            f"ceo_usage:{session_id}", _USAGE_TTL, json.dumps(usage, default=str)
+        )
+    except Exception:
+        logger.exception("Failed to record usage for session_id=%s", session_id)
+
+
+def pop_usage(session_id: str) -> dict | None:
+    """Fetch and delete the recorded usage for a session (or None)."""
+    if not session_id:
+        return None
+    key = f"ceo_usage:{session_id}"
+    try:
+        raw = get_redis_client().get(key)
+        if raw:
+            get_redis_client().delete(key)
+            return json.loads(raw)
+    except Exception:
+        logger.exception("Failed to read usage for session_id=%s", session_id)
+    return None
 
 
 # ── Internal ────────────────────────────────────────────────────────────────

@@ -40,10 +40,10 @@ const POINTS = [
 ];
 
 const FEED = [
-  { agent: "CEO", action: "Decomposed objective · delegating to 3 agents", time: "now", color: "#7c8cff" },
-  { agent: "Researcher", action: "Scanning 142 sources · market evidence", time: "12s", color: "#b388ff" },
-  { agent: "Writer", action: "Drafting positioning narrative", time: "34s", color: "#6ee7b7" },
-  { agent: "Judge", action: "Scored output 8/10 · above threshold", time: "48s", color: "#a78bfa" },
+  { agent: "CEO", action: "Decomposed objective · delegating to 3 agents", time: "now", color: "#143620" },
+  { agent: "Researcher", action: "Scanning 142 sources · market evidence", time: "12s", color: "#2a5a3a" },
+  { agent: "Writer", action: "Drafting positioning narrative", time: "34s", color: "#5a7247" },
+  { agent: "Judge", action: "Scored output 8/10 · above threshold", time: "48s", color: "#3d5a40" },
 ];
 
 export function Dashboard() {
@@ -72,7 +72,9 @@ export function Dashboard() {
   }, []);
 
   return (
-    <section ref={root} id="solution" className="relative py-32 md:py-48 overflow-hidden">
+    <section ref={root} id="solution" className="relative py-24 md:py-32 overflow-hidden" style={{ isolation: "isolate" }}>
+      <div className="pointer-events-none absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-black/[0.04] to-transparent" />
+      <div className="pointer-events-none absolute top-0 inset-x-0 h-[36px] md:h-[48px] bg-gradient-to-b from-[var(--color-bg)] to-transparent opacity-30" />
       <SectionBackground variant="default" />
 
       <div className="relative mx-auto max-w-7xl px-6 grid lg:grid-cols-[1fr_1.15fr] gap-16 lg:gap-20 items-center">
