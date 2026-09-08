@@ -76,8 +76,9 @@ def delete_generated_graphic(storage_path: str) -> bool:
         return False
 
 
-def save_generated_graphic(company_id: int, content: bytes) -> None:
-    """Persist a generated image and its metadata; clean up storage on metadata failure."""
+def save_generated_graphic(company_id: int, content: bytes) -> str | None:
+    """Persist a generated image and its metadata; clean up storage on metadata failure.
+    Returns the signed URL for fast CDN display if successful."""
     from uuid import uuid4
 
     from backend.db.insert_to_sql import add_meta_to_file
@@ -98,10 +99,20 @@ def save_generated_graphic(company_id: int, content: bytes) -> None:
             file_size=len(content),
         )
         logger.info("Saved generated graphic — company_id=%s, file_name=%s", company_id, file_name)
+        try:
+            signed = client.storage.from_(GENERATED_GRAPHICS_BUCKET).create_signed_url(
+                storage_path, 3600 * 24 * 365 * 5
+            )
+            if isinstance(signed, dict):
+                return signed.get("signedUrl") or signed.get("signedURL")
+        except Exception:
+            logger.warning("Failed to create signed URL for generated graphic")
+        return None
     except Exception:
         if storage_path:
             delete_generated_graphic(storage_path)
         logger.exception("Failed to save generated graphic — company_id=%s", company_id)
+        return None
 
 def delete_from_cloud(
     company_id: int,

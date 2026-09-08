@@ -87,6 +87,17 @@ export default function AppLayout({ children }: Props) {
     finally { setLoadingSessions(false); }
   }, [userId]);
 
+  // Refresh sidebar sessions when a chat session is created
+  useEffect(() => {
+    const onSessionsUpdated = () => loadSessions();
+    window.addEventListener("cofounder:session-created", onSessionsUpdated);
+    window.addEventListener("cofounder:sessions-updated", onSessionsUpdated);
+    return () => {
+      window.removeEventListener("cofounder:session-created", onSessionsUpdated);
+      window.removeEventListener("cofounder:sessions-updated", onSessionsUpdated);
+    };
+  }, [loadSessions]);
+
   useEffect(() => {
     if (!hydrated) return;
     if (!session) {

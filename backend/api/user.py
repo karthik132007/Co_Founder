@@ -160,27 +160,23 @@ def download_file(
     Avoids proxying file bytes through our slow backend connection."""
     from fastapi.responses import RedirectResponse
 
-    from backend.db.database import engine
     from backend.utils import get_supabase_client
-    from sqlalchemy import text
 
     logger.info("download_file called — file_id=%s, user_id=%s, view=%s", file_id, user_id, view)
 
-    # Use direct DB to fetch file metadata + verify ownership in one query
-    with engine.connect() as conn:
-        row = conn.execute(
-            text(
-                "SELECT f.*, c.user_id "
-                "FROM files f "
-                "JOIN companies c ON c.id = f.company_id "
-                "WHERE f.id = :file_id"
-            ),
-            {"file_id": file_id},
-        ).mappings().first()
-
-    if not row:
+    supabase = get_supabase_client()
+    response = (
+        supabase.table("files")
+        .select("*, companies!inner(user_id)")
+        .eq("id", file_id)
+        .execute()
+    )
+    rows = response.data or []
+    if not rows:
         raise HTTPException(status_code=404, detail="File not found.")
-    if row["user_id"] != user_id:
+    row = rows[0]
+    file_user_id = (row.get("companies") or {}).get("user_id")
+    if file_user_id != user_id:
         raise HTTPException(status_code=403, detail="Access denied.")
 
     bucket = row.get("bucket_name") or "company_files"

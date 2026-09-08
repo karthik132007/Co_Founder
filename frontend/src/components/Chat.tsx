@@ -843,27 +843,59 @@ function McqCard({
    Inline Trace Components
    ───────────────────────────────────────────── */
 
-function LiveAgentTrace({ runs }: { runs: ToolRun[] }) {
+function LiveAgentTrace({
+  runs,
+  connectionStatus,
+  streamingText,
+}: {
+  runs: ToolRun[];
+  connectionStatus?: string;
+  streamingText?: string;
+}) {
   const [expanded, setExpanded] = useState(true);
   const runningCount = runs.filter((r) => r.status === "running").length;
+  const isStreamingLlm = Boolean(streamingText && streamingText.length > 0);
+
+  const getStatusText = () => {
+    if (runningCount > 0) {
+      return `${runningCount} tool${runningCount > 1 ? "s" : ""} running…`;
+    }
+    if (runs.length > 0) {
+      return isStreamingLlm ? "Drafting response…" : "Steps completed";
+    }
+    if (connectionStatus === "connecting") {
+      return "Connecting…";
+    }
+    return "Reasoning & planning…";
+  };
+
+  const getHeaderTitle = () => {
+    if (runs.length > 0) {
+      return `Agent Activity (${runs.length} step${runs.length > 1 ? "s" : ""})`;
+    }
+    return "Agent Activity";
+  };
 
   return (
-    <div className="rounded-2xl border border-[#e8e9e3] bg-white/95 backdrop-blur-sm p-3 shadow-xs max-w-[85%]">
+    <div className="rounded-2xl border border-[#dce3db] bg-white/95 backdrop-blur-sm p-3.5 shadow-xs max-w-[85%]">
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
         className="w-full flex items-center gap-2 pb-1.5 border-b border-[rgba(15,34,20,0.06)] text-left cursor-pointer"
       >
-        {runningCount > 0 ? (
-          <Loader2 className="w-3.5 h-3.5 animate-spin text-[#143620] shrink-0" />
-        ) : (
-          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-        )}
+        <Loader2 className="w-3.5 h-3.5 animate-spin text-[#143620] shrink-0" />
         <span className="text-xs font-semibold text-[#143620]">
-          Agent Activity ({runs.length} step{runs.length > 1 ? "s" : ""})
+          {getHeaderTitle()}
         </span>
-        <span className="text-[11px] text-[#8d9d94] font-medium ml-auto">
-          {runningCount > 0 ? "In progress…" : "Completed"}
+        <span className="text-[11px] text-[#8d9d94] font-medium ml-auto flex items-center gap-1.5">
+          <span className="relative flex h-2 w-2">
+            <span
+              className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-60"
+              style={{ background: ACCENT }}
+            />
+            <span className="relative inline-flex h-2 w-2 rounded-full" style={{ background: ACCENT }} />
+          </span>
+          {getStatusText()}
         </span>
         <ChevronRight
           className={`w-3.5 h-3.5 text-[#8d9d94] transition-transform shrink-0 ${expanded ? "rotate-90" : ""}`}
@@ -878,9 +910,20 @@ function LiveAgentTrace({ runs }: { runs: ToolRun[] }) {
             transition={{ duration: 0.15 }}
             className="mt-2 space-y-1 overflow-hidden"
           >
-            {runs.map((run) => (
-              <TraceRow key={run.runId} run={run} />
-            ))}
+            {runs.length === 0 ? (
+              <div className="flex items-center gap-2 py-2 px-1 text-xs text-[#68786c]">
+                <Sparkles className="w-3.5 h-3.5 text-[#143620] animate-pulse shrink-0" />
+                <span className="leading-snug">
+                  {connectionStatus === "connecting"
+                    ? "Connecting to agent stream…"
+                    : "CEO agent analyzing objectives and coordinating specialists…"}
+                </span>
+              </div>
+            ) : (
+              runs.map((run) => (
+                <TraceRow key={run.runId} run={run} />
+              ))
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -896,11 +939,11 @@ function MessageTrace({ runs }: { runs: ToolRun[] }) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 text-xs text-[#5f6f63] hover:text-[#143620] transition-colors py-1 px-2 rounded-lg hover:bg-[#f6f5ef]"
+        className="flex items-center gap-1.5 text-xs text-[#2b4c34] hover:text-[#143620] transition-colors py-1 px-2.5 rounded-lg bg-[rgba(20,54,32,0.04)] hover:bg-[rgba(20,54,32,0.08)]"
       >
-        <Cpu className="w-3.5 h-3.5 text-[#8d9d94]" />
-        <span className="font-medium">
-          {runs.length} agent step{runs.length > 1 ? "s" : ""}
+        <Cpu className="w-3.5 h-3.5 text-[#143620]" />
+        <span className="font-semibold text-[#143620]">
+          {runs.length} agent step{runs.length > 1 ? "s" : ""} executed
         </span>
         <ChevronRight
           className={`w-3.5 h-3.5 text-[#8d9d94] transition-transform ${open ? "rotate-90" : ""}`}
@@ -954,6 +997,7 @@ export default function Chat({
     waitForConnection,
     streamingText,
     llmActive,
+    connectionStatus,
   } = useObservability(sessionId);
 
 
@@ -1005,9 +1049,22 @@ export default function Chat({
                 ? new Date(m.created_at).getTime()
                 : Date.now(),
             };
+
+            // Parse image from stored "[image: ...]" format
+            const imgMatch = base.content.match(/^\[image:\s*(https?:\/\/[^\s\]]+|data:image\/[^\s\]]+)\]\n*/i);
+            if (imgMatch) {
+              base.imageDataUrl = imgMatch[1];
+              base.content = base.content.replace(imgMatch[0], "").trim();
+            } else if (m.role === "assistant") {
+              const mdImgMatch = base.content.match(/!\[.*?\]\((https?:\/\/[^\s\)]+|data:image\/[^\s\)]+)\)/i);
+              if (mdImgMatch) {
+                base.imageDataUrl = mdImgMatch[1];
+              }
+            }
+
             // Parse MCQ clarification from stored "Options:" format
-            if (m.role === "assistant" && m.content.includes("Options:")) {
-              const parts = m.content.split("Options:");
+            if (m.role === "assistant" && base.content.includes("Options:")) {
+              const parts = base.content.split("Options:");
               let question = (parts[0] ?? "").trim();
               const optionsStr = (parts[1] ?? "").trim();
               // Detect [multi] prefix stored by backend
@@ -1080,17 +1137,6 @@ export default function Chat({
         // Snapshot agent trace runs so they stick to this message
         const traceRuns = snapshotRuns();
 
-        if (response.is_new_session || !sessionId) {
-          // Use the backend's session_id if it differs (should match our pre-generated one)
-          const finalSid = response.session_id || sid;
-          if (finalSid !== sessionId) {
-            setSessionId(finalSid);
-          }
-          const title = response.title ?? "Untitled Chat";
-          setChatTitle(title);
-          onSessionCreated(finalSid, title);
-        }
-
         if (response.type === "clarification_request" && response.clarification) {
           const mcqMsg: Message = {
             id: createClientId(),
@@ -1120,6 +1166,17 @@ export default function Chat({
             traceRuns: traceRuns.length > 0 ? traceRuns : undefined,
           };
           setMessages((prev) => [...prev, assistantMsg]);
+        }
+
+        if (response.is_new_session || !sessionId) {
+          // Use the backend's session_id if it differs (should match our pre-generated one)
+          const finalSid = response.session_id || sid;
+          if (finalSid !== sessionId) {
+            setSessionId(finalSid);
+          }
+          const title = response.title ?? "Untitled Chat";
+          setChatTitle(title);
+          onSessionCreated(finalSid, title);
         }
         window.dispatchEvent(new Event("cofounder:credits-updated"));
       } catch (err) {
@@ -1375,7 +1432,7 @@ export default function Chat({
 
           {/* Active agent tool trace while executing */}
           <AnimatePresence>
-            {sending && runs.length > 0 && (
+            {sending && (
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -1389,35 +1446,11 @@ export default function Chat({
                   <Sparkles className="w-4 h-4 text-white" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <LiveAgentTrace runs={runs} />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Typing indicator (only before any streaming tokens or tool runs appear) */}
-          <AnimatePresence>
-            {sending && streamingText.length === 0 && runs.length === 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="flex gap-3"
-              >
-                <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                  style={{ background: ACCENT }}
-                >
-                  <Sparkles className="w-4 h-4 text-white" />
-                </div>
-                <div className="flex items-center gap-1.5">
-                  {[0, 150, 300].map((delay) => (
-                    <span
-                      key={delay}
-                      className="w-1.5 h-1.5 rounded-full bg-[#143620] animate-bounce"
-                      style={{ animationDelay: `${delay}ms` }}
-                    />
-                  ))}
+                  <LiveAgentTrace
+                    runs={runs}
+                    connectionStatus={connectionStatus}
+                    streamingText={streamingText}
+                  />
                 </div>
               </motion.div>
             )}

@@ -9,9 +9,14 @@ export default function ChatPage() {
   const session = getSession();
   const router = useRouter();
 
-  const handleSessionCreated = useCallback((sessionId: string, _title: string) => {
-    router.replace(`/${sessionId}`);
-  }, [router]);
+  const handleSessionCreated = useCallback((sessionId: string, title: string) => {
+    window.history.replaceState(null, "", `/${sessionId}`);
+    window.dispatchEvent(
+      new CustomEvent("cofounder:session-created", {
+        detail: { sessionId, title },
+      }),
+    );
+  }, []);
 
   if (!session) return null;
 

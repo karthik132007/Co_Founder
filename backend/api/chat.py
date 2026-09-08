@@ -211,8 +211,18 @@ def chat_with_user(
             logger.error("CEO returned invalid generated image data: %s", exc)
             raise HTTPException(status_code=500, detail="Generated image data was invalid") from exc
 
-        add_message_to_session(session_id, "assistant", generated_message)
-        background_tasks.add_task(save_generated_graphic, company_id, image_bytes)
+        # Save to storage to obtain permanent signed URL for CDN delivery
+        image_url = None
+        try:
+            image_url = save_generated_graphic(company_id, image_bytes)
+        except Exception:
+            logger.exception("Failed to save generated graphic to storage")
+
+        final_image_url = image_url or image_data_url
+
+        # Store with image marker so it persists on reload and session switch
+        stored_message = f"[image: {final_image_url}]\n\n{generated_message}"
+        add_message_to_session(session_id, "assistant", stored_message)
 
         try:
             queue_chat_memory(company_id, message, generated_message)
@@ -222,7 +232,7 @@ def chat_with_user(
             "status": "success",
             "type": "image_generated",
             "message": generated_message,
-            "image_data_url": image_data_url,
+            "image_data_url": final_image_url,
             "session_id": session_id,
         }
         if is_new_session or title:

@@ -315,8 +315,13 @@ export function formatFileSize(bytes: number | null): string {
   return `${size.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
 }
 
-export function isImageMime(mime: string): boolean {
-  return mime.startsWith("image/");
+export function isImageMime(mime?: string | null, ext?: string | null): boolean {
+  if (mime && mime.startsWith("image/")) return true;
+  if (ext) {
+    const cleanExt = ext.toLowerCase().replace(/^\./, "");
+    return ["png", "jpg", "jpeg", "webp", "gif", "svg", "bmp", "avif"].includes(cleanExt);
+  }
+  return false;
 }
 
 /** Build a download URL for a file. Set view=true to open inline (images/PDFs in browser). */

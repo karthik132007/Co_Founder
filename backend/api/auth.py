@@ -117,6 +117,12 @@ def _extract_google_name(user) -> str | None:
     name = metadata.get("full_name") or metadata.get("name") or None
     return str(name).strip() if name else None
 
+@router.get("instagram/login")
+async def instagram_login(request: Request):
+    pass
+@router.get("/instagram/callback")
+async def instagram_callback(code: str, state: str | None = None):
+    pass
 
 @router.post("/google")
 def google_login(payload: GoogleLoginRequest, request: Request, response: Response):
