@@ -241,7 +241,7 @@ def _build_ceo_tools(company_id: int):
     @tool(
         "graphic_design_request",
         return_direct=True,
-        description="Delegate branded visual assets and color-palette work to the Graphic Designer agent.",
+        description="Delegate branded visual assets, graphics, Instagram posts, social media marketing visuals, and color-palette work to the Graphic Designer agent. Always use for Instagram posts or when an image is requested.",
     )
     def graphic_design_request(task: str):
         logger.info("graphic_design_request called: task='%s', company_id=%d, effort=%s", task, company_id, ceo_state._current_effort)

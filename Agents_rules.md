@@ -124,7 +124,7 @@ Each session has a Redis-backed resource budget (`agents/CEO/ceo_resources.py`, 
 - The Graphic Designer has three tools:
   - `get_color_palette(company_id)` — Fetch the active brand color palette (hex array). Must be called FIRST before any graphic generation.
   - `update_color_palette(company_id, new_colors)` — Create or update the active palette with new hex values.
-  - `create_graphic(company_id, prompt)` — Generate a PNG image via OpenRouter `google/gemini-2.5-flash-image`. Returns an image token (not raw bytes) to keep the ~1MB base64 payload out of the LLM context.
+  - `create_graphic(company_id, prompt, model)` — Generate a PNG image via OpenRouter dedicated Images API (`https://openrouter.ai/api/v1/images`). Returns an image token (not raw bytes) to keep the ~1MB base64 payload out of the LLM context.
 - The designer must always respect the company's color palette in every visual asset.
 - The designer should adapt output to the requested format (Instagram post, email header, ad banner, etc.) and match the brand's positioning and audience.
 - The designer should not fabricate brand assets or use colors that conflict with the established palette.

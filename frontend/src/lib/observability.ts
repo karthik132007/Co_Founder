@@ -112,8 +112,20 @@ export interface ObservabilityState {
    ───────────────────────────────────────────── */
 
 function wsUrl(sessionId: string): string {
-  const http = API_BASE_URL.replace(/\/+$/, "");
-  return http.replace(/^http/, "ws") + `/chat/ws?session_id=${encodeURIComponent(sessionId)}`;
+  const base = API_BASE_URL.replace(/\/+$/, "");
+  let wsProtocol = "ws:";
+  let host = "127.0.0.1:8000";
+  if (base.startsWith("http://")) {
+    wsProtocol = "ws:";
+    host = base.replace(/^http:\/\//, "");
+  } else if (base.startsWith("https://")) {
+    wsProtocol = "wss:";
+    host = base.replace(/^https:\/\//, "");
+  } else if (typeof window !== "undefined") {
+    wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    host = window.location.hostname === "localhost" ? "127.0.0.1:8000" : `${window.location.hostname}:8000`;
+  }
+  return `${wsProtocol}//${host}/chat/ws?session_id=${encodeURIComponent(sessionId)}`;
 }
 
 let _runCounter = 0;
@@ -258,9 +270,12 @@ export function useObservability(
 
           case "tool_end": {
             const backendRunId = String(ev.data.tool_run_id ?? "");
-            updateRun((prev) =>
-              prev.map((r) => {
-                if (r.toolRunId === backendRunId && r.status === "running") {
+            const toolName = String(ev.data.tool_name ?? "");
+            updateRun((prev) => {
+              let matched = false;
+              const next = prev.map((r) => {
+                if (backendRunId && r.toolRunId === backendRunId && r.status === "running") {
+                  matched = true;
                   return {
                     ...r,
                     endedAt: ev.timestamp,
@@ -270,16 +285,40 @@ export function useObservability(
                   };
                 }
                 return r;
-              }),
-            );
+              });
+              if (matched) return next;
+              // Fallback: match last running tool with matching toolName or any running tool
+              const lastRunningIdx = [...prev].reverse().findIndex(
+                (r) => r.status === "running" && (!toolName || r.toolName === toolName || r.toolName === "unknown")
+              );
+              if (lastRunningIdx !== -1) {
+                const targetIdx = prev.length - 1 - lastRunningIdx;
+                return prev.map((r, i) => {
+                  if (i === targetIdx) {
+                    return {
+                      ...r,
+                      endedAt: ev.timestamp,
+                      durationMs: (ev.data.duration_ms as number) ?? null,
+                      toolOutput: String(ev.data.tool_output ?? ""),
+                      status: "ok" as const,
+                    };
+                  }
+                  return r;
+                });
+              }
+              return prev;
+            });
             break;
           }
 
           case "tool_error": {
             const backendRunId = String(ev.data.tool_run_id ?? "");
-            updateRun((prev) =>
-              prev.map((r) => {
-                if (r.toolRunId === backendRunId && r.status === "running") {
+            const toolName = String(ev.data.tool_name ?? "");
+            updateRun((prev) => {
+              let matched = false;
+              const next = prev.map((r) => {
+                if (backendRunId && r.toolRunId === backendRunId && r.status === "running") {
+                  matched = true;
                   return {
                     ...r,
                     endedAt: ev.timestamp,
@@ -288,8 +327,27 @@ export function useObservability(
                   };
                 }
                 return r;
-              }),
-            );
+              });
+              if (matched) return next;
+              const lastRunningIdx = [...prev].reverse().findIndex(
+                (r) => r.status === "running" && (!toolName || r.toolName === toolName || r.toolName === "unknown")
+              );
+              if (lastRunningIdx !== -1) {
+                const targetIdx = prev.length - 1 - lastRunningIdx;
+                return prev.map((r, i) => {
+                  if (i === targetIdx) {
+                    return {
+                      ...r,
+                      endedAt: ev.timestamp,
+                      error: String(ev.data.error ?? "Unknown error"),
+                      status: "error" as const,
+                    };
+                  }
+                  return r;
+                });
+              }
+              return prev;
+            });
             break;
           }
 
@@ -297,7 +355,33 @@ export function useObservability(
             const subagentName = String(ev.data.subagent_name ?? "");
             updateRun((prev) => {
               const idx = [...prev].reverse().findIndex((r) => r.status === "running");
-              if (idx === -1) return prev;
+              if (idx === -1) {
+                // Synthesize top-level ToolRun if subagent runs standalone
+                const run: ToolRun = {
+                  runId: nextRunId(),
+                  toolRunId: `subagent-${Date.now()}`,
+                  toolName: subagentName || "Subagent",
+                  agent: ev.agent,
+                  toolInput: String(ev.data.task ?? ""),
+                  startedAt: ev.timestamp,
+                  endedAt: null,
+                  durationMs: null,
+                  toolOutput: null,
+                  error: null,
+                  subagent: {
+                    name: subagentName,
+                    task: String(ev.data.task ?? ""),
+                    effort: String(ev.data.effort ?? "flash"),
+                    startedAt: ev.timestamp,
+                    endedAt: null,
+                    durationMs: null,
+                    resultPreview: null,
+                    error: null,
+                  },
+                  status: "running",
+                };
+                return [...prev, run];
+              }
               const mapped = [...prev];
               const realIdx = mapped.length - 1 - idx;
               mapped[realIdx] = {
@@ -416,7 +500,7 @@ export function useObservability(
   // immediately (events pushed before the WS upgrade finished were the root
   // cause of the invisible trace in production — now also buffered server-side).
   const waitForConnection = useCallback(
-    (overrideSessionId?: string, timeoutMs = 8000): Promise<boolean> => {
+    (overrideSessionId?: string, timeoutMs = 1500): Promise<boolean> => {
       return new Promise((resolve) => {
         const sid = overrideSessionId ?? sessionRef.current;
         if (!sid) {
@@ -442,14 +526,12 @@ export function useObservability(
           }
           if (Date.now() - started >= timeoutMs) {
             window.clearInterval(timer);
+            // Non-blocking: proceed with HTTP POST even if WS hasn't connected yet;
+            // backend buffers replay events so they will be delivered once WS opens.
             resolve(false);
             return;
           }
-          // Socket failed — retry opening (idempotent for same session).
-          if (!ws || ws.readyState === WebSocket.CLOSED) {
-            _openSocket(overrideSessionId);
-          }
-        }, 60);
+        }, 50);
       });
     },
     [_openSocket],

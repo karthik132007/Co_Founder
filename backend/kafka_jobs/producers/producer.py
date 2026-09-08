@@ -27,8 +27,17 @@ def _produce(topic: str, payload: dict) -> dict:
     """Serialize *payload* to JSON and produce a Kafka message on *topic*."""
     data = json.dumps(payload).encode("utf-8")
     try:
-        _get_producer().produce(topic=topic, value=data)
-        _get_producer().flush()
+        producer = _get_producer()
+        producer.produce(topic=topic, value=data)
+        remaining = producer.flush(timeout=1.0)
+        if remaining > 0:
+            logger.warning("Kafka message not delivered (timeout/broker unreachable) — topic=%s", topic)
+            return {
+                "status": "error",
+                "error": "broker_unreachable",
+                "topic": topic,
+                "payload": payload,
+            }
         logger.debug("Kafka message produced — topic=%s", topic)
         return {
             "status": "success",
@@ -36,8 +45,7 @@ def _produce(topic: str, payload: dict) -> dict:
             "payload": payload,
         }
     except Exception:
-        logger.exception("Failed to produce Kafka message — topic=%s", topic)
-        raise
+        logger.warning("Failed to produce Kafka message (best-effort) — topic=%s", topic, exc_info=True)
         return {
             "status": "error",
             "topic": topic,
@@ -86,6 +94,7 @@ def queue_credit_management(
     usage: list[dict],
     no_of_images: int = 0,
     session_id: str | None = None,
+    message_id: str | None = None,
 ) -> dict:
     """Queue a credit management request (manage_credits job).
 
@@ -94,7 +103,7 @@ def queue_credit_management(
         [
             {"model": "deepseek/deepseek-v4-flash",
              "input_tokens": 1200, "output_tokens": 340},
-            {"model": "x-ai/grok-imagine-image-2.0",
+            {"model": "google/gemini-2.5-flash-image",
              "input_tokens": 0, "output_tokens": 0, "image_count": 2},
         ]
 
@@ -103,7 +112,7 @@ def queue_credit_management(
     (when present) lets the consumer record per-session credit usage.
     """
     payload = {
-        "message_id": str(uuid4()),
+        "message_id": message_id or str(uuid4()),
         "company_id": company_id,
         "usage": usage,
         "no_of_images": no_of_images,

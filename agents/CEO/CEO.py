@@ -1,6 +1,7 @@
 """
 The main CEO agent that interacts with the user and delegates work to specialist agents.
 """
+from collections.abc import Mapping
 import json
 import logging
 import time
@@ -21,7 +22,25 @@ from RAG_Engine.chat_memory import get_chat_memories_by_query
 
 from agents.CEO.ceo_agent_tools import _build_user_message_with_memories,_build_ceo_tools
 def _extract_content(response):
-    content = response["messages"][-1].content
+    if not response or not isinstance(response, Mapping):
+        return ""
+    messages = response.get("messages", [])
+    if not messages:
+        return ""
+    last_msg = messages[-1]
+    content = getattr(last_msg, "content", "")
+    if not isinstance(content, str):
+        content = str(content or "")
+
+    reasoning = ""
+    if hasattr(last_msg, "additional_kwargs") and isinstance(last_msg.additional_kwargs, dict):
+        reasoning = last_msg.additional_kwargs.get("reasoning_content") or last_msg.additional_kwargs.get("reasoning") or ""
+    if not reasoning and hasattr(last_msg, "response_metadata") and isinstance(last_msg.response_metadata, dict):
+        reasoning = last_msg.response_metadata.get("reasoning_content") or ""
+
+    if reasoning and "<think>" not in content:
+        content = f"<think>\n{reasoning}\n</think>\n\n{content}"
+
     return content
 
 
@@ -104,8 +123,8 @@ def _get_ceo_agent(company_id: int, effort: str = "flash"):
 # Tool lifecycle events (tool_start/tool_end/subagent_*) still fire through
 # the ObservabilityCallback, so the trace panel gets them live.
 
-_TOKEN_BATCH_SIZE = 24        # push a WS event every N streamed tokens
-_TOKEN_FLUSH_SECONDS = 0.06   # or at least every ~60ms
+_TOKEN_BATCH_SIZE = 2        # push a WS event every N streamed tokens (low-latency streaming)
+_TOKEN_FLUSH_SECONDS = 0.03   # or at least every ~30ms
 
 
 def _invoke_agent(agent, messages: list[dict], session_id: str = "", invoke_config: dict | None = None):
@@ -137,9 +156,13 @@ def _invoke_agent(agent, messages: list[dict], session_id: str = "", invoke_conf
         text = "".join(token_buffer)
         token_buffer = []
         last_flush = time.time()
-        event_bus.push(make_llm_token(session_id, text, agent="CEO"))
+        try:
+            event_bus.push(make_llm_token(session_id, text, agent="CEO"))
+        except Exception:
+            logger.exception("Failed to push llm_token event for session_id=%s", session_id)
 
     config = dict(invoke_config or {})
+    in_think_block = False
     try:
         for mode, data in agent.stream(
             {"messages": messages},
@@ -148,10 +171,43 @@ def _invoke_agent(agent, messages: list[dict], session_id: str = "", invoke_conf
         ):
             if mode == "messages":
                 chunk, _meta = data
-                if isinstance(chunk, AIMessageChunk) and chunk.content:
-                    token_buffer.append(str(chunk.content))
-                    if len(token_buffer) >= _TOKEN_BATCH_SIZE or (time.time() - last_flush) >= _TOKEN_FLUSH_SECONDS:
-                        flush_tokens()
+                if isinstance(chunk, AIMessageChunk):
+                    text_delta = ""
+                    if isinstance(chunk.content, str):
+                        text_delta = chunk.content
+                    elif isinstance(chunk.content, list):
+                        parts = []
+                        for p in chunk.content:
+                            if isinstance(p, dict) and p.get("type") == "text":
+                                parts.append(p.get("text", ""))
+                            elif isinstance(p, str):
+                                parts.append(p)
+                        text_delta = "".join(parts)
+
+                    # Extract reasoning tokens (e.g. DeepSeek or reasoning models on OpenRouter)
+                    is_reasoning_chunk = False
+                    if not text_delta and hasattr(chunk, "additional_kwargs") and isinstance(chunk.additional_kwargs, dict):
+                        text_delta = chunk.additional_kwargs.get("reasoning_content") or chunk.additional_kwargs.get("reasoning") or ""
+                        if text_delta:
+                            is_reasoning_chunk = True
+                    if not text_delta and hasattr(chunk, "response_metadata") and isinstance(chunk.response_metadata, dict):
+                        text_delta = chunk.response_metadata.get("reasoning_content") or ""
+                        if text_delta:
+                            is_reasoning_chunk = True
+
+                    if text_delta:
+                        if is_reasoning_chunk:
+                            if not in_think_block:
+                                token_buffer.append("<think>\n")
+                                in_think_block = True
+                        else:
+                            if in_think_block:
+                                token_buffer.append("\n</think>\n\n")
+                                in_think_block = False
+
+                        token_buffer.append(text_delta)
+                        if len(token_buffer) >= _TOKEN_BATCH_SIZE or (time.time() - last_flush) >= _TOKEN_FLUSH_SECONDS:
+                            flush_tokens()
             elif mode == "updates":
                 # Each update carries the messages produced by that node;
                 # accumulating them in order reconstructs the final state.
@@ -163,12 +219,18 @@ def _invoke_agent(agent, messages: list[dict], session_id: str = "", invoke_conf
         logger.exception("Agent stream failed for session_id=%s", session_id)
         # Flush whatever tokens we have so the UI isn't left hanging, then
         # fall back to a plain invoke so the user still gets an answer.
+        if in_think_block:
+            token_buffer.append("\n</think>\n\n")
+            in_think_block = False
         flush_tokens()
         return agent.invoke(
             {"messages": messages},
             config=config,
         )
     finally:
+        if in_think_block:
+            token_buffer.append("\n</think>\n\n")
+            in_think_block = False
         flush_tokens()
 
     if not final_messages:
@@ -261,7 +323,8 @@ def talk_to_ceo(company_id: int, message: str, history: list[dict] | None = None
             image_data_url = get_generated_image(token)
             if image_data_url:
                 image_payload["image_data_url"] = image_data_url
-                image_payload["message"] = "Here is the generated graphic."
+                if not image_payload.get("message") or image_payload.get("message") == "Graphic generated successfully.":
+                    image_payload["message"] = "Here is the generated graphic based on your brand requirements."
                 logger.info("CEO agent returned image_generated")
                 return image_payload
             logger.warning("Image token %s not found in cache", token)
@@ -282,12 +345,13 @@ def talk_to_ceo(company_id: int, message: str, history: list[dict] | None = None
 
 
 def _find_image_generated_payload(response) -> dict | None:
-    """Scan tool messages for an image_generated JSON payload from graphic_design_request."""
-    for message in reversed(response.get("messages", [])):
-        if getattr(message, "name", None) != "graphic_design_request":
-            continue
-        content = getattr(message, "content", None)
-        if isinstance(content, str):
+    """Scan tool and response messages for an image_generated JSON payload."""
+    messages = response.get("messages", []) if isinstance(response, Mapping) else []
+    for message in reversed(messages):
+        content = message.get("content") if isinstance(message, Mapping) else getattr(message, "content", None)
+        if isinstance(content, dict) and content.get("type") == "image_generated":
+            return content
+        if isinstance(content, str) and "image_generated" in content:
             try:
                 parsed = json.loads(content)
                 if isinstance(parsed, dict) and parsed.get("type") == "image_generated":
@@ -306,6 +370,7 @@ def _collect_usage(result: dict) -> dict:
     "no_of_images": int}`` — the shape the credit-management consumer expects.
     """
     from langchain_core.messages import AIMessage
+    from agents.helpers.choose_llm import DEFAULT_MODEL
 
     per_model: dict[str, dict[str, int]] = {}
     image_count = 0
@@ -315,18 +380,33 @@ def _collect_usage(result: dict) -> dict:
         usage_metadata = getattr(message, "usage_metadata", None) or {}
         if not usage_metadata:
             continue
-        model = (getattr(message, "response_metadata", {}) or {}).get("model") or "unknown"
-        entry = per_model.setdefault(model, {"input_tokens": 0, "output_tokens": 0})
+        resp_meta = getattr(message, "response_metadata", {}) or {}
+        model = (
+            resp_meta.get("model_name")
+            or resp_meta.get("model")
+            or resp_meta.get("model_id")
+            or DEFAULT_MODEL.value
+        )
+        entry = per_model.setdefault(model, {"input_tokens": 0, "output_tokens": 0, "image_count": 0})
         entry["input_tokens"] += int(usage_metadata.get("input_tokens") or 0)
         entry["output_tokens"] += int(usage_metadata.get("output_tokens") or 0)
+
     # Count generated graphics — charged separately via the image model.
-    if _find_image_generated_payload(result):
+    image_payload = _find_image_generated_payload(result)
+    if image_payload:
         image_count += 1
+        image_model = "google/gemini-2.5-flash-image"
+        if isinstance(image_payload, dict) and image_payload.get("model"):
+            image_model = image_payload.get("model")
+        entry = per_model.setdefault(image_model, {"input_tokens": 0, "output_tokens": 0, "image_count": 0})
+        entry["image_count"] = entry.get("image_count", 0) + 1
+
     breakdown = [
         {
             "model": model,
-            "input_tokens": counts["input_tokens"],
-            "output_tokens": counts["output_tokens"],
+            "input_tokens": counts.get("input_tokens", 0),
+            "output_tokens": counts.get("output_tokens", 0),
+            "image_count": counts.get("image_count", 0),
         }
         for model, counts in per_model.items()
     ]

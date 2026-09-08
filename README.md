@@ -418,7 +418,7 @@ get_usage(model, input_tokens, output_tokens, image_count=0)
 get_total_usage(usage_list, no_of_images=0)  # sums across models
 ```
 
-- `get_model_price(model, is_image_model)` (`credits_engine/Get_model_price.py`) returns per-1M input/output USD rates (and image pricing for `x-ai/grok-imagine-image-2.0` at $0.04/image).
+- `get_model_price(model, is_image_model)` (`credits_engine/Get_model_price.py`) returns per-1M input/output USD rates for text models and image generation models (`google/gemini-2.5-flash-image`, `openai/gpt-image-2`).
 - `MARKUP = 2`, `USD_INR = 100` (`credits_engine/usage.py:8`) — i.e. 2× over raw LLM cost, $1 = ₹100 for the selling price.
 - Returns `credits = selling_price_inr = total_cost_usd * 2 * 100`. Multi-model requests are summed in `get_total_usage()` (`credits_engine/usage.py:82`) with per-model breakdown and graceful skipping of unpriceable models.
 

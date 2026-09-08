@@ -303,11 +303,12 @@ class SessionEventBus:
         blocking forever.  Safe to call from any thread.
         """
         queues = self._queues.get(session_id)
-        if self._loop is None:
-            return
-        if queues:
+        if queues and self._loop is not None:
             for q in queues:
-                self._loop.call_soon_threadsafe(q.put_nowait, None)
+                try:
+                    self._loop.call_soon_threadsafe(q.put_nowait, None)
+                except Exception:
+                    logger.exception("EventBus: failed to push sentinel for session_id=%s", session_id)
         else:
             self._pending_sentinel.add(session_id)
             logger.debug("EventBus: sentinel pending for session_id=%s (no drain loop yet)", session_id)

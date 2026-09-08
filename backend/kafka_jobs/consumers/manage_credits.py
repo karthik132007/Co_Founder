@@ -9,7 +9,7 @@ Reads per-request LLM usage payloads emitted by ``main.chat``::
         "usage": [
             {"model": "deepseek/deepseek-v4-flash",
              "input_tokens": 1200, "output_tokens": 340},
-            {"model": "x-ai/grok-imagine-image-2.0",
+            {"model": "google/gemini-2.5-flash-image",
              "input_tokens": 0, "output_tokens": 0, "image_count": 2},
         ],
         "no_of_images": 0,
@@ -43,9 +43,7 @@ from logger_config import setup_logging
 setup_logging()
 
 from confluent_kafka import Consumer, KafkaError
-from credits_engine.usage import get_total_usage
-from backend.db.credits import deduct_credits, InsufficientCreditsError
-from backend.db.insert_to_sql import add_credits_to_session
+from backend.db.credits_charge import process_credit_charge
 
 logger = logging.getLogger(__name__)
 
@@ -61,27 +59,6 @@ credits_manager.subscribe(["manage_credits"])
 logger.info("manage_credits consumer started — subscribed to [manage_credits]")
 
 
-# ── Idempotency (Redis) ─────────────────────────────────────────────────────
-_DEDUP_TTL = 86400  # 24h — comfortably covers any retry window
-
-
-def _already_processed(message_id: str | None) -> bool:
-    """Claim a message id; return True if it was already processed.
-
-    Uses an atomic SETNX so concurrent redeliveries can't both pass.
-    Returns False on Redis failure so a charge is never skipped accidentally.
-    """
-    if not message_id:
-        return False
-    try:
-        from backend.db.redis_client import get_redis_client
-        key = f"credit_processed:{message_id}"
-        return not get_redis_client().set(key, "1", nx=True, ex=_DEDUP_TTL)
-    except Exception:
-        logger.exception("Redis dedup check failed for message_id=%s", message_id)
-        return False
-
-
 def _commit(message) -> None:
     try:
         credits_manager.commit(message=message, asynchronous=False)
@@ -90,55 +67,8 @@ def _commit(message) -> None:
 
 
 def process_message(data: dict) -> None:
-    company_id = data.get("company_id")
-    if company_id is None:
-        logger.warning("No company_id in manage_credits message: %s", data)
-        return
+    process_credit_charge(data)
 
-    if _already_processed(data.get("message_id")):
-        logger.info(
-            "Message %s already processed — skipping company_id=%s",
-            data.get("message_id"),
-            company_id,
-        )
-        return
-
-    usage = data.get("usage") or []
-    no_of_images = int(data.get("no_of_images") or 0)
-    if not usage and not no_of_images:
-        logger.debug("Empty usage for company_id=%s — nothing to deduct", company_id)
-        return
-
-    priced = get_total_usage(usage, no_of_images=no_of_images)
-    credits_to_deduct = priced["total_credits"]
-    if credits_to_deduct <= 0:
-        logger.info("Zero-cost request for company_id=%s — nothing to deduct", company_id)
-        return
-
-    try:
-        deduct_credits(company_id, credits_to_deduct)
-    except InsufficientCreditsError as e:
-        # Terminal state: balance too low. Commit so we don't retry forever.
-        logger.warning("Insufficient credits for company_id=%s: %s", company_id, e)
-    else:
-        logger.info(
-            "Deducted %s credits for company_id=%s (%s)",
-            credits_to_deduct,
-            company_id,
-            priced["per_model"],
-        )
-
-        # Record per-session usage so the overview can show credits per chat.
-        session_id = data.get("session_id")
-        if session_id:
-            try:
-                add_credits_to_session(session_id, credits_to_deduct)
-            except Exception:
-                # Balance is already deducted; per-session tracking is best-effort.
-                logger.exception(
-                    "Failed to record session credits session_id=%s — balance already deducted",
-                    session_id,
-                )
 
 
 try:

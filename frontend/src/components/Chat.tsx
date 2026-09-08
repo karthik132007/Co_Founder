@@ -14,18 +14,25 @@ import {
   Copy,
   Check,
   ChevronDown,
+  ChevronRight,
+  Cpu,
+  CheckCircle2,
   Search,
   PenLine,
   Palette,
   BarChart3,
   ArrowUpRight,
+  Download,
+  Maximize2,
+  X,
+  Brain,
 } from "lucide-react";
 import { fetchSessionMessages, sendChatMessage } from "@/lib/api";
 import type { Clarification } from "@/lib/api";
 import type { SessionUser } from "@/lib/session";
 import { useObservability } from "@/lib/observability";
 import type { ToolRun } from "@/lib/observability";
-import AgentTracePanel from "@/components/AgentTracePanel";
+import { TraceRow } from "@/components/AgentTimeline";
 
 const ACCENT = "#143620";
 
@@ -179,33 +186,462 @@ function MarkdownMessage({ content }: { content: string }) {
   );
 }
 
-function GeneratedImage({ imageDataUrl }: { imageDataUrl: string }) {
+/* ─────────────────────────────────────────────
+   Reasoning Parser & Dropdown (Claude / ChatGPT style)
+   ───────────────────────────────────────────── */
+
+interface ParsedReasoning {
+  reasoning: string | null;
+  answer: string;
+  isThinking: boolean;
+}
+
+function parseReasoningAndContent(raw: string): ParsedReasoning {
+  if (!raw) return { reasoning: null, answer: "", isThinking: false };
+
+  // 1. Check for complete <think>...</think> tags
+  const thinkRegex = /<think(?:\s[^>]*)?>([\s\S]*?)<\/think>/gi;
+  const thoughts: string[] = [];
+  let match: RegExpExecArray | null;
+  while ((match = thinkRegex.exec(raw)) !== null) {
+    if (match[1].trim()) {
+      thoughts.push(match[1].trim());
+    }
+  }
+
+  // 2. Check for open/unclosed <think> tag (during live streaming)
+  const remaining = raw.replace(thinkRegex, "");
+  const unclosedMatch = remaining.match(/<think(?:\s[^>]*)?>([\s\S]*)$/i);
+
+  if (thoughts.length > 0 || unclosedMatch) {
+    let reasoning = thoughts.join("\n\n").trim();
+    let answer = remaining;
+    let isThinking = false;
+
+    if (unclosedMatch) {
+      const streamPart = unclosedMatch[1].trim();
+      reasoning = reasoning ? `${reasoning}\n\n${streamPart}` : streamPart;
+      answer = remaining.replace(/<think(?:\s[^>]*)?>[\s\S]*$/i, "").trim();
+      isThinking = true;
+    } else {
+      answer = answer.trim();
+    }
+
+    return {
+      reasoning: reasoning || null,
+      answer,
+      isThinking,
+    };
+  }
+
+  // 3. Fallback for <thought> or <reasoning> tags
+  const altRegex = /<(thought|reasoning)(?:\s[^>]*)?>([\s\S]*?)<\/\1>/gi;
+  while ((match = altRegex.exec(raw)) !== null) {
+    if (match[2].trim()) {
+      thoughts.push(match[2].trim());
+    }
+  }
+  if (thoughts.length > 0) {
+    return {
+      reasoning: thoughts.join("\n\n").trim(),
+      answer: raw.replace(altRegex, "").trim(),
+      isThinking: false,
+    };
+  }
+
+  return { reasoning: null, answer: raw, isThinking: false };
+}
+
+function ReasoningDropdown({
+  reasoning,
+  isStreaming = false,
+  isThinking = false,
+}: {
+  reasoning: string;
+  isStreaming?: boolean;
+  isThinking?: boolean;
+}) {
+  const [userToggled, setUserToggled] = useState(false);
+  const [isOpen, setIsOpen] = useState(isThinking);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!userToggled) {
+      if (isThinking) {
+        setIsOpen(true);
+      } else if (isStreaming) {
+        setIsOpen(false);
+      }
+    }
+  }, [isThinking, isStreaming, userToggled]);
+
+  const handleCopyReasoning = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(reasoning);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // ignore
+    }
+  };
+
   return (
-    // The image is a data URL returned by our backend, not an external URL.
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={imageDataUrl}
-      alt="Generated graphic"
-      className="mt-3 max-h-[420px] w-auto max-w-full rounded-xl border border-[#e8e9e3] bg-white object-contain"
-    />
+    <div className="mb-3 select-text">
+      {/* Claude/ChatGPT style faded dropdown trigger */}
+      <button
+        type="button"
+        onClick={() => {
+          setUserToggled(true);
+          setIsOpen(!isOpen);
+        }}
+        className="group inline-flex items-center gap-1.5 rounded-lg border border-[rgba(15,34,20,0.08)] bg-[rgba(15,34,20,0.02)] px-2.5 py-1.5 text-[12px] font-medium text-[#68786c] transition-all hover:bg-[rgba(15,34,20,0.05)] hover:text-[#143620]"
+      >
+        <Brain
+          className={`h-3.5 w-3.5 text-[#68786c] transition-colors group-hover:text-[#143620] ${
+            isThinking ? "animate-pulse text-[#143620]" : ""
+          }`}
+        />
+        <span className="tracking-tight">
+          {isThinking ? "Thinking…" : "Thought process"}
+        </span>
+        <motion.div
+          animate={{ rotate: isOpen ? 180 : 0 }}
+          transition={{ duration: 0.18 }}
+          className="flex items-center justify-center text-[#8d9d94] group-hover:text-[#143620]"
+        >
+          <ChevronDown className="h-3 w-3" />
+        </motion.div>
+      </button>
+
+      {/* Collapsible reasoning container */}
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div className="relative mt-2 rounded-xl border border-[rgba(15,34,20,0.08)] bg-[#f7f9f7]/90 p-3.5 text-xs text-[#526356] shadow-2xs backdrop-blur-xs">
+              <div className="mb-2 flex items-center justify-between border-b border-[rgba(15,34,20,0.06)] pb-1.5 text-[10.5px] font-mono tracking-wider text-[#8a9b90]">
+                <span className="flex items-center gap-1.5 font-semibold uppercase">
+                  <span>Thinking Process</span>
+                  {isThinking && (
+                    <span className="inline-block h-1.5 w-1.5 animate-ping rounded-full bg-[#143620]" />
+                  )}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleCopyReasoning}
+                  className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-[#718276] hover:bg-black/5 hover:text-[#143620] transition-colors"
+                >
+                  {copied ? (
+                    <>
+                      <Check className="h-2.5 w-2.5 text-emerald-600" />
+                      <span className="text-emerald-600">Copied</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-2.5 w-2.5" />
+                      <span>Copy</span>
+                    </>
+                  )}
+                </button>
+              </div>
+              <div className="max-h-72 overflow-y-auto pr-1 font-sans text-[12px] font-normal leading-relaxed text-[#4b5b4f] whitespace-pre-wrap selection:bg-[#d8e6db]">
+                {reasoning}
+                {isThinking && (
+                  <span className="ml-1 inline-block h-3.5 w-[2px] animate-pulse rounded-full bg-[#143620] align-middle" />
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function GeneratedGraphicCard({
+  imageDataUrl,
+  content,
+  timestamp,
+}: {
+  imageDataUrl: string;
+  content?: string;
+  timestamp?: number;
+}) {
+  const [copiedImage, setCopiedImage] = useState(false);
+  const [copiedText, setCopiedText] = useState(false);
+  const [isZoomed, setIsZoomed] = useState(false);
+
+  const { reasoning, answer: cleanContent } = parseReasoningAndContent(content || "");
+
+  useEffect(() => {
+    if (!isZoomed) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsZoomed(false);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isZoomed]);
+
+  const handleDownload = () => {
+    const link = document.createElement("a");
+    link.href = imageDataUrl;
+    link.download = `brand-graphic-${timestamp ?? Date.now()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleCopyImage = async () => {
+    try {
+      const res = await fetch(imageDataUrl);
+      const blob = await res.blob();
+      if (typeof ClipboardItem !== "undefined") {
+        await navigator.clipboard.write([
+          new ClipboardItem({ [blob.type || "image/png"]: blob }),
+        ]);
+        setCopiedImage(true);
+        setTimeout(() => setCopiedImage(false), 2000);
+        return;
+      }
+    } catch {
+      // Fallback
+    }
+    try {
+      await navigator.clipboard.writeText(imageDataUrl);
+      setCopiedImage(true);
+      setTimeout(() => setCopiedImage(false), 2000);
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleCopyText = async () => {
+    if (!cleanContent) return;
+    try {
+      await navigator.clipboard.writeText(cleanContent);
+      setCopiedText(true);
+      setTimeout(() => setCopiedText(false), 2000);
+    } catch {
+      // ignore
+    }
+  };
+
+  return (
+    <>
+      <div className="group relative my-3 overflow-hidden rounded-2xl border border-[#dce3db] bg-white shadow-sm transition-all duration-300 hover:border-[#ccd7cb] hover:shadow-md">
+        {/* Header Bar */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[rgba(15,34,20,0.06)] bg-[#fafbfa] px-4 py-3">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#143620] text-white shadow-2xs">
+              <Sparkles className="h-3.5 w-3.5" />
+            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[13px] font-semibold tracking-tight text-[#0f2214]">
+                Brand Asset Graphic
+              </span>
+              <span className="rounded-full border border-[rgba(20,54,32,0.12)] bg-[#edf4ed] px-2 py-0.5 text-[10.5px] font-medium text-[#143620]">
+                High-Res
+              </span>
+            </div>
+          </div>
+
+          {/* Action Toolbar */}
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setIsZoomed(true)}
+              title="Preview in Lightbox"
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#dde3dc] bg-white px-2.5 text-[11.5px] font-medium text-[#3f4f43] shadow-2xs hover:border-[#c8d4c7] hover:bg-[#edf2eb] hover:text-[#143620] transition-all"
+            >
+              <Maximize2 className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Preview</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleCopyImage}
+              title="Copy image to clipboard"
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#dde3dc] bg-white px-2.5 text-[11.5px] font-medium text-[#3f4f43] shadow-2xs hover:border-[#c8d4c7] hover:bg-[#edf2eb] hover:text-[#143620] transition-all"
+            >
+              {copiedImage ? (
+                <>
+                  <Check className="h-3.5 w-3.5 text-emerald-600" />
+                  <span className="hidden sm:inline text-emerald-600 font-medium">Copied</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Copy</span>
+                </>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={handleDownload}
+              title="Download image file"
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#143620] px-3 text-[11.5px] font-medium text-white shadow-2xs hover:bg-[#0c2213] active:scale-[0.98] transition-all"
+            >
+              <Download className="h-3.5 w-3.5" />
+              <span>Download</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Gallery Image Display Stage */}
+        <div
+          onClick={() => setIsZoomed(true)}
+          className="group/stage relative flex cursor-zoom-in items-center justify-center overflow-hidden bg-gradient-to-b from-[#f7f9f6] via-[#f3f6f2] to-[#edf1eb] p-4 sm:p-6"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={imageDataUrl}
+            alt="Generated brand graphic"
+            className="max-h-[460px] w-auto max-w-full rounded-xl object-contain shadow-md shadow-black/5 transition-transform duration-300 group-hover/stage:scale-[1.015]"
+          />
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/10 opacity-0 backdrop-blur-[1px] transition-opacity duration-200 group-hover/stage:opacity-100">
+            <span className="inline-flex items-center gap-2 rounded-full bg-black/75 px-3.5 py-1.5 text-xs font-medium text-white shadow-lg backdrop-blur-md">
+              <Maximize2 className="h-3.5 w-3.5" />
+              Click to expand
+            </span>
+          </div>
+        </div>
+
+        {/* Integrated Marketing Copy & Rationale Section */}
+        {cleanContent && (
+          <div className="border-t border-[rgba(15,34,20,0.06)] bg-white p-4 sm:p-5">
+            <div className="mb-3 flex items-center justify-between border-b border-[rgba(15,34,20,0.05)] pb-2.5">
+              <div className="flex items-center gap-2 text-[12px] font-semibold text-[#143620]">
+                <MessageSquare className="h-3.5 w-3.5 text-[#2b5837]" />
+                <span>Suggested Marketing Copy & Details</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleCopyText}
+                className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-medium text-[#5f6f63] hover:bg-[#edf2eb] hover:text-[#143620] transition-colors"
+                title="Copy marketing caption and copy"
+              >
+                {copiedText ? (
+                  <>
+                    <Check className="h-3 w-3 text-emerald-600" />
+                    <span className="text-emerald-600">Copied text</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-3 w-3" />
+                    <span>Copy copy</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {reasoning && <ReasoningDropdown reasoning={reasoning} />}
+            <MarkdownMessage content={cleanContent} />
+          </div>
+        )}
+      </div>
+
+      {/* Lightbox / Zoom Modal */}
+      <AnimatePresence>
+        {isZoomed && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsZoomed(false)}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative flex max-h-[94vh] max-w-[94vw] flex-col items-center rounded-2xl border border-white/10 bg-[#111612]/90 p-3 shadow-2xl backdrop-blur-xl"
+            >
+              <div className="mb-3 flex w-full items-center justify-between px-2">
+                <div className="flex items-center gap-2 text-xs font-semibold text-white/90">
+                  <Palette className="h-4 w-4 text-[#86e29b]" />
+                  <span>High-Resolution Graphic Preview</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleDownload}
+                    className="flex h-8 items-center gap-1.5 rounded-lg bg-[#143620] px-3 text-xs font-semibold text-white shadow-md hover:bg-[#1a472a] transition-colors"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Download
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsZoomed(false)}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-white/90 hover:bg-white/20 transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={imageDataUrl}
+                alt="Full preview"
+                className="max-h-[82vh] w-auto max-w-[90vw] rounded-xl object-contain shadow-2xl"
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
 
 /* ─────────────────────────────────────────────
-   Assistant Message with Copy Button
+   Assistant Message (renders reasoning dropdown if present, then markdown)
    ───────────────────────────────────────────── */
 
 function AssistantMessage({ content }: { content: string }) {
+  const { reasoning, answer } = parseReasoningAndContent(content);
+
+  return (
+    <div className="overflow-x-auto text-sm leading-relaxed break-words text-[#2f3e32]">
+      {reasoning && <ReasoningDropdown reasoning={reasoning} />}
+      {answer && <MarkdownMessage content={answer} />}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   Message footer copy button — always visible at bottom after time
+   ───────────────────────────────────────────── */
+
+function MessageCopyButton({
+  content,
+  variant = "assistant",
+}: {
+  content: string;
+  variant?: "user" | "assistant";
+}) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(async () => {
+    // If copying assistant message, copy clean answer without internal <think>
+    const { answer } = parseReasoningAndContent(content);
+    const textToCopy = answer.trim() || content.trim();
+    if (!textToCopy) return;
     try {
-      await navigator.clipboard.writeText(content);
+      await navigator.clipboard.writeText(textToCopy);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
       const ta = document.createElement("textarea");
-      ta.value = content;
+      ta.value = textToCopy;
       ta.style.position = "fixed";
       ta.style.opacity = "0";
       document.body.appendChild(ta);
@@ -217,26 +653,28 @@ function AssistantMessage({ content }: { content: string }) {
     }
   }, [content]);
 
+  if (!content.trim()) return null;
+
+  const isUser = variant === "user";
+
   return (
-    <div className="group relative">
-      <button
-        type="button"
-        onClick={handleCopy}
-        className="absolute -right-1 -top-1 z-10 rounded-lg p-1.5 text-[#8d9d94] opacity-0 transition-all hover:bg-[#f6f5ef] hover:text-[#143620] group-hover:opacity-100"
-        aria-label={copied ? "Copied" : "Copy message"}
-      >
-        {copied ? (
-          <Check className="h-3.5 w-3.5 text-green-500" />
-        ) : (
-          <Copy className="h-3.5 w-3.5" />
-        )}
-      </button>
-      <div className="overflow-x-auto text-sm leading-relaxed break-words text-[#2f3e32]">
-        <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-          {content}
-        </ReactMarkdown>
-      </div>
-    </div>
+    <button
+      type="button"
+      onClick={handleCopy}
+      aria-label={copied ? "Copied" : "Copy message"}
+      className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium leading-none transition-colors ${
+        isUser
+          ? "border-white/20 bg-white/10 text-white/80 hover:bg-white/15 hover:text-white hover:border-white/30"
+          : "border-[#e8e9e3] bg-white text-[#5f6f63] hover:border-[#143620]/25 hover:bg-[#f6f5ef] hover:text-[#143620] shadow-sm"
+      }`}
+    >
+      {copied ? (
+        <Check className={`h-3 w-3 shrink-0 ${isUser ? "text-white" : "text-green-600"}`} />
+      ) : (
+        <Copy className="h-3 w-3 shrink-0" />
+      )}
+      {copied ? "Copied" : "Copy"}
+    </button>
   );
 }
 
@@ -274,11 +712,11 @@ function CodeBlock({
   }, [code]);
 
   return (
-    <div className="group relative my-3">
+    <div className="relative my-3">
       <button
         type="button"
         onClick={handleCopy}
-        className="absolute right-3 top-3 z-10 rounded-lg bg-white/5 border border-white/10 p-1.5 text-white/60 opacity-0 transition-all hover:bg-white/15 hover:text-white hover:scale-105 group-hover:opacity-100"
+        className="absolute right-3 top-3 z-10 rounded-lg bg-white/10 border border-white/15 p-1.5 text-white/80 backdrop-blur-sm transition-all hover:bg-white/15 hover:text-white hover:scale-105 shadow-sm"
         aria-label={copied ? "Copied" : "Copy code"}
       >
         {copied ? (
@@ -402,6 +840,92 @@ function McqCard({
 }
 
 /* ─────────────────────────────────────────────
+   Inline Trace Components
+   ───────────────────────────────────────────── */
+
+function LiveAgentTrace({ runs }: { runs: ToolRun[] }) {
+  const [expanded, setExpanded] = useState(true);
+  const runningCount = runs.filter((r) => r.status === "running").length;
+
+  return (
+    <div className="rounded-2xl border border-[#e8e9e3] bg-white/95 backdrop-blur-sm p-3 shadow-xs max-w-[85%]">
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full flex items-center gap-2 pb-1.5 border-b border-[rgba(15,34,20,0.06)] text-left cursor-pointer"
+      >
+        {runningCount > 0 ? (
+          <Loader2 className="w-3.5 h-3.5 animate-spin text-[#143620] shrink-0" />
+        ) : (
+          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+        )}
+        <span className="text-xs font-semibold text-[#143620]">
+          Agent Activity ({runs.length} step{runs.length > 1 ? "s" : ""})
+        </span>
+        <span className="text-[11px] text-[#8d9d94] font-medium ml-auto">
+          {runningCount > 0 ? "In progress…" : "Completed"}
+        </span>
+        <ChevronRight
+          className={`w-3.5 h-3.5 text-[#8d9d94] transition-transform shrink-0 ${expanded ? "rotate-90" : ""}`}
+        />
+      </button>
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="mt-2 space-y-1 overflow-hidden"
+          >
+            {runs.map((run) => (
+              <TraceRow key={run.runId} run={run} />
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function MessageTrace({ runs }: { runs: ToolRun[] }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="mt-2.5 pt-2 border-t border-[rgba(15,34,20,0.06)]">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1.5 text-xs text-[#5f6f63] hover:text-[#143620] transition-colors py-1 px-2 rounded-lg hover:bg-[#f6f5ef]"
+      >
+        <Cpu className="w-3.5 h-3.5 text-[#8d9d94]" />
+        <span className="font-medium">
+          {runs.length} agent step{runs.length > 1 ? "s" : ""}
+        </span>
+        <ChevronRight
+          className={`w-3.5 h-3.5 text-[#8d9d94] transition-transform ${open ? "rotate-90" : ""}`}
+        />
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="mt-1.5 rounded-xl border border-[rgba(15,34,20,0.08)] bg-[#fdfcf8] p-2 space-y-1 overflow-hidden"
+          >
+            {runs.map((run) => (
+              <TraceRow key={run.runId} run={run} />
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
    Chat Component
    ───────────────────────────────────────────── */
 
@@ -419,7 +943,6 @@ export default function Chat({
   const [chatTitle, setChatTitle] = useState<string | null>(initialTitle);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [effort, setEffort] = useState<Effort>("flash");
-  const [traceOpen, setTraceOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -427,19 +950,12 @@ export default function Chat({
   const {
     runs,
     snapshotRuns,
-    resetRuns,
     startQuery,
     waitForConnection,
     streamingText,
     llmActive,
-    connectionStatus,
-    retryCount,
   } = useObservability(sessionId);
 
-  const clearTrace = useCallback(() => {
-    resetRuns();
-    setTraceOpen(false);
-  }, [resetRuns]);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -447,7 +963,7 @@ export default function Chat({
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, scrollToBottom]);
+  }, [messages, streamingText, runs, scrollToBottom]);
 
   // Sync props into state during render (React-recommended pattern)
   const [prevProps, setPrevProps] = useState({ initialSessionId, initialTitle });
@@ -537,7 +1053,6 @@ export default function Chat({
     async (text: string) => {
       setSending(true);
       setError("");
-      setTraceOpen(true); // surface the trace immediately on send
 
       // Pre-generate session ID so the WebSocket can connect before the API call
       let sid = sessionId;
@@ -606,12 +1121,15 @@ export default function Chat({
           };
           setMessages((prev) => [...prev, assistantMsg]);
         }
+        window.dispatchEvent(new Event("cofounder:credits-updated"));
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to get response");
+        window.dispatchEvent(new Event("cofounder:credits-updated"));
       } finally {
         setSending(false);
         inputRef.current?.focus();
       }
+
     },
     [user.id, sessionId, onSessionCreated, effort, snapshotRuns, startQuery, waitForConnection],
   );
@@ -806,10 +1324,11 @@ export default function Chat({
                       }
                     />
                   ) : msg.role === "assistant" && msg.imageDataUrl ? (
-                    <div className="space-y-3">
-                      <MarkdownMessage content={msg.content} />
-                      <GeneratedImage imageDataUrl={msg.imageDataUrl} />
-                    </div>
+                    <GeneratedGraphicCard
+                      imageDataUrl={msg.imageDataUrl}
+                      content={msg.content}
+                      timestamp={msg.timestamp}
+                    />
                   ) : msg.role === "assistant" ? (
                     <AssistantMessage content={msg.content} />
                   ) : (
@@ -817,13 +1336,32 @@ export default function Chat({
                       {msg.content}
                     </p>
                   )}
-                  <span
-                    className={`text-[10px] mt-1.5 block font-medium ${
-                      msg.role === "user" ? "text-white/50" : "text-[#8d9d94]"
+                  {msg.role === "assistant" && msg.traceRuns && msg.traceRuns.length > 0 && (
+                    <MessageTrace runs={msg.traceRuns} />
+                  )}
+                  <div
+                    className={`mt-2 flex items-center gap-2 ${
+                      msg.role === "user" ? "justify-end" : "justify-start"
                     }`}
                   >
-                    {formatTime(msg.timestamp)}
-                  </span>
+                    <span
+                      className={`text-[10px] font-medium ${
+                        msg.role === "user" ? "text-white/50" : "text-[#8d9d94]"
+                      }`}
+                    >
+                      {formatTime(msg.timestamp)}
+                    </span>
+                    {!msg.imageDataUrl && (
+                      <MessageCopyButton
+                        content={
+                          msg.clarification?.question
+                            ? msg.clarification.question
+                            : msg.content
+                        }
+                        variant={msg.role}
+                      />
+                    )}
+                  </div>
                 </div>
 
                 {msg.role === "user" && (
@@ -835,9 +1373,31 @@ export default function Chat({
             ))}
           </AnimatePresence>
 
-          {/* Typing indicator */}
+          {/* Active agent tool trace while executing */}
           <AnimatePresence>
-            {sending && (
+            {sending && runs.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="flex gap-3"
+              >
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+                  style={{ background: ACCENT }}
+                >
+                  <Sparkles className="w-4 h-4 text-white" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <LiveAgentTrace runs={runs} />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Typing indicator (only before any streaming tokens or tool runs appear) */}
+          <AnimatePresence>
+            {sending && streamingText.length === 0 && runs.length === 0 && (
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -865,32 +1425,48 @@ export default function Chat({
 
           {/* Live streaming response while CEO is processing */}
           <AnimatePresence>
-            {sending && llmActive && streamingText.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="flex gap-3"
-              >
-                <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
-                  style={{ background: ACCENT }}
+            {sending && streamingText.length > 0 && (() => {
+              const { reasoning: streamReasoning, answer: streamAnswer, isThinking: streamIsThinking } =
+                parseReasoningAndContent(streamingText);
+
+              return (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="flex gap-3"
                 >
-                  <Sparkles className="w-4 h-4 text-white" />
-                </div>
-                <div className="min-w-0 max-w-[85%] py-1.5 flex-1">
-                  <div className="rounded-[20px] rounded-tl-[4px] border border-[#e8e9e3] bg-white px-4 py-3 shadow-sm">
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap break-words text-[#2f3e32]">
-                      {streamingText}
-                      <span
-                        className="ml-0.5 inline-block h-3.5 w-[2px] animate-pulse rounded-full align-middle"
-                        style={{ background: ACCENT }}
-                      />
-                    </p>
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+                    style={{ background: ACCENT }}
+                  >
+                    <Sparkles className="w-4 h-4 text-white" />
                   </div>
-                </div>
-              </motion.div>
-            )}
+                  <div className="min-w-0 max-w-[85%] py-1.5 flex-1">
+                    <div className="rounded-[20px] rounded-tl-[4px] border border-[#e8e9e3] bg-white px-4 py-3 shadow-sm">
+                      {streamReasoning && (
+                        <ReasoningDropdown
+                          reasoning={streamReasoning}
+                          isStreaming={true}
+                          isThinking={streamIsThinking}
+                        />
+                      )}
+                      {(streamAnswer || !streamReasoning) && (
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap break-words text-[#2f3e32]">
+                          {streamAnswer}
+                          {!streamIsThinking && (
+                            <span
+                              className="ml-0.5 inline-block h-3.5 w-[2px] animate-pulse rounded-full align-middle"
+                              style={{ background: ACCENT }}
+                            />
+                          )}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })()}
           </AnimatePresence>
 
           {/* Error */}
@@ -945,18 +1521,6 @@ export default function Chat({
             disabled={sending}
             className="flex-1 bg-transparent text-[15px] text-[#0f2214] placeholder-[#8d9d94] outline-none py-1.5 disabled:opacity-50"
             autoFocus
-          />
-          {/* Agent trace dropdown — sits beside the chat bar */}
-          <AgentTracePanel
-            runs={runs}
-            streamingText={streamingText}
-            llmActive={llmActive}
-            isStreaming={sending}
-            connectionStatus={connectionStatus}
-            retryCount={retryCount}
-            open={traceOpen}
-            onToggle={() => setTraceOpen((v) => !v)}
-            onClear={clearTrace}
           />
           <button
             onClick={handleSend}

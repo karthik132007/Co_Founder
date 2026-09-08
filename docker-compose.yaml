@@ -70,7 +70,13 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: backend
-    command: ["uvicorn", "backend.app:app", "--host", "0.0.0.0", "--port", "8000"]
+    command: ["uvicorn", "backend.app:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    volumes:
+      - ./backend:/app/backend
+      - ./agents:/app/agents
+      - ./RAG_Engine:/app/RAG_Engine
+      - ./main.py:/app/main.py
+      - ./logger_config.py:/app/logger_config.py
     env_file:
       - .env
     environment:

@@ -1,3 +1,5 @@
+import asyncio
+from contextlib import asynccontextmanager
 import logging
 import os
 
@@ -16,10 +18,16 @@ from backend.api.chat import router as chat_router
 from backend.api.credits import router as credits_router
 from backend.api.payments import router as payments_router
 from backend.api.payment_history import router as payment_history_router
+from backend.api.connection_manager import event_bus
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    event_bus.set_event_loop(asyncio.get_running_loop())
+    yield
+
+app = FastAPI(lifespan=lifespan)
 app.include_router(auth_router)
 app.include_router(user_router)
 app.include_router(drive_router)

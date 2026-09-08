@@ -23,6 +23,8 @@ from backend.api.connection_manager import manager, event_bus
 from backend.api.observability_events import (
     make_session_start,
     make_session_end,
+    make_heartbeat,
+    make_error,
 )
 from backend.api.rate_limit import SlidingWindowRateLimiter
 
@@ -90,7 +92,10 @@ def chat_with_user(
         logger.info("Creating new chat session — session_id=%s, company_id=%s", session_id, company_id)
         create_chat_session(session_id, company_id, title=title)
         
-        queue_title_creation(session_id, message)
+        try:
+            queue_title_creation(session_id, message)
+        except Exception:
+            logger.warning("Failed to queue title creation — best effort", exc_info=True)
         is_new_session = True
     else:
         # Fetch existing messages once — used both to verify the session
@@ -101,7 +106,10 @@ def chat_with_user(
             title = "New Chat"
             create_chat_session(session_id, company_id, title=title)
             
-            queue_title_creation(session_id, message)
+            try:
+                queue_title_creation(session_id, message)
+            except Exception:
+                logger.warning("Failed to queue title creation — best effort", exc_info=True)
             is_new_session = True
             history = []
         else:
@@ -206,7 +214,10 @@ def chat_with_user(
         add_message_to_session(session_id, "assistant", generated_message)
         background_tasks.add_task(save_generated_graphic, company_id, image_bytes)
 
-        queue_chat_memory(company_id, message, generated_message)
+        try:
+            queue_chat_memory(company_id, message, generated_message)
+        except Exception:
+            logger.warning("Failed to queue chat memory — best effort", exc_info=True)
         response = {
             "status": "success",
             "type": "image_generated",
@@ -226,7 +237,10 @@ def chat_with_user(
 
     add_message_to_session(session_id, "assistant", reply)
     
-    queue_chat_memory(company_id, message, reply)
+    try:
+        queue_chat_memory(company_id, message, reply)
+    except Exception:
+        logger.warning("Failed to queue chat memory — best effort", exc_info=True)
 
     response = {
         "status": "success",
@@ -335,14 +349,17 @@ async def show_internals(ws: WebSocket, session_id: str = Query(...)):
     event_bus.set_event_loop(loop)
 
     await manager.connect(session_id, ws)
-    await manager.broadcast(session_id, make_session_start(session_id))
+    try:
+        await ws.send_json(make_session_start(session_id).to_json())
+    except Exception:
+        pass
 
     # ── heartbeat: keepalive ping every 30 s ────────────────────────────
     async def _heartbeat() -> None:
         while True:
             await asyncio.sleep(30)
             try:
-                await manager.broadcast_heartbeat(session_id)
+                await ws.send_json(make_heartbeat(session_id).to_json())
             except Exception:
                 break
 
@@ -354,16 +371,17 @@ async def show_internals(ws: WebSocket, session_id: str = Query(...)):
         # loop creates a fresh drain queue for the next query.
         while True:
             async for event in event_bus.drain(session_id):
-                await manager.broadcast(session_id, event)
+                await ws.send_json(event.to_json())
 
             # Signal the frontend that this query's stream is complete.
-            await manager.broadcast(session_id, make_session_end(session_id))
+            await ws.send_json(make_session_end(session_id).to_json())
 
     except WebSocketDisconnect:
         logger.info("WS client disconnected — session_id=%s", session_id)
     except Exception:
         logger.exception("WS error for session_id=%s", session_id)
-        await manager.broadcast_error(session_id, "Internal stream error")
+        with contextlib.suppress(Exception):
+            await ws.send_json(make_error(session_id, "Internal stream error").to_json())
     finally:
         heartbeat_task.cancel()
         with contextlib.suppress(asyncio.CancelledError):

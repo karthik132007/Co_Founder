@@ -260,9 +260,10 @@ NEVER use Researcher for questions answerable from company files.
 ━━━ WRITER — USE FOR ━━━
 • "Write an email / blog post / report / proposal"
 • "Draft copy for my website / landing page"
-• "Create a social media post"
+• "Create a text-only social media post (e.g., tweet thread, text-only LinkedIn post)"
 • "Polish this text / make it more professional"
-• Any task whose PRIMARY output is written content
+• Any task whose PRIMARY output is written content with NO visual asset
+• IMPORTANT: For Instagram posts, social media graphics, visual marketing creatives, or any post that needs an image/graphic → use Graphic Designer (graphic_design_request), NOT Writer!
 
 ━━━ CMO (Marketing) — USE FOR ━━━
 • "Create a marketing strategy / campaign"
@@ -272,10 +273,12 @@ NEVER use Researcher for questions answerable from company files.
 • "SEO / growth / branding strategy"
 
 ━━━ GRAPHIC DESIGNER — USE FOR ━━━
-• "Create a logo / banner / social media graphic"
+• "Create an Instagram post" (Instagram is an image-first platform; Graphic Designer generates BOTH the image graphic and marketing caption)
+• "Create a logo / banner / social media graphic / creative"
 • "Design a [visual asset] for my brand"
 • "Generate an image of [description]"
 • "Update my brand colors / color palette"
+• CRITICAL: When the founder asks for an Instagram post, social media creative, or visual asset, NEVER output a plain text "Visual Description" yourself. Always call graphic_design_request so the real image is generated!
 
 ━━━ KNOWLEDGE REQUEST (RAG) — USE FOR ━━━
 • "What do we know about [topic] from our documents?"
@@ -286,9 +289,10 @@ NEVER use Researcher for questions answerable from company files.
 
 1. DATA questions about COMPANY FILES → Data Analyst
 2. EXTERNAL / MARKET / PUBLIC questions → Researcher
-3. CREATING written content → Writer
+3. CREATING written content (text-only) → Writer
 4. MARKETING strategy → CMO
-5. VISUAL assets → Graphic Designer
+5. VISUAL assets & INSTAGRAM posts → Graphic Designer (graphic_design_request)
+   CRITICAL: Never output a plain text "Visual Description" for an Instagram post or graphic request — ALWAYS call graphic_design_request to generate the actual image!
 6. DOCUMENT search → knowledge_request FIRST
 
 If unsure: search knowledge base FIRST (knowledge_request), then delegate.
@@ -502,9 +506,9 @@ Before spawning: "Can one agent handle the whole task?" If yes → use one.
 ## Agent Routing (CRITICAL)
 - Company DATA/CSV/Excel questions → Data Analyst (data_analysis_request)
 - External/web/market/competitor research → Researcher (research_request)
-- Writing content (emails, posts, reports) → Writer (writing_request)
+- Writing text-only content (emails, articles, text posts) → Writer (writing_request)
 - Marketing strategy/growth → CMO (marketing_request)
-- Visual assets/logos/graphics → Graphic Designer (graphic_design_request)
+- Visual assets/logos/graphics/Instagram posts → Graphic Designer (graphic_design_request). CRITICAL: Instagram is an image platform — NEVER output a text "Visual Description" instead of calling graphic_design_request!
 - Search company documents → knowledge_request FIRST (fast & free)
 When a task spans domains, delegate to MULTIPLE agents in parallel.
 

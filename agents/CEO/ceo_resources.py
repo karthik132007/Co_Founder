@@ -33,11 +33,12 @@ def _get_resources(effort:str)-> dict:
         }
 
 
+_in_memory_resources: dict[str, dict] = {}
+
+
 def init_session_resources(session_id: str, effort: str) -> dict:
     """Initialize resource counters for a session. Called once at session start."""
-    redis_client = get_redis_client()
     limits = _get_resources(effort)
-
     state = {
         "effort": effort,
         "limits": limits,
@@ -48,17 +49,25 @@ def init_session_resources(session_id: str, effort: str) -> dict:
             "mcqs": 0,
         },
     }
-    redis_client.setex(_session_resource_key(session_id), _RESOURCE_TTL, json.dumps(state))
+    _in_memory_resources[session_id] = state
+    try:
+        redis_client = get_redis_client()
+        redis_client.setex(_session_resource_key(session_id), _RESOURCE_TTL, json.dumps(state))
+    except Exception:
+        pass
     return state
 
 
 def get_session_resources(session_id: str) -> dict | None:
     """Get current resource state for a session."""
-    redis_client = get_redis_client()
-    raw = redis_client.get(_session_resource_key(session_id))
-    if raw is None:
-        return None
-    return json.loads(raw)
+    try:
+        redis_client = get_redis_client()
+        raw = redis_client.get(_session_resource_key(session_id))
+        if raw is not None:
+            return json.loads(raw)
+    except Exception:
+        pass
+    return _in_memory_resources.get(session_id)
 
 
 def consume_resource(session_id: str, resource: str) -> bool:
@@ -70,36 +79,49 @@ def consume_resource(session_id: str, resource: str) -> bool:
 
     resource must be one of: 'external_agents', 'web_searches', 'rag_calls', 'mcqs'
     """
-    redis_client = get_redis_client()
-    key = _session_resource_key(session_id)
-    for _ in range(5):
-        pipeline = redis_client.pipeline()
-        try:
-            pipeline.watch(key)
-            raw = pipeline.get(key)
-            if raw is None:
-                return False
-            state = json.loads(raw)
-            current = state["consumed"].get(resource, 0)
-            limit = state["limits"].get(f"max_{resource}")
-            if limit is None:
-                return True
-            if current >= limit:
-                return False
+    try:
+        redis_client = get_redis_client()
+        key = _session_resource_key(session_id)
+        for _ in range(5):
+            pipeline = redis_client.pipeline()
+            try:
+                pipeline.watch(key)
+                raw = pipeline.get(key)
+                if raw is None:
+                    break
+                state = json.loads(raw)
+                current = state["consumed"].get(resource, 0)
+                limit = state["limits"].get(f"max_{resource}")
+                if limit is None:
+                    return True
+                if current >= limit:
+                    return False
 
-            state["consumed"][resource] = current + 1
-            pipeline.multi()
-            pipeline.setex(key, _RESOURCE_TTL, json.dumps(state))
-            pipeline.execute()
-            return True
-        except WatchError:
-            # Another parallel tool updated this session; read the fresh value.
-            continue
-        except Exception:
-            return False
-        finally:
-            pipeline.reset()
-    return False
+                state["consumed"][resource] = current + 1
+                pipeline.multi()
+                pipeline.setex(key, _RESOURCE_TTL, json.dumps(state))
+                pipeline.execute()
+                _in_memory_resources[session_id] = state
+                return True
+            except WatchError:
+                continue
+            except Exception:
+                break
+            finally:
+                pipeline.reset()
+    except Exception:
+        pass
+
+    # In-memory fallback
+    state = _in_memory_resources.get(session_id)
+    if not state:
+        return True
+    current = state["consumed"].get(resource, 0)
+    limit = state["limits"].get(f"max_{resource}")
+    if limit is not None and current >= limit:
+        return False
+    state["consumed"][resource] = current + 1
+    return True
 
 
 def format_resources_for_prompt(session_id: str) -> str:

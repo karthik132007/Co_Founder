@@ -27,18 +27,25 @@ _request_key: contextvars.ContextVar[str] = contextvars.ContextVar(
 )
 
 
+_in_memory_usage: dict[str, dict] = {}
+
+
 # ── Public API ──────────────────────────────────────────────────────────────
 
 def init_request_state(session_id: str, effort: str) -> str:
-    """Store *session_id* and *effort* in Redis and return the request key.
+    """Store *session_id* and *effort* in memory and Redis and return the request key.
 
     Called once at the start of ``talk_to_ceo``.
     """
     key = str(uuid.uuid4())
     payload = {"sid": session_id, "effort": effort}
-    redis_client = get_redis_client()
-    redis_client.setex(f"ceo_req:{key}", _REQUEST_TTL, json.dumps(payload))
     _request_key.set(key)
+    _cached_request_state.set((key, payload))
+    try:
+        redis_client = get_redis_client()
+        redis_client.setex(f"ceo_req:{key}", _REQUEST_TTL, json.dumps(payload))
+    except Exception:
+        logger.debug("Redis unavailable for init_request_state, using in-memory state")
     return key
 
 
@@ -64,12 +71,13 @@ def record_usage(session_id: str, usage: dict) -> None:
     """Store the LLM usage breakdown for a session (best-effort)."""
     if not session_id:
         return
+    _in_memory_usage[session_id] = usage
     try:
         get_redis_client().setex(
             f"ceo_usage:{session_id}", _USAGE_TTL, json.dumps(usage, default=str)
         )
     except Exception:
-        logger.exception("Failed to record usage for session_id=%s", session_id)
+        logger.debug("Redis unavailable for record_usage, stored in memory for session_id=%s", session_id)
 
 
 def pop_usage(session_id: str) -> dict | None:
@@ -81,10 +89,11 @@ def pop_usage(session_id: str) -> dict | None:
         raw = get_redis_client().get(key)
         if raw:
             get_redis_client().delete(key)
+            _in_memory_usage.pop(session_id, None)
             return json.loads(raw)
     except Exception:
-        logger.exception("Failed to read usage for session_id=%s", session_id)
-    return None
+        pass
+    return _in_memory_usage.pop(session_id, None)
 
 
 # ── Internal ────────────────────────────────────────────────────────────────
