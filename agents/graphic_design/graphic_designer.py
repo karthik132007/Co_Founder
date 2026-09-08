@@ -33,7 +33,8 @@ def spawn_graphic_designer(company_id: int, prompt: str, effort: str = "flash"):
         f"CRITICAL INSTRUCTIONS:\n"
         f"1. You MUST call the `create_graphic` tool to generate exactly ONE visual graphic. Do NOT simulate or describe without calling the tool.\n"
         f"2. Always generate a SINGLE static graphic (no multi-slide carousels unless the user explicitly requested multiple slides).\n"
-        f"3. Use `google/gemini-2.5-flash-image` as the default cost-effective model. Only use `openai/gpt-image-2` if explicitly requested.\n\n"
+        f"3. Choose between `google/gemini-2.5-flash-image` and `openai/gpt-image-2` based on design needs. You can freely use `openai/gpt-image-2` for sharp typography, legible text on image, and high-fidelity marketing creatives.\n"
+        f"4. NO THIRD-PARTY LOGOS: In the prompt you build for create_graphic, you MUST explicitly specify NOT to include any third-party brand logos, commercial brand names, manufacturer emblems, or watermarks (e.g. no Kapiva, no commercial brand logos). Keep all bottles, packaging, and labels clean, generic, and unbranded.\n\n"
         f"Task: {prompt}"
     )
     result = graphic_designer_agent.invoke(
@@ -61,7 +62,8 @@ def spawn_graphic_designer(company_id: int, prompt: str, effort: str = "flash"):
             colors_str = ", ".join(palette) if palette else "#FFFFFF, #1A1A2E"
             graphic_prompt = (
                 f"{prompt}. High-quality marketing graphic. "
-                f"Incorporate brand colors: {colors_str}. Clean, modern aesthetic, professional lighting."
+                f"Incorporate brand colors: {colors_str}. Clean, modern aesthetic, professional lighting. "
+                f"Clean unbranded packaging, strictly no third-party brand logos, commercial brand names, or watermarks."
             )
             raw_res = create_graphic.invoke({
                 "company_id": company_id,

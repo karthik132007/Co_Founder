@@ -55,6 +55,12 @@ def create_graphic(company_id: int, prompt: str, model: str = "google/gemini-2.5
     if target_model not in MODEL_ALIASES.values():
         target_model = "google/gemini-2.5-flash-image"
 
+    # Enforce unbranded safeguard so image models do not hallucinate real-world commercial brand logos
+    clean_prompt = prompt.strip()
+    anti_logo_directive = "Clean unbranded presentation, strictly no third-party brand logos, commercial brand names, trademarks, brand emblems, or watermarks."
+    if "no third-party logo" not in clean_prompt.lower() and "unbranded" not in clean_prompt.lower() and "no logo" not in clean_prompt.lower():
+        clean_prompt = f"{clean_prompt}. {anti_logo_directive}"
+
     logger.info("create_graphic called with model=%s (resolved from %s)", target_model, model)
     resp = requests.post(
         "https://openrouter.ai/api/v1/images",
@@ -64,7 +70,7 @@ def create_graphic(company_id: int, prompt: str, model: str = "google/gemini-2.5
         },
         json={
             "model": target_model,
-            "prompt": prompt,
+            "prompt": clean_prompt,
         },
         timeout=120,
     )
