@@ -1,10 +1,27 @@
 function getApiBaseUrl(): string {
+  // 1. In browser runtime:
   if (typeof window !== "undefined" && window.location?.hostname) {
-    const host = window.location.hostname === "localhost" ? "127.0.0.1" : window.location.hostname;
-    return `${window.location.protocol}//${host}:8000`;
+    const hostname = window.location.hostname;
+
+    // Local development: connect directly to backend on port 8000 via IPv4 127.0.0.1
+    if (hostname === "localhost" || hostname === "127.0.0.1") {
+      return `${window.location.protocol}//127.0.0.1:8000`;
+    }
+
+    // Remote / production host (e.g. get-cofounder.tech or VM IP):
+    // If NEXT_PUBLIC_API_URL was explicitly set to a non-localhost URL, use it
+    const envUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
+    if (envUrl && !envUrl.includes("localhost") && !envUrl.includes("127.0.0.1")) {
+      return envUrl.replace(/\/+$/, "");
+    }
+
+    // Default for production: route via the Nginx reverse-proxy /api path on current origin
+    return `${window.location.origin}/api`;
   }
+
+  // 2. Server-side / build-time fallback:
   if (process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL.replace("://localhost:", "://127.0.0.1:");
+    return process.env.NEXT_PUBLIC_API_URL.replace("://localhost:", "://127.0.0.1:").replace(/\/+$/, "");
   }
   return "http://127.0.0.1:8000";
 }

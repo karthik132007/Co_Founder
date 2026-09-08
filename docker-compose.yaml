@@ -84,7 +84,7 @@ services:
       REDIS_URL: redis://redis:6379/0
       # Comma-separated browser origins allowed by CORS. Override for deploy,
       # e.g. CORS_ORIGINS=https://app.example.com in your shell/.env.
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000,https://get-cofounder.tech,https://www.get-cofounder.tech}
     ports:
       - "127.0.0.1:8000:8000"
     depends_on:

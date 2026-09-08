@@ -112,24 +112,55 @@ export interface ObservabilityState {
    ───────────────────────────────────────────── */
 
 function wsUrl(sessionId: string): string {
+  const base = API_BASE_URL.replace(/\/+$/, "");
   let wsProtocol = "ws:";
   let host = "127.0.0.1:8000";
+  let path = "/chat/ws";
 
-  if (typeof window !== "undefined" && window.location?.hostname) {
-    wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const h = window.location.hostname === "localhost" ? "127.0.0.1" : window.location.hostname;
-    host = `${h}:8000`;
-  } else {
-    const base = API_BASE_URL.replace(/\/+$/, "");
-    if (base.startsWith("https://")) {
-      wsProtocol = "wss:";
-      host = base.replace(/^https:\/\//, "").replace(/^localhost\b/, "127.0.0.1");
-    } else if (base.startsWith("http://")) {
+  if (base.startsWith("https://")) {
+    wsProtocol = "wss:";
+    const withoutProto = base.replace(/^https:\/\//, "");
+    const slashIdx = withoutProto.indexOf("/");
+    if (slashIdx !== -1) {
+      host = withoutProto.slice(0, slashIdx);
+      path = `${withoutProto.slice(slashIdx)}/chat/ws`;
+    } else {
+      host = withoutProto;
+      path = "/chat/ws";
+    }
+  } else if (base.startsWith("http://")) {
+    wsProtocol = "ws:";
+    const withoutProto = base.replace(/^http:\/\//, "");
+    const slashIdx = withoutProto.indexOf("/");
+    if (slashIdx !== -1) {
+      host = withoutProto.slice(0, slashIdx);
+      path = `${withoutProto.slice(slashIdx)}/chat/ws`;
+    } else {
+      host = withoutProto;
+      path = "/chat/ws";
+    }
+    host = host.replace(/^localhost\b/, "127.0.0.1");
+  } else if (base.startsWith("/")) {
+    if (typeof window !== "undefined") {
+      wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      host = window.location.host;
+      path = `${base}/chat/ws`;
+    }
+  } else if (typeof window !== "undefined" && window.location?.hostname) {
+    const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+    if (isLocal) {
       wsProtocol = "ws:";
-      host = base.replace(/^http:\/\//, "").replace(/^localhost\b/, "127.0.0.1");
+      host = "127.0.0.1:8000";
+      path = "/chat/ws";
+    } else {
+      wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      host = window.location.host;
+      path = "/api/chat/ws";
     }
   }
-  return `${wsProtocol}//${host}/chat/ws?session_id=${encodeURIComponent(sessionId)}`;
+
+  path = "/" + path.replace(/^\/+/, "").replace(/\/+/g, "/");
+  return `${wsProtocol}//${host}${path}?session_id=${encodeURIComponent(sessionId)}`;
 }
 
 let _runCounter = 0;
