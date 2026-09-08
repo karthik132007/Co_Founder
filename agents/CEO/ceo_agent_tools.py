@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 def _resource_exhausted(session_id: str, resource: str) -> bool:
-    """Check a session budget before spawning a specialist that needs it."""
+    """Check a query budget before spawning a specialist that needs it."""
     if not session_id:
         return False
     try:
@@ -87,7 +87,7 @@ def _build_ceo_tools(company_id: int):
         logger.info("ask_mcq_for_user called: question='%s', options=%s, multi_select=%s", question, options, multi_select)
         sid = ceo_state._current_session_id
         if sid and not consume_resource(sid, "mcqs"):
-            return json.dumps({"error": "mcqs budget exhausted for this session."})
+            return json.dumps({"error": "mcqs budget exhausted for this query."})
         # return_direct=True means LangChain skips on_tool_end — push it manually
         if sid:
             from agents.helpers.observability import _push_tool_end_manual
@@ -109,7 +109,7 @@ def _build_ceo_tools(company_id: int):
 
         sid = ceo_state._current_session_id
         if sid and not consume_resource(sid, "rag_calls"):
-            return json.dumps({"error": "rag calls budget exhausted for this session."})
+            return json.dumps({"error": "rag calls budget exhausted for this query."})
 
         logger.info("knowledge_request called: query='%s', top_k=%d, company_id=%d", query, top_k, company_id)
         repo_root = Path(__file__).resolve().parents[2]
@@ -143,12 +143,12 @@ def _build_ceo_tools(company_id: int):
         logger.info("research_request called: task='%s', effort=%s", task, ceo_state._current_effort)
         sid = ceo_state._current_session_id
 
-        # The Researcher consumes the session's web-search budget. Once it is
+        # The Researcher consumes the query's web-search budget. Once it is
         # empty, spawning another full Researcher would only add LLM latency
         # before returning the same budget error.
         if _resource_exhausted(sid, "web_searches"):
-            logger.info("Skipping Researcher: web-search budget exhausted for session_id=%s", sid)
-            return json.dumps({"error": "Web-search budget exhausted for this session."})
+            logger.info("Skipping Researcher: web-search budget exhausted for session_id=%s query", sid)
+            return json.dumps({"error": "Web-search budget exhausted for this query."})
 
         if sid:
             event_bus.push(make_subagent_spawn(sid, "Researcher", task, ceo_state._current_effort))
@@ -173,7 +173,7 @@ def _build_ceo_tools(company_id: int):
 
         sid = ceo_state._current_session_id
         if sid and not consume_resource(sid, "external_agents"):
-            return json.dumps({"error": "external agents budget exhausted for this session."})
+            return json.dumps({"error": "external agents budget exhausted for this query."})
         
         if sid:
             event_bus.push(make_subagent_spawn(sid, "Writer", task, ceo_state._current_effort))
@@ -197,7 +197,7 @@ def _build_ceo_tools(company_id: int):
         logger.info("marketing_request called: task='%s', company_id=%d, effort=%s", task, company_id, ceo_state._current_effort)
         sid = ceo_state._current_session_id
         if sid and not consume_resource(sid, "external_agents"):
-            return json.dumps({"error": "external agents budget exhausted for this session."})
+            return json.dumps({"error": "external agents budget exhausted for this query."})
         
         if sid:
             event_bus.push(make_subagent_spawn(sid, "CMO", task, ceo_state._current_effort))
@@ -222,7 +222,7 @@ def _build_ceo_tools(company_id: int):
         sid = ceo_state._current_session_id
 
         if sid and not consume_resource(sid, "external_agents"):
-            return json.dumps({"error": "external agents budget exhausted for this session."})
+            return json.dumps({"error": "external agents budget exhausted for this query."})
         
         if sid:
             event_bus.push(make_subagent_spawn(sid, "DataAnalyst", task, ceo_state._current_effort))
@@ -248,7 +248,7 @@ def _build_ceo_tools(company_id: int):
         sid = ceo_state._current_session_id
       
         if sid and not consume_resource(sid, "external_agents"):
-            return json.dumps({"error": "external agents budget exhausted for this session."})
+            return json.dumps({"error": "external agents budget exhausted for this query."})
         if sid:
             event_bus.push(make_subagent_spawn(sid, "GraphicDesigner", task, ceo_state._current_effort))
         t0 = time.time()

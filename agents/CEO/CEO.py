@@ -265,12 +265,8 @@ def talk_to_ceo(company_id: int, message: str, history: list[dict] | None = None
     user_message = _build_user_message_with_memories(message, chat_memories)
 
     if session_id:
-        existing = get_session_resources(session_id)
-        if existing is None:
-            init_session_resources(session_id, effort)
-        # If effort changed mid-session, re-init (or you could choose to preserve)
-        elif existing.get("effort") != effort:
-            init_session_resources(session_id, effort)
+        # Resource budget is per query — each new user message gets a fresh budget.
+        init_session_resources(session_id, effort)
     
     
 

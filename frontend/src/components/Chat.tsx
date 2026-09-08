@@ -32,7 +32,7 @@ import type { Clarification } from "@/lib/api";
 import type { SessionUser } from "@/lib/session";
 import { useObservability } from "@/lib/observability";
 import type { ToolRun } from "@/lib/observability";
-import { TraceRow } from "@/components/AgentTimeline";
+import AgentTimeline from "@/components/AgentTimeline";
 
 const ACCENT = "#143620";
 
@@ -839,134 +839,7 @@ function McqCard({
   );
 }
 
-/* ─────────────────────────────────────────────
-   Inline Trace Components
-   ───────────────────────────────────────────── */
 
-function LiveAgentTrace({
-  runs,
-  connectionStatus,
-  streamingText,
-}: {
-  runs: ToolRun[];
-  connectionStatus?: string;
-  streamingText?: string;
-}) {
-  const [expanded, setExpanded] = useState(true);
-  const runningCount = runs.filter((r) => r.status === "running").length;
-  const isStreamingLlm = Boolean(streamingText && streamingText.length > 0);
-
-  const getStatusText = () => {
-    if (runningCount > 0) {
-      return `${runningCount} tool${runningCount > 1 ? "s" : ""} running…`;
-    }
-    if (runs.length > 0) {
-      return isStreamingLlm ? "Drafting response…" : "Steps completed";
-    }
-    if (connectionStatus === "connecting") {
-      return "Connecting…";
-    }
-    return "Reasoning & planning…";
-  };
-
-  const getHeaderTitle = () => {
-    if (runs.length > 0) {
-      return `Agent Activity (${runs.length} step${runs.length > 1 ? "s" : ""})`;
-    }
-    return "Agent Activity";
-  };
-
-  return (
-    <div className="rounded-2xl border border-[#dce3db] bg-white/95 backdrop-blur-sm p-3.5 shadow-xs max-w-[85%]">
-      <button
-        type="button"
-        onClick={() => setExpanded((v) => !v)}
-        className="w-full flex items-center gap-2 pb-1.5 border-b border-[rgba(15,34,20,0.06)] text-left cursor-pointer"
-      >
-        <Loader2 className="w-3.5 h-3.5 animate-spin text-[#143620] shrink-0" />
-        <span className="text-xs font-semibold text-[#143620]">
-          {getHeaderTitle()}
-        </span>
-        <span className="text-[11px] text-[#8d9d94] font-medium ml-auto flex items-center gap-1.5">
-          <span className="relative flex h-2 w-2">
-            <span
-              className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-60"
-              style={{ background: ACCENT }}
-            />
-            <span className="relative inline-flex h-2 w-2 rounded-full" style={{ background: ACCENT }} />
-          </span>
-          {getStatusText()}
-        </span>
-        <ChevronRight
-          className={`w-3.5 h-3.5 text-[#8d9d94] transition-transform shrink-0 ${expanded ? "rotate-90" : ""}`}
-        />
-      </button>
-      <AnimatePresence initial={false}>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="mt-2 space-y-1 overflow-hidden"
-          >
-            {runs.length === 0 ? (
-              <div className="flex items-center gap-2 py-2 px-1 text-xs text-[#68786c]">
-                <Sparkles className="w-3.5 h-3.5 text-[#143620] animate-pulse shrink-0" />
-                <span className="leading-snug">
-                  {connectionStatus === "connecting"
-                    ? "Connecting to agent stream…"
-                    : "CEO agent analyzing objectives and coordinating specialists…"}
-                </span>
-              </div>
-            ) : (
-              runs.map((run) => (
-                <TraceRow key={run.runId} run={run} />
-              ))
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-function MessageTrace({ runs }: { runs: ToolRun[] }) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <div className="mt-2.5 pt-2 border-t border-[rgba(15,34,20,0.06)]">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 text-xs text-[#2b4c34] hover:text-[#143620] transition-colors py-1 px-2.5 rounded-lg bg-[rgba(20,54,32,0.04)] hover:bg-[rgba(20,54,32,0.08)]"
-      >
-        <Cpu className="w-3.5 h-3.5 text-[#143620]" />
-        <span className="font-semibold text-[#143620]">
-          {runs.length} agent step{runs.length > 1 ? "s" : ""} executed
-        </span>
-        <ChevronRight
-          className={`w-3.5 h-3.5 text-[#8d9d94] transition-transform ${open ? "rotate-90" : ""}`}
-        />
-      </button>
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="mt-1.5 rounded-xl border border-[rgba(15,34,20,0.08)] bg-[#fdfcf8] p-2 space-y-1 overflow-hidden"
-          >
-            {runs.map((run) => (
-              <TraceRow key={run.runId} run={run} />
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
 
 /* ─────────────────────────────────────────────
    Chat Component
@@ -996,8 +869,6 @@ export default function Chat({
     startQuery,
     waitForConnection,
     streamingText,
-    llmActive,
-    connectionStatus,
   } = useObservability(sessionId);
 
 
@@ -1394,7 +1265,7 @@ export default function Chat({
                     </p>
                   )}
                   {msg.role === "assistant" && msg.traceRuns && msg.traceRuns.length > 0 && (
-                    <MessageTrace runs={msg.traceRuns} />
+                    <AgentTimeline runs={msg.traceRuns} />
                   )}
                   <div
                     className={`mt-2 flex items-center gap-2 ${
@@ -1432,11 +1303,10 @@ export default function Chat({
 
           {/* Active agent tool trace while executing */}
           <AnimatePresence>
-            {sending && (
+            {sending && runs.length > 0 && (
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
                 className="flex gap-3"
               >
                 <div
@@ -1446,11 +1316,35 @@ export default function Chat({
                   <Sparkles className="w-4 h-4 text-white" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <LiveAgentTrace
-                    runs={runs}
-                    connectionStatus={connectionStatus}
-                    streamingText={streamingText}
-                  />
+                  <AgentTimeline runs={runs} isStreaming />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Typing indicator (when sending before tool calls appear) */}
+          <AnimatePresence>
+            {sending && runs.length === 0 && streamingText.length === 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="flex gap-3"
+              >
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ background: ACCENT }}
+                >
+                  <Sparkles className="w-4 h-4 text-white" />
+                </div>
+                <div className="flex items-center gap-1.5 py-2">
+                  {[0, 150, 300].map((delay) => (
+                    <span
+                      key={delay}
+                      className="w-1.5 h-1.5 rounded-full bg-[#143620] animate-bounce"
+                      style={{ animationDelay: `${delay}ms` }}
+                    />
+                  ))}
                 </div>
               </motion.div>
             )}

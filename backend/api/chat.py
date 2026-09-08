@@ -50,12 +50,15 @@ def _get_mcq_limit_for_effort(effort: str) -> int:
 
 
 def _count_mcqs_in_history(history: list[dict]) -> int:
-    """Count how many MCQ questions the CEO has asked in this session.
-    MCQs are stored as assistant messages containing 'Options:'."""
+    """Count consecutive MCQ questions asked by the CEO for the current turn/flow.
+    Stops when a completed assistant response (without options) is encountered."""
     count = 0
-    for msg in history:
-        if msg.get("role") == "assistant" and "Options:" in (msg.get("message") or ""):
-            count += 1
+    for msg in reversed(history):
+        if msg.get("role") == "assistant":
+            if "Options:" in (msg.get("message") or ""):
+                count += 1
+            else:
+                break
     return count
 
 
@@ -131,7 +134,7 @@ def chat_with_user(
         )
         ceo_message = (
             f"[SYSTEM DIRECTIVE — READ THIS FIRST]\n"
-            f"You have already asked {mcq_count} clarification questions in this session. "
+            f"You have already asked {mcq_count} clarification question(s) for this task. "
             f"The hard limit is {mcq_limit}. "
             f"You MUST execute the task NOW with the information you have. "
             f"Do NOT call ask_mcq_for_user again. Delegate immediately.\n\n"

@@ -1,4 +1,4 @@
-# Co_Founder — AI Co-Founder Platform v0.9.16
+# Co_Founder — AI Co-Founder Platform v0.9.17
 
 > **For complete system context and contributor expectations, read [`Agents_rules.md`](Agents_rules.md) before changing agent behavior.**
 
@@ -491,9 +491,10 @@ CTA
 - `Demo` (`frontend/src/components/landing/Demo.tsx`) was removed from the landing flow; the file remains for reference.
 - Public brand SVGs: `google-sheets.svg`, `google_ads-icon.svg`, `instagram.svg`, `meta.svg`, `shopify.svg`, `razorpay-mark.svg`/`razorpay.svg`, plus `bg.png`.
 
-**v0.9.15 — chat trace & streaming:**
-- `frontend/src/components/Chat.tsx:422` — chat container owns the session, effort selector, message list, and the **live streaming answer bubble** (`streamingText` + `llmActive` from `useObservability`). `sendToBackend` pre-generates the `sessionId`, calls `startQuery(sid)` + `await waitForConnection(sid)` *before* `POST /chat`, then snapshots `runs` via `snapshotRuns()` for the response. Typing indicator and streaming bubble render under `sending`.
-- `frontend/src/components/AgentTracePanel.tsx:57` — trace dropdown anchored **beside the chat bar** (right-aligned popover above the input). Auto-opens on send, displays connection badge, live tool calls with `TraceRow` (`frontend/src/components/AgentTimeline.tsx:51`), subagent durations, streaming response preview, and a clear button. Closes on outside click. Replaces the old inline `AgentTraceInline` that rendered under each assistant message.
+**v0.9.17 — per-query resource budget & chat area trace consolidation:**
+- `frontend/src/components/Chat.tsx` — chat container owns the session, effort selector, message list, live streaming answer bubble, and the consolidated **chat area `AgentTimeline`**. The redundant bottom input bar trace popover was removed so all agent activity (subagent roles, tool executions, durations, checkmarks, expandable input/output) is cleanly visible directly within the message conversation flow.
+- `frontend/src/lib/observability.ts` & `api.ts` — host resolution normalized to `127.0.0.1` for client WebSocket and API requests, preventing IPv6 `::1` connection errors in Linux/Docker environments.
+- `agents/CEO/CEO.py` & `ceo_resources.py` — resource budgets (`external_agents`, `web_searches`, `rag_calls`, `mcqs`) are now reset per query turn instead of locking down the entire session lifetime.
 - `frontend/src/lib/observability.ts:129` — `useObservability(sessionId)` manages the persistent WS (`/chat/ws`), groups raw events into `ToolRun`s (keyed by `tool_run_id`), handles `llm_token` accumulation (cleared on next `tool_start`), auto-reconnect with exponential backoff, and per-session isolation.
 
 If you need the exact frontend structure, inspect the `frontend/` workspace directly.
@@ -557,18 +558,18 @@ Real-time observability streamed to the frontend via WebSocket (`WS /chat/ws?ses
 - `messages` channel → `AIMessageChunk` token deltas batched at ~24 tokens / 60ms (`_TOKEN_BATCH_SIZE` / `_TOKEN_FLUSH_SECONDS`) and pushed as `llm_token` events via `event_bus.push(make_llm_token(...))`.
 - `updates` channel → `{node: {messages: [...]}}` accumulated to reconstruct the full `{"messages": [...]}` result so MCQ (`clarification_request`) and `image_generated` flows are unchanged. Stream failures flush buffered tokens and fall back to `agent.invoke()`; eval/CLI calls with no `session_id` bypass streaming entirely.
 
-**Frontend — `useObservability` (`frontend/src/lib/observability.ts:129`) + `AgentTracePanel` (`frontend/src/components/AgentTracePanel.tsx:1`)**
+**Frontend — `useObservability` (`frontend/src/lib/observability.ts:129`) + `AgentTimeline` (`frontend/src/components/AgentTimeline.tsx:1`)**
 - `useObservability` maintains one persistent WS per session (`wsUrl` → `API_BASE_URL` + `/chat/ws`). State: `runs` (grouped `ToolRun`s), `streamingText` / `llmActive` (live answer), `connectionStatus` (`disconnected`/`connecting`/`connected`), `streamEnded`, `retryCount`.
-- **Guaranteed connect before chat**: `Chat.tsx:544` calls `await waitForConnection(sid)` (polls up to 8s, auto-reopens) *before* `POST /chat` — combined with the server-side buffer this eliminates the "invisible trace" race. `startQuery(sid)` resets `runs`/`streamingText` per query without tearing down the WS.
+- **Guaranteed connect before chat**: `Chat.tsx` calls `await waitForConnection(sid)` (polls up to 8s, auto-reopens) *before* `POST /chat` — combined with the server-side buffer this eliminates the "invisible trace" race. `startQuery(sid)` resets `runs`/`streamingText` per query without tearing down the WS.
 - **Token handling**: `llm_token` appends to `streamingText`; the next `tool_start` clears it so planning/"thinking" tokens never appear as the final answer. `session_end` clears `llmActive`.
-- **`AgentTracePanel`**: dropdown anchored beside the chat bar (right-aligned popover above the input, `AgentTracePanel.tsx:121`). Auto-opens on send, shows connection badge (Live/Connected/Connecting/Offline), live tool calls via `TraceRow` (`AgentTimeline.tsx:51`), subagent durations, expandable inputs/outputs, live streaming response block, and a clear button (`resetRuns`). The old inline `AgentTraceInline` under each message was removed — per-message `traceRuns` snapshot is still taken via `snapshotRuns()` but no longer rendered inline.
+- **`AgentTimeline`**: Consolidated directly inside the chat conversation area. During active query execution, renders real-time subagent cards (Graphic Designer, Writer, CMO, Researcher), live tool names, duration timings, status badges, and expandable inputs/outputs. On completed messages, snapshots of `traceRuns` are preserved for review. The redundant popover on the bottom input bar was removed.
 - **Resilience**: `onclose` exponential backoff (up to 5 retries); session switch tears down the old WS; `resetRuns` clears display without touching the socket.
 
-**Per-query isolation**: trace resets at each new query (`begin_query` server-side + `startQuery` client-side); `snapshotRuns()` captures the current `runs` snapshot for optional message attachment. Trace survives page reload via persisted message state.
+**Per-query isolation & budget**: Trace and resource budgets reset at each new query (`begin_query` server-side + `startQuery` client-side, plus `init_session_resources` per turn).
 
 ## Status
 
-Functional end-to-end production test release (v0.9.16). The core chat loop, multi-agent system, RAG pipeline, file management, **buffered WebSocket observability with live LLM streaming**, effort-based execution, Kafka async jobs, onboarding flow, Argon2id password hashing, Google OAuth, cookie-based session auth, and **live Razorpay billing (₹100 minimum, payment_history invoices, INR/USD)** are operational. v0.9.15 fixed the production-only invisible trace and added token-by-token answer streaming; v0.9.16 ships the money path and a reworked landing/billing shell. Known gaps:
+Functional end-to-end production test release (v0.9.17). The core chat loop, multi-agent system, RAG pipeline, file management, **buffered WebSocket observability with live LLM streaming**, effort-based execution, Kafka async jobs, onboarding flow, Argon2id password hashing, Google OAuth, cookie-based session auth, and **live Razorpay billing (₹100 minimum, payment_history invoices, INR/USD)** are operational. v0.9.15 fixed the production-only invisible trace and added token-by-token answer streaming; v0.9.16 shipped the money path and a reworked landing/billing shell; v0.9.17 switches resource budgets to per-query enforcement (preventing multi-turn session lockouts) and consolidates agent trace observability into the chat conversation area. Known gaps:
 - Image generation uses OpenRouter `google/gemini-2.5-flash-image`; slow (~30s) and blocks the CEO pipeline
 - Supabase free tier REST API adds 3-7s latency per RPC call (embedding serialization overhead)
 - The session cookie restores login on the next visit, but protected endpoints still trust the `user_id` query param when no cookie is present (no per-request JWT verification beyond `verify_session_token` in payments/payment-history)

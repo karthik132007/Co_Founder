@@ -5,7 +5,7 @@ from credits_engine.Get_model_price import get_model_price
 
 logger = logging.getLogger(__name__)
 
-MARKUP = 3
+MARKUP = 2
 USD_INR = 100
 
 IMAGE_MODELS = {

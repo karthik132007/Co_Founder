@@ -1,4 +1,18 @@
 
+## Changelog (v0.9.16 → v0.9.17)
+
+### Per-Query Resource Budgeting
+- **Per-query budget enforcement**: Agent resource budgets (`external_agents`, `web_searches`, `rag_calls`, `mcqs`) are now tracked and reset on a **per-query** basis rather than permanently across the whole chat session.
+- **Fixed session lockout**: Resolved the issue where invoking an external agent (e.g. Graphic Designer, Writer, CMO, or Data Analyst) in the first turn permanently exhausted the session budget, causing subsequent requests in the same chat to fail with `{"error": "external agents budget exhausted for this session."}`.
+- **Turn initialization**: `talk_to_ceo()` now re-initializes the resource budget at the start of every query turn, providing fresh limits matched to the effort level (`flash`, `mid`, `max`).
+- **Prompt & error updates**: Renamed `SESSION RESOURCE BUDGET` prompt directive to `QUERY RESOURCE BUDGET` and updated tool exhaustion payloads to report exhaustion `for this query`.
+- **Contextual MCQ guard**: Updated `_count_mcqs_in_history()` in `chat.py` to count consecutive MCQs leading up to the current turn rather than summing all historical MCQs across the session lifetime, preventing clarification lockouts on new tasks within the same chat.
+
+### Agent Observability & UI Consolidation
+- **Consolidated chat area trace (`AgentTimeline`)**: Retained the live Agent Activity timeline directly inside the chat conversation area, displaying real-time subagent tags (Graphic Designer, Writer, CMO, Researcher), tool execution names, durations, status checkmarks, and expandable inputs/outputs.
+- **Removed redundant search bar trace panel**: Removed the duplicate `Trace` button and popover dropdown from the bottom input area in `Chat.tsx`, providing a cleaner input interface.
+- **WebSocket connection reliability**: Normalized client WebSocket and API host resolutions to `127.0.0.1` instead of `localhost`, eliminating IPv6 `::1` connection refused errors on Linux/Docker environments and ensuring immediate real-time event streaming.
+
 ## Changelog (v0.9.15 → v0.9.16)
 
 ### Credit System & Usage Tracking

@@ -112,18 +112,22 @@ export interface ObservabilityState {
    ───────────────────────────────────────────── */
 
 function wsUrl(sessionId: string): string {
-  const base = API_BASE_URL.replace(/\/+$/, "");
   let wsProtocol = "ws:";
   let host = "127.0.0.1:8000";
-  if (base.startsWith("http://")) {
-    wsProtocol = "ws:";
-    host = base.replace(/^http:\/\//, "");
-  } else if (base.startsWith("https://")) {
-    wsProtocol = "wss:";
-    host = base.replace(/^https:\/\//, "");
-  } else if (typeof window !== "undefined") {
+
+  if (typeof window !== "undefined" && window.location?.hostname) {
     wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    host = window.location.hostname === "localhost" ? "127.0.0.1:8000" : `${window.location.hostname}:8000`;
+    const h = window.location.hostname === "localhost" ? "127.0.0.1" : window.location.hostname;
+    host = `${h}:8000`;
+  } else {
+    const base = API_BASE_URL.replace(/\/+$/, "");
+    if (base.startsWith("https://")) {
+      wsProtocol = "wss:";
+      host = base.replace(/^https:\/\//, "").replace(/^localhost\b/, "127.0.0.1");
+    } else if (base.startsWith("http://")) {
+      wsProtocol = "ws:";
+      host = base.replace(/^http:\/\//, "").replace(/^localhost\b/, "127.0.0.1");
+    }
   }
   return `${wsProtocol}//${host}/chat/ws?session_id=${encodeURIComponent(sessionId)}`;
 }
@@ -454,7 +458,7 @@ export function useObservability(
     };
 
     socket.onclose = () => {
-      if (cancelledRef.current) return;
+      if (cancelledRef.current || wsRef.current !== socket) return;
       setConnectionStatus("disconnected");
       // Auto-reconnect on unexpected close (backend keeps WS alive across queries)
       const retries = retryCountRef.current;
@@ -462,7 +466,7 @@ export function useObservability(
         const delay = Math.min(1000 * 2 ** retries, 10000);
         setRetryCount((c) => c + 1);
         setTimeout(() => {
-          if (!cancelledRef.current) _openSocket();
+          if (!cancelledRef.current && sessionRef.current) _openSocket(sessionRef.current);
         }, delay);
       }
     };
@@ -537,10 +541,11 @@ export function useObservability(
     [_openSocket],
   );
 
-  // ── Close WS when switching to a DIFFERENT session (not null→new, not same) ──
+  // ── Maintain WS connection whenever sessionId is present ──
   useEffect(() => {
-    if (sessionId && connectedSessionRef.current && connectedSessionRef.current !== sessionId) {
-      // User switched to a different existing chat — close old WS
+    if (!sessionId) return;
+    if (connectedSessionRef.current !== sessionId) {
+      // User switched to a different chat session — close old WS
       cancelledRef.current = true;
       wsRef.current?.close();
       wsRef.current = null;
@@ -551,8 +556,11 @@ export function useObservability(
       setRuns([]);
       setEvents([]);
       setStreamEnded(false);
+      _openSocket(sessionId);
+    } else if (!wsRef.current || wsRef.current.readyState === WebSocket.CLOSED) {
+      _openSocket(sessionId);
     }
-  }, [sessionId]);
+  }, [sessionId, _openSocket]);
 
   // ── Cleanup on unmount ──
   useEffect(() => {

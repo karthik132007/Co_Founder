@@ -55,9 +55,9 @@ Every chat request carries an `effort` parameter (`backend/api/chat.py`, fronten
 - Flash mode uses a dedicated compact CEO prompt (`get_ceo_system_prompt_flash`) that tells the CEO its exact resource limits and instructs it to minimize agents (one agent should research AND write, analyze AND summarize, etc.).
 - Model selection for every agent goes through `get_best_llm(tasks, effort)` in `agents/helpers/choose_llm.py`.
 
-## 5. Session Resource Budget
+## 5. Query Resource Budget
 
-Each session has a Redis-backed resource budget (`agents/CEO/ceo_resources.py`, key `session_resources:{id}`, 1h TTL) initialized on first request and re-initialized if the effort changes mid-session:
+Each query has a Redis-backed resource budget (`agents/CEO/ceo_resources.py`, key `session_resources:{id}`, 1h TTL) initialized/reset at the start of each user query turn:
 
 | Resource | ⚡ Flash | ⚖️ Mid | 🎯 Max |
 |----------|---------|--------|-------|
@@ -67,8 +67,8 @@ Each session has a Redis-backed resource budget (`agents/CEO/ceo_resources.py`, 
 | max_mcqs | 1 | 2 | 3 |
 
 - Every budget-consuming tool calls `consume_resource(session_id, resource)` before executing; if exhausted it returns an error payload telling the agent to synthesize from what it has.
-- The remaining budget is injected into the CEO's system context each turn (`format_resources_for_prompt`). Once a resource hits 0, the tool MUST NOT be called again.
-- Researcher, CMO, and Data Analyst tool calls consume the same shared session budget as the CEO.
+- The remaining budget is injected into the CEO's system context each turn (`format_resources_for_prompt`). Once a resource hits 0, the tool MUST NOT be called again during that query.
+- Researcher, CMO, and Data Analyst tool calls consume the same shared query budget as the CEO.
 
 ## 6. Researcher Agent Rules
 

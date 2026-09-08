@@ -37,7 +37,7 @@ _in_memory_resources: dict[str, dict] = {}
 
 
 def init_session_resources(session_id: str, effort: str) -> dict:
-    """Initialize resource counters for a session. Called once at session start."""
+    """Initialize or reset resource counters for a query. Called at the start of each query turn."""
     limits = _get_resources(effort)
     state = {
         "effort": effort,
@@ -56,6 +56,9 @@ def init_session_resources(session_id: str, effort: str) -> dict:
     except Exception:
         pass
     return state
+
+
+reset_query_resources = init_session_resources
 
 
 def get_session_resources(session_id: str) -> dict | None:
@@ -125,7 +128,7 @@ def consume_resource(session_id: str, resource: str) -> bool:
 
 
 def format_resources_for_prompt(session_id: str) -> str:
-    """Build a concise system message showing remaining resources."""
+    """Build a concise system message showing remaining resources for this query."""
     state = get_session_resources(session_id)
     if state is None:
         return ""
@@ -144,10 +147,10 @@ def format_resources_for_prompt(session_id: str) -> str:
     }
 
     return (
-        f"SESSION RESOURCE BUDGET (effort: {state.get('effort', 'flash')}):\n"
+        f"QUERY RESOURCE BUDGET (effort: {state.get('effort', 'flash')}):\n"
         f"  - External agents remaining: {remaining['external_agents']}/{limits.get('max_external_agents', 0)}\n"
         f"  - Web searches remaining:   {remaining['web_searches']}/{limits.get('max_web_searches', 0)}\n"
         f"  - RAG/knowledge calls remaining: {remaining['rag_calls']}/{limits.get('max_rag_calls', 0)}\n"
         f"  - MCQs remaining:           {remaining['mcqs']}/{limits.get('max_mcqs', 0)}\n\n"
-        f"IMPORTANT: Do NOT exceed these limits. Once a resource hits 0, you MUST NOT call that tool again."
+        f"IMPORTANT: Do NOT exceed these limits for this query. Once a resource hits 0, you MUST NOT call that tool again."
     )
