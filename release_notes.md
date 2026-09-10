@@ -1,4 +1,20 @@
 
+## Changelog (v0.9.17 → v0.9.18)
+
+### Plugins & Instagram Integration
+- **Plugins page**: replaced the placeholder page with a responsive two-column connector grid, search, status filters, connector descriptions, brand assets, connected badges, and upcoming-integration states.
+- **Instagram OAuth**: added the complete connect flow from the Plugins page through Instagram authorization, backend code exchange, long-lived token exchange, Supabase persistence, and return to the Plugins page with a success or error status.
+- **Connection API**: added `GET /connections`, `GET /connections/instagram`, and `DELETE /connections/instagram` for listing integration availability, checking Instagram status, and disconnecting Instagram.
+- **Token safety**: Instagram access tokens remain backend-only and are never returned to the frontend connection status API.
+- **OAuth state handling**: Redis-backed, expiring OAuth state binds the Instagram callback to the company that started the connection.
+- **Local development**: documented ngrok HTTPS forwarding for Instagram OAuth and fixed callback URL handling for local, tunneled, and production environments.
+- **Redirect fix**: corrected the callback redirect so an existing `/plugins` URL is not incorrectly changed to `/plugins/plugins`.
+- **Redis startup resilience**: a Redis outage no longer prevents FastAPI from starting; Redis-backed features degrade gracefully where supported.
+
+### Connector Catalog
+- Instagram is currently available and connectable.
+- Google Sheets, Google Drive, Gmail, Google Calendar, Notion, Slack, and Shopify are represented in the grid as upcoming connectors.
+
 ## Changelog (v0.9.16 → v0.9.17)
 
 ### Per-Query Resource Budgeting

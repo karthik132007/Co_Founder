@@ -1,4 +1,4 @@
-# Co_Founder — AI Co-Founder Platform v0.9.17
+# Co_Founder — AI Co-Founder Platform v0.9.18
 
 > **For complete system context and contributor expectations, read [`Agents_rules.md`](Agents_rules.md) before changing agent behavior.**
 
@@ -14,6 +14,7 @@
 - [RAG Engine](#rag-engine)
 - [Backend](#backend)
 - [Credits & Billing](#credits--billing)
+- [Plugins & Integrations](#plugins--integrations)
 - [Frontend](#frontend)
 - [Code Sandbox](#code-sandbox)
 - [Prompt System & Tool Registry](#prompt-system--tool-registry)
@@ -37,7 +38,7 @@ The important bits:
 
 AI Co-Founder is a multi-agent platform that simulates an early founding team around a CEO orchestrator. A founder describes the business through chat; the CEO decides whether to answer directly, ask a clarification question, retrieve company knowledge, or delegate to a specialist agent.
 
-This v0.9.16 production test includes the complete Dockerized stack, async Kafka persistence, effort-based routing, **buffered WebSocket observability with real-time LLM streaming**, Argon2id password hashing, Google OAuth + cookie session auth, env-driven CORS/rate limiting, and **live Razorpay billing**. Credits are modeled as `1 credit == ₹1`, backed by `company_credits`, `payment_history`, Redis caching, and payment idempotency. The app is usable end-to-end, with known gaps documented in [Status](#status).
+This v0.9.18 production test includes the complete Dockerized stack, async Kafka persistence, effort-based routing, **buffered WebSocket observability with real-time LLM streaming**, Argon2id password hashing, Google OAuth + cookie session auth, env-driven CORS/rate limiting, **live Razorpay billing**, and the first working external plugin integration through Instagram OAuth. Credits are modeled as `1 credit == ₹1`, backed by `company_credits`, `payment_history`, Redis caching, and payment idempotency. The app is usable end-to-end, with known gaps documented in [Status](#status).
 
 ## Interviewer's Map
 
@@ -46,6 +47,7 @@ If you are reviewing this project, these are the engineering decisions worth loo
 - **Agent orchestration:** `agents/CEO/CEO.py` and `agents/CEO/ceo_agent_tools.py` show how one CEO agent routes to specialist agents while preserving tool-based reasoning.
 - **Retrieval quality:** `RAG_Engine/` combines semantic search, keyword search, fusion, reranking, document chunks, and separate chat-memory retrieval.
 - **Streaming observability:** `backend/api/connection_manager.py`, `backend/api/observability_events.py`, `frontend/src/lib/observability.ts`, and `frontend/src/components/AgentTracePanel.tsx` solve the production race between `POST /chat` and WebSocket connection startup.
+- **Plugin connections:** `backend/api/connections.py`, `backend/api/auth.py`, `connections/instagram_connection_manager.py`, and `frontend/src/app/(app)/plugins/page.tsx` implement the Instagram connection lifecycle and connector catalog.
 - **Async product behavior:** `backend/kafka_jobs/` moves chat message persistence, memory extraction, and title generation out of the request path.
 - **Real billing path:** `backend/api/payments.py`, `backend/db/credits.py`, `backend/db/payment_history.py`, and `frontend/src/app/(app)/billing/page.tsx` cover checkout, verification, idempotency, balance updates, and invoice history.
 - **Evaluation culture:** `evals/`, [Evals & Benchmarks](#evals--benchmarks), and [`docs/eval_report.md`](docs/eval_report.md) capture both the RAG numbers and CEO e2e judge results, including limitations and confounders.
@@ -291,18 +293,19 @@ Co_Founder/
 │   ├── util_agents/         # Chat memory, title, description, image description, writer agents
 │   └── helpers/             # LLM selection, datetime, utilities
 ├── backend/
-│   ├── app.py               # FastAPI app, CORS, router registration (auth/user/drive/chat/credits/payments/payment_history)
+│   ├── app.py               # FastAPI app, CORS, router registration (auth/user/drive/chat/credits/payments/payment_history/connections)
 │   ├── models.py            # SQLAlchemy models
 │   ├── utils.py             # Supabase client init, helpers
 │   ├── security.py          # Argon2id hashing + HMAC session cookies
 │   ├── api/
-│   │   ├── auth.py          # /auth/signup, /auth/login, /auth/google, /auth/me, /auth/logout
+│   │   ├── auth.py          # /auth/signup, /auth/login, /auth/google, /auth/me, /auth/logout, Instagram OAuth
 │   │   ├── chat.py          # POST /chat, session CRUD, WS /chat/ws, MCQ guard
 │   │   ├── user.py          # /user/onboarding, /user/dashboard, /user/files, /user/profile
 │   │   ├── drive.py         # POST /upload, DELETE /file/{id}
 │   │   ├── credits.py       # POST /credits/add, GET /credits/{company_id}
 │   │   ├── payments.py      # POST /payments/create-order, POST /payments/verify-payment (Razorpay)
 │   │   ├── payment_history.py  # CRUD /payment-history (list/create/update/delete)
+│   │   ├── connections.py  # /connections catalog, Instagram status, disconnect
 │   │   ├── connection_manager.py    # ConnectionManager + SessionEventBus (buffered replay, WS traces)
 │   │   └── observability_events.py  # Agent trace event types/factories (incl. llm_token)
 │   ├── kafka_jobs/          # Async Kafka pipeline (producers + consumers)
@@ -359,6 +362,11 @@ Co_Founder/
 | GET | `/payment-history/{payment_id}` | Fetch a single payment row |
 | PATCH | `/payment-history/{payment_id}` | Update status (`pending|completed|failed|refunded`) |
 | DELETE | `/payment-history/{payment_id}` | Delete a payment row |
+| GET | `/connections?user_id=` | List available integrations and connection status for the user's company |
+| GET | `/connections/instagram?user_id=` | Get the company's Instagram connection status |
+| DELETE | `/connections/instagram?user_id=` | Disconnect Instagram and remove the stored token |
+| GET | `/auth/instagram/login?company_id=&redirect_to=` | Start Instagram OAuth; stores an expiring Redis state and redirects to Instagram |
+| GET | `/auth/instagram/callback` | Exchange the Instagram authorization code, persist the long-lived token, and redirect back to the Plugins page |
 
 ### Async Kafka Pipeline
 
@@ -410,6 +418,66 @@ POST /chat
 ## Credits & Billing
 
 Credits are the product's currency: **1 credit == ₹1 of selling value**. The CEO agent's token usage is priced per model, marked up, and charged in INR. Payments are collected via **Razorpay Standard Checkout** — the frontend never sees `RAZORPAY_KEY_SECRET`.
+
+## Plugins & Integrations
+
+The Plugins page (`frontend/src/app/(app)/plugins/page.tsx`) provides a searchable, filterable two-column connector grid. Each connector shows its logo, description, availability, and connection status.
+
+### Connector availability
+
+| Connector | Status | Capabilities |
+|---|---|---|
+| Instagram | Available | OAuth connection, long-lived token storage, account binding, status, disconnect |
+| Google Sheets | Coming soon | Catalog entry only |
+| Google Drive | Coming soon | Catalog entry only |
+| Gmail | Coming soon | Catalog entry only |
+| Google Calendar | Coming soon | Catalog entry only |
+| Notion | Coming soon | Catalog entry only |
+| Slack | Coming soon | Catalog entry only |
+| Shopify | Coming soon | Catalog entry only |
+
+### Instagram connection flow
+
+1. The user opens **Plugins** and selects **Connect** on Instagram.
+2. The frontend fetches the user's company ID and opens `GET /auth/instagram/login`.
+3. The backend stores a ten-minute, Redis-backed OAuth state containing the company ID and return URL, then redirects to Instagram.
+4. Instagram redirects to `GET /auth/instagram/callback` with the authorization code.
+5. The backend exchanges the code for a short-lived token, exchanges that for a long-lived token, and stores it in `instagram_connections`.
+6. The backend redirects to the original Plugins URL with `?instagram=connected` or `?instagram=error`.
+7. The frontend reloads the connection catalog and displays the connected state. Disconnect removes the stored token through `DELETE /connections/instagram`.
+
+Access tokens are never included in frontend API responses. Agent-side Instagram operations use `connections/instagram_connection_manager.py` to retrieve the token server-side.
+
+### Local OAuth with ngrok
+
+Instagram requires an HTTPS redirect URI that is publicly reachable. For local development:
+
+```bash
+# Terminal 1: Redis
+redis-server
+
+# Terminal 2: backend
+.venv/bin/uvicorn backend.app:app --reload --host 127.0.0.1 --port 8000
+
+# Terminal 3: HTTPS tunnel
+ngrok http 8000 --url=https://<your-ngrok-domain>
+```
+
+Set the exact callback URL in the root `.env` and in the Meta app's **Valid OAuth Redirect URIs**:
+
+```dotenv
+INSTAGRAM_REDIRECT_URI=https://<your-ngrok-domain>/auth/instagram/callback
+```
+
+Restart the backend after changing `.env`. The ngrok domain must forward to the backend port, not the frontend port. Redis must be running for the OAuth state handshake.
+
+For production behind the current `/api` reverse-proxy path, use:
+
+```dotenv
+INSTAGRAM_REDIRECT_URI=https://get-cofounder.tech/api/auth/instagram/callback
+```
+
+The redirect URI must match the Meta configuration exactly, including scheme, host, path, and `/api` prefix where applicable.
 
 ### Pricing Engine (`credits_engine/usage.py:18`)
 

@@ -212,6 +212,59 @@ export async function fetchPaymentHistory(
   return res.json() as Promise<PaymentHistoryResponse>;
 }
 
+/* ── Connections / Plugins ── */
+
+export type ConnectionInfo = {
+  id: string;
+  name: string;
+  description: string;
+  available: boolean;
+  connected: boolean;
+  instagram_user_id?: string;
+  expires_at?: string;
+  created_at?: string;
+};
+
+export type ConnectionsResponse = {
+  connections: ConnectionInfo[];
+};
+
+/** List all integrations and whether the user's company has connected them. */
+export async function fetchConnections(userId: number): Promise<ConnectionsResponse> {
+  const res = await fetch(`${API_BASE_URL}/connections?user_id=${userId}`, {
+    credentials: "include",
+  });
+  if (!res.ok) {
+    throw new Error(await readApiError(res, "Failed to load connections"));
+  }
+  return res.json() as Promise<ConnectionsResponse>;
+}
+
+/** Remove the company's Instagram connection. */
+export async function disconnectInstagram(userId: number): Promise<{ status: string }> {
+  const res = await fetch(`${API_BASE_URL}/connections/instagram?user_id=${userId}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!res.ok) {
+    throw new Error(await readApiError(res, "Failed to disconnect Instagram"));
+  }
+  return res.json() as Promise<{ status: string }>;
+}
+
+/**
+ * Build the URL that starts the Instagram OAuth handshake. `redirectTo` is
+ * the frontend page the browser is sent back to after the backend callback
+ * completes (it gets `?instagram=connected|error` appended).
+ */
+export function instagramConnectUrl(companyId: number, redirectTo: string): string {
+  const params = new URLSearchParams({
+    company_id: String(companyId),
+    redirect_to: redirectTo,
+  });
+  return `${API_BASE_URL}/auth/instagram/login?${params.toString()}`;
+}
+
 /* ── Dashboard ── */
 
 export type CompanyInfo = {

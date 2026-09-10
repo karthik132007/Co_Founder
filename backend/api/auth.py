@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import secrets
@@ -126,24 +127,58 @@ def _extract_google_name(user) -> str | None:
     name = metadata.get("full_name") or metadata.get("name") or None
     return str(name).strip() if name else None
 
+
+def _instagram_redirect_uri(request: Request) -> str:
+    """Resolve the Instagram OAuth `redirect_uri`.
+
+    This MUST exactly match a redirect URI registered on the Instagram/Meta
+    app. The explicit `INSTAGRAM_REDIRECT_URI` env wins — in production the
+    API lives behind the `/api` proxy path, so it must be the full public URL
+    (e.g. `https://get-cofounder.tech/api/auth/instagram/callback`). When the
+    env is unset (local dev), the URL is reconstructed from the incoming
+    request, honouring `X-Forwarded-*` headers set by reverse proxies.
+    """
+    configured = os.getenv("INSTAGRAM_REDIRECT_URI")
+    if configured:
+        return configured
+
+    scheme = request.headers.get("x-forwarded-proto") or request.url.scheme
+    host = request.headers.get("x-forwarded-host") or request.headers.get("host") or "localhost:8000"
+    prefix = request.headers.get("x-forwarded-prefix", "")
+    return f"{scheme}://{host}{prefix}/auth/instagram/callback"
+
+
 @router.get("/instagram/login")
-async def instagram_login(request: Request, company_id: int):
+async def instagram_login(
+    request: Request,
+    company_id: int,
+    redirect_to: str | None = None,
+):
+    """Start the Instagram OAuth handshake.
+
+    Redirects the browser to Instagram's authorization screen. `company_id`
+    is the company to bind the resulting token to, and `redirect_to` (when
+    provided) is the frontend URL the browser is sent back to after the
+    callback completes — the callback appends `?instagram=connected` or
+    `?instagram=error&detail=…` to it.
+    """
     if not company_id:
         raise HTTPException(status_code=400, detail="Company ID is required")
 
     client_id = os.getenv("INSTAGRAM_APP_ID")
-    redirect_uri = os.getenv("INSTAGRAM_REDIRECT_URI")
-    if not client_id or not redirect_uri:
-        logger.error(
-            "Instagram OAuth config missing — INSTAGRAM_APP_ID/INSTAGRAM_REDIRECT_URI not set"
-        )
+    redirect_uri = _instagram_redirect_uri(request)
+    if not client_id:
+        logger.error("Instagram OAuth config missing — INSTAGRAM_APP_ID not set")
         raise HTTPException(status_code=500, detail="Instagram integration is not configured")
 
     state = secrets.token_urlsafe(32)
+    state_payload = json.dumps(
+        {"company_id": str(company_id), "redirect_to": redirect_to}
+    )
     _redis_client.setex(
         f"instagram_oauth:{state}",
         600,
-        str(company_id)
+        state_payload,
     )
     params = {
         "client_id": client_id,
@@ -177,28 +212,61 @@ async def instagram_callback(
     Instagram redirects back here after the user approves or denies the
     authorization request. On denial it returns `error`/`error_reason`/
     `error_description` (no `code`), which must not 422.
+
+    On completion the browser is redirected back to the frontend plugins
+    page (the `redirect_to` captured at login, or FRONTEND_URL as a
+    fallback) with `?instagram=connected|error` so the UI can show the
+    outcome instead of landing on a raw JSON response.
     """
+    def _plugin_redirect(redirect_to: str | None, **params: str) -> RedirectResponse:
+        # `redirect_to` is already the full plugins page URL (e.g.
+        # http://localhost:3000/plugins) supplied by the frontend at login time.
+        # Only fall back to building one from FRONTEND_URL when it is absent.
+        base = redirect_to or f"{(os.getenv('FRONTEND_URL') or 'http://localhost:3000').rstrip('/')}/plugins"
+        qs = urllib.parse.urlencode(params)
+        return RedirectResponse(url=f"{base.rstrip('/')}?{qs}")
+
+    # Resolve the state payload first so we can redirect the user back to the
+    # exact frontend URL they came from, even on early failures.
+    redirect_to: str | None = None
+    company_id: str | None = None
+    if state:
+        state_key = f"instagram_oauth:{state}"
+        raw_state = _redis_client.get(state_key)
+        _redis_client.delete(state_key)
+        if raw_state:
+            raw_state_str = (
+                raw_state.decode("utf-8")
+                if isinstance(raw_state, bytes)
+                else raw_state
+            )
+            try:
+                state_data = json.loads(raw_state_str)
+                if isinstance(state_data, dict):
+                    redirect_to = state_data.get("redirect_to") or None
+                    company_id = state_data.get("company_id") or None
+                else:
+                    # Legacy state payloads stored the raw company_id string.
+                    company_id = raw_state_str
+            except (ValueError, TypeError):
+                company_id = raw_state_str
+
     if error:
         logger.warning(
             "Instagram OAuth denied — error=%s, reason=%s, description=%s",
             error, error_reason, error_description,
         )
-        raise HTTPException(
-            status_code=400,
+        return _plugin_redirect(
+            redirect_to,
+            instagram="error",
             detail=error_description or error or "Instagram authorization failed",
         )
 
     if not code:
-        raise HTTPException(status_code=400, detail="Authorization code is required")
+        return _plugin_redirect(redirect_to, instagram="error", detail="Authorization code is required")
 
-    if not state:
-        raise HTTPException(status_code=400, detail="OAuth state is required")
-
-    state_key = f"instagram_oauth:{state}"
-    company_id = _redis_client.get(state_key)
-    _redis_client.delete(state_key)
-    if not company_id:
-        raise HTTPException(status_code=400, detail="Invalid or expired OAuth state")
+    if not state or company_id is None:
+        return _plugin_redirect(redirect_to, instagram="error", detail="Invalid or expired OAuth state")
 
     manager = Instagram_Connection_Manager()
     try:
@@ -221,12 +289,12 @@ async def instagram_callback(
         manager.store_instagram_access_token_in_db(int(company_id), token_data)
     except (ValueError, TypeError) as exc:
         logger.warning("Instagram OAuth returned invalid data: %s", exc)
-        raise HTTPException(status_code=502, detail="Instagram authorization failed") from exc
+        return _plugin_redirect(redirect_to, instagram="error", detail="Instagram authorization failed")
     except Exception:
         logger.exception("Instagram OAuth token exchange failed")
-        raise HTTPException(status_code=502, detail="Instagram authorization failed")
+        return _plugin_redirect(redirect_to, instagram="error", detail="Instagram authorization failed")
 
-    return {"status": "connected", "company_id": int(company_id)}
+    return _plugin_redirect(redirect_to, instagram="connected")
 
 @router.post("/google")
 def google_login(payload: GoogleLoginRequest, request: Request, response: Response):

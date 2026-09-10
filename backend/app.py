@@ -18,6 +18,7 @@ from backend.api.chat import router as chat_router
 from backend.api.credits import router as credits_router
 from backend.api.payments import router as payments_router
 from backend.api.payment_history import router as payment_history_router
+from backend.api.connections import router as connections_router
 from backend.api.connection_manager import event_bus
 
 logger = logging.getLogger(__name__)
@@ -35,6 +36,7 @@ app.include_router(chat_router)
 app.include_router(credits_router)
 app.include_router(payments_router)
 app.include_router(payment_history_router)
+app.include_router(connections_router)
 
 # Allowed browser origins — comma-separated list, env-configurable for deploy.
 # Example: CORS_ORIGINS=https://app.example.com,https://www.example.com

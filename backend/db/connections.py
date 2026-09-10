@@ -42,3 +42,21 @@ def get_from_insta_table(company_id: int) -> dict[str, Any] | None:
         return cast(dict[str, Any] | None, getattr(response, "data", None))
     except Exception as e:
         raise RuntimeError(f"Failed to retrieve Instagram connection: {e}")
+
+
+def delete_from_insta_table(company_id: int) -> bool:
+    """Remove an Instagram connection for a company.
+
+    Returns True when a row was removed, False when there was nothing to
+    remove. Raises RuntimeError on unexpected storage errors.
+    """
+    try:
+        response = (
+            _client.table("instagram_connections")
+            .delete()
+            .eq("company_id", company_id)
+            .execute()
+        )
+        return bool(getattr(response, "data", None))
+    except Exception as e:
+        raise RuntimeError(f"Failed to delete Instagram connection: {e}")
