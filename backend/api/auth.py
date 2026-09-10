@@ -1,7 +1,12 @@
 import logging
 import os
+import secrets
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi.responses import RedirectResponse
+import urllib.parse
+
 from backend.models import LoginRequest, UserCreate, GoogleLoginRequest
 from backend.db.insert_to_sql import (
     create_user,
@@ -12,10 +17,12 @@ from backend.db.insert_to_sql import (
     GoogleEmailConflictError,
     UserAlreadyExistsError,
 )
+from backend.db.redis_client import get_redis_client
 from backend.security import hash_password, create_session_token, verify_session_token
 from backend.api.rate_limit import SlidingWindowRateLimiter
 from backend.utils import get_supabase_client
 from backend.db.get_from_sql import get_company_id
+from connections.instagram_connection_manager import Instagram_Connection_Manager
 from supabase_auth.errors import (
     AuthApiError,
     AuthInvalidJwtError,
@@ -39,6 +46,8 @@ _auth_limiter = SlidingWindowRateLimiter(max_attempts=10, window_seconds=60)
 _google_limiter = SlidingWindowRateLimiter(max_attempts=20, window_seconds=60)
 
 _supabase_client = get_supabase_client()
+
+_redis_client = get_redis_client()
 
 # ── Session cookie ────────────────────────────────────────────────────────────
 # On a successful login/signup we set an httpOnly cookie holding a signed,
@@ -117,12 +126,107 @@ def _extract_google_name(user) -> str | None:
     name = metadata.get("full_name") or metadata.get("name") or None
     return str(name).strip() if name else None
 
-@router.get("instagram/login")
-async def instagram_login(request: Request):
-    pass
+@router.get("/instagram/login")
+async def instagram_login(request: Request, company_id: int):
+    if not company_id:
+        raise HTTPException(status_code=400, detail="Company ID is required")
+
+    client_id = os.getenv("INSTAGRAM_APP_ID")
+    redirect_uri = os.getenv("INSTAGRAM_REDIRECT_URI")
+    if not client_id or not redirect_uri:
+        logger.error(
+            "Instagram OAuth config missing — INSTAGRAM_APP_ID/INSTAGRAM_REDIRECT_URI not set"
+        )
+        raise HTTPException(status_code=500, detail="Instagram integration is not configured")
+
+    state = secrets.token_urlsafe(32)
+    _redis_client.setex(
+        f"instagram_oauth:{state}",
+        600,
+        str(company_id)
+    )
+    params = {
+        "client_id": client_id,
+        "redirect_uri": redirect_uri,
+        "response_type": "code",
+        "scope": ",".join([
+            "instagram_business_basic",
+            "instagram_business_content_publish",
+            "instagram_business_manage_comments",
+            "instagram_business_manage_messages",
+        ]),
+        "state": state,
+    }
+
+    url = (
+        "https://www.instagram.com/oauth/authorize?"
+        + urllib.parse.urlencode(params)
+    )
+    return RedirectResponse(url)
+
 @router.get("/instagram/callback")
-async def instagram_callback(code: str, state: str | None = None):
-    pass
+async def instagram_callback(
+    code: str | None = None,
+    state: str | None = None,
+    error: str | None = None,
+    error_reason: str | None = None,
+    error_description: str | None = None,
+):
+    """Instagram OAuth callback.
+
+    Instagram redirects back here after the user approves or denies the
+    authorization request. On denial it returns `error`/`error_reason`/
+    `error_description` (no `code`), which must not 422.
+    """
+    if error:
+        logger.warning(
+            "Instagram OAuth denied — error=%s, reason=%s, description=%s",
+            error, error_reason, error_description,
+        )
+        raise HTTPException(
+            status_code=400,
+            detail=error_description or error or "Instagram authorization failed",
+        )
+
+    if not code:
+        raise HTTPException(status_code=400, detail="Authorization code is required")
+
+    if not state:
+        raise HTTPException(status_code=400, detail="OAuth state is required")
+
+    state_key = f"instagram_oauth:{state}"
+    company_id = _redis_client.get(state_key)
+    _redis_client.delete(state_key)
+    if not company_id:
+        raise HTTPException(status_code=400, detail="Invalid or expired OAuth state")
+
+    manager = Instagram_Connection_Manager()
+    try:
+        short_token = await manager.exchange_instagram_code(code)
+        access_token = short_token.get("access_token")
+        instagram_user_id = short_token.get("user_id")
+        if not access_token or not instagram_user_id:
+            raise ValueError("Instagram token response is incomplete")
+
+        token = await manager.get_long_lived_token(access_token)
+        expires_in = token.get("expires_in")
+        token_data = {
+            "access_token": token.get("access_token", access_token),
+            "user_id": instagram_user_id,
+            "expires_at": (
+                datetime.now(timezone.utc) + timedelta(seconds=int(expires_in))
+                if expires_in is not None else None
+            ),
+        }
+        manager.store_instagram_access_token_in_db(int(company_id), token_data)
+    except (ValueError, TypeError) as exc:
+        logger.warning("Instagram OAuth returned invalid data: %s", exc)
+        raise HTTPException(status_code=502, detail="Instagram authorization failed") from exc
+    except Exception:
+        logger.exception("Instagram OAuth token exchange failed")
+        raise HTTPException(status_code=502, detail="Instagram authorization failed")
+
+    return {"status": "connected", "company_id": int(company_id)}
 
 @router.post("/google")
 def google_login(payload: GoogleLoginRequest, request: Request, response: Response):
