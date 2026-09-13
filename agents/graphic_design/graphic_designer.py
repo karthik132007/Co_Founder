@@ -79,11 +79,15 @@ def spawn_graphic_designer(company_id: int, prompt: str, effort: str = "flash"):
     if image_token:
         # Only peek — don't pop. talk_to_ceo will pop it when building the response.
         if has_generated_image(image_token):
+            # Upload now so the CEO has a publicly fetchable URL to hand to
+            # publishing tools (e.g. Instagram) without re-uploading later.
+            image_url = _upload_generated_graphic(company_id, image_token)
             return json.dumps(
                 {
                     "type": "image_generated",
                     "message": designer_text,
                     "image_token": image_token,
+                    "image_url": image_url,
                 }
             )
         logger.warning("Image token %s not found in cache for company_id=%d", image_token, company_id)
@@ -129,6 +133,37 @@ def _find_image_token(response) -> str | None:
         return list(_generated_images.keys())[-1]
 
     return None
+
+
+def _upload_generated_graphic(company_id: int, image_token: str) -> str | None:
+    """Upload a generated graphic to Supabase and return a fetchable URL.
+
+    Publishing tools (Instagram, etc.) download the image from a URL, so the
+    graphic must live in storage before it can be posted. The URL is a
+    long-lived signed URL, which works even when the bucket is private.
+    Returns None when the upload fails — the caller still shows the preview.
+    """
+    from agents.graphic_design.graphic_desiger_tools import peek_generated_image
+    from agents.helpers.utils import base64_to_img
+    from backend.db.put_to_drive import save_generated_graphic
+
+    data_url = peek_generated_image(image_token)
+    if not data_url:
+        return None
+
+    try:
+        image_url = save_generated_graphic(company_id, base64_to_img(data_url))
+    except Exception:
+        logger.exception(
+            "Failed to upload generated graphic for company_id=%d", company_id
+        )
+        return None
+
+    if image_url:
+        logger.info("Generated graphic uploaded for company_id=%d", company_id)
+    else:
+        logger.warning("Generated graphic upload returned no URL for company_id=%d", company_id)
+    return image_url
 
 
 # Backwards-compatible alias for callers using the original misspelled name.

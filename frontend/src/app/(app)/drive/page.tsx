@@ -289,7 +289,6 @@ export default function DrivePage() {
                     {/* AI Generated tag */}
                     {f.bucket_name === "genrated_buckets" && (
                       <div className="absolute top-2 left-2 z-10 flex items-center gap-1 bg-[#143620]/90 text-white text-[10px] font-medium px-2 py-0.5 rounded-full shadow-sm backdrop-blur-sm">
-                        <Sparkles className="w-2.5 h-2.5 text-emerald-300" />
                         <span>AI Graphic</span>
                       </div>
                     )}

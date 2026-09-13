@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Bell, LogOut, Menu,
   ChevronRight, MessageSquare, HardDrive,
   Plus, Clock, Trash2, Loader2,
-  Puzzle, ChevronUp, Settings, CreditCard, Coins,
+  Puzzle, ChevronUp, Settings, CreditCard, Coins, HelpCircle,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -14,6 +14,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { clearSession, getSession, parseSessionUser, saveSession } from "@/lib/session";
 import { fetchChatSessions, deleteChatSession, fetchMe, logoutUser, fetchProfile, fetchCreditBalance, type ChatSession } from "@/lib/api";
 import SettingsModal from "./SettingsModal";
+import ProductTour, { startProductTour } from "./ProductTour";
 
 const ACCENT = "#143620";
 
@@ -200,7 +201,7 @@ export default function AppLayout({ children }: Props) {
 
         {/* New Chat */}
         <div className={`p-3 ${sidebarCollapsed ? "lg:px-2.5" : ""}`}>
-          <button onClick={handleNewChat} className={`w-full btn-primary py-2 text-[13px] ${sidebarCollapsed ? "lg:px-0" : "px-3.5"}`}>
+          <button onClick={handleNewChat} data-tour="new-chat" className={`w-full btn-primary py-2 text-[13px] ${sidebarCollapsed ? "lg:px-0" : "px-3.5"}`}>
             <Plus className="w-4 h-4 shrink-0" /><span className={sidebarCollapsed ? "lg:hidden" : ""}>New Chat</span>
           </button>
         </div>
@@ -211,6 +212,7 @@ export default function AppLayout({ children }: Props) {
             const active = isActive(item.href);
             return (
               <Link key={item.href} href={item.href} onClick={() => setSidebarOpen(false)}
+                data-tour={`nav-${item.label.toLowerCase()}`}
                 className={`group w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 relative overflow-hidden
                   ${sidebarCollapsed ? "lg:justify-center lg:px-0" : ""}
                   ${active ? "bg-[rgba(20,54,32,0.08)] text-[#143620] shadow-sm font-semibold" : "text-[#5f6f63] hover:text-[#0f2214] hover:bg-[rgba(16,36,24,0.05)]"}`}>
@@ -227,7 +229,7 @@ export default function AppLayout({ children }: Props) {
         <div className={`mx-4 my-3 border-t border-[rgba(15,34,20,0.06)] ${sidebarCollapsed ? "lg:mx-3" : ""}`} />
 
         {/* Chat history */}
-        <div className={`flex-1 overflow-y-auto px-3 pb-3 ${sidebarCollapsed ? "lg:hidden" : ""}`}>
+        <div data-tour="recent-chats" className={`flex-1 overflow-y-auto px-3 pb-3 ${sidebarCollapsed ? "lg:hidden" : ""}`}>
           <p className="text-[10px] font-semibold text-[#8d9d94] uppercase tracking-wider px-3 py-2">Recent Chats</p>
           {loadingSessions && chatSessions.length === 0 && (
             <div className="flex items-center justify-center py-6"><Loader2 className="w-4 h-4 animate-spin text-[#c2c9c0]" /></div>
@@ -266,7 +268,7 @@ export default function AppLayout({ children }: Props) {
         {/* User — click opens profile dropdown */}
         <div className={`p-3 border-t border-[rgba(15,34,20,0.07)] relative ${sidebarCollapsed ? "lg:px-2.5" : ""}`}>
           {/* Available credits — credits are currency-agnostic, show the count */}
-          <div className={`mb-2 flex items-center gap-2 rounded-lg bg-[rgba(20,54,32,0.07)] border border-[rgba(20,54,32,0.12)] px-2.5 py-1.5 ${sidebarCollapsed ? "lg:justify-center" : ""}`}>
+          <div data-tour="credits" className={`mb-2 flex items-center gap-2 rounded-lg bg-[rgba(20,54,32,0.07)] border border-[rgba(20,54,32,0.12)] px-2.5 py-1.5 ${sidebarCollapsed ? "lg:justify-center" : ""}`}>
             <Coins className="w-3.5 h-3.5 shrink-0" style={{ color: ACCENT }} />
             <div className={`min-w-0 ${sidebarCollapsed ? "lg:hidden" : ""}`}>
               <div className="text-[13px] font-semibold leading-tight" style={{ color: ACCENT }}>
@@ -311,6 +313,16 @@ export default function AppLayout({ children }: Props) {
                   <Settings className="w-4 h-4 text-[#8d9d94]" />
                   Settings
                 </button>
+                <button
+                  onClick={() => {
+                    setProfileOpen(false);
+                    startProductTour();
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium text-[#2f3e32] hover:bg-[rgba(16,36,24,0.05)] transition-colors"
+                >
+                  <HelpCircle className="w-4 h-4 text-[#8d9d94]" />
+                  Product tour
+                </button>
                 <Link
                   href="/billing"
                   onClick={() => setProfileOpen(false)}
@@ -349,6 +361,7 @@ export default function AppLayout({ children }: Props) {
       </div>
 
       <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <ProductTour storageKey={userId} />
     </div>
   );
 }

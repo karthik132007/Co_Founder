@@ -4,6 +4,7 @@ The main CEO agent that interacts with the user and delegates work to specialist
 from collections.abc import Mapping
 import json
 import logging
+import re
 import time
 from agents.CEO import ceo_state
 from pathlib import Path
@@ -309,29 +310,47 @@ def talk_to_ceo(company_id: int, message: str, history: list[dict] | None = None
     # Record per-model token usage (for the credit-management Kafka job).
     if session_id:
         ceo_state.record_usage(session_id, _collect_usage(result))
-    # Check tool outputs for image_generated payload (from graphic_design_request)
+    # Resolve a generated image (kept out of the LLM context) once, so it can be
+    # attached either to a plain image reply or to an approval question.
     image_payload = _find_image_generated_payload(result)
+    image_data_url = None
     if image_payload:
-        # Resolve the image token back to the real data URL (kept out of LLM context).
         token = image_payload.pop("image_token", None)
         if token:
             from agents.graphic_design.graphic_desiger_tools import get_generated_image
             image_data_url = get_generated_image(token)
-            if image_data_url:
-                image_payload["image_data_url"] = image_data_url
-                if not image_payload.get("message") or image_payload.get("message") == "Graphic generated successfully.":
-                    image_payload["message"] = "Here is the generated graphic based on your brand requirements."
-                logger.info("CEO agent returned image_generated")
-                return image_payload
-            logger.warning("Image token %s not found in cache", token)
-        elif "image_data_url" in image_payload:
-            logger.info("CEO agent returned image_generated")
-            return image_payload
+            if not image_data_url:
+                logger.warning("Image token %s not found in cache", token)
+        else:
+            image_data_url = image_payload.get("image_data_url")
+
+    # The founder's answer (buttons) matters most, so a clarification wins — but
+    # the generated graphic rides along so it stays visible while they approve
+    # publishing it.
+    clarification = _find_clarification_payload(result)
+    if clarification:
+        if image_data_url:
+            clarification["image_data_url"] = image_data_url
+        logger.info("CEO agent returned clarification_request (image attached=%s)", bool(image_data_url))
+        return clarification
+
+    if image_data_url:
+        image_payload = image_payload or {}
+        image_payload["image_data_url"] = image_data_url
+        # Prefer the CEO's own closing text over the designer's placeholder.
+        ceo_message = _image_caption_message(result)
+        if ceo_message:
+            image_payload["message"] = ceo_message
+        elif not image_payload.get("message") or image_payload.get("message") == "Graphic generated successfully.":
+            image_payload["message"] = "Here is the generated graphic based on your brand requirements."
+        logger.info("CEO agent returned image_generated")
+        return image_payload
+
     content = _extract_content(result)
     if isinstance(content, str):
         try:
             parsed = json.loads(content)
-            if isinstance(parsed, dict) and parsed.get("type") in {"clarification_request", "image_generated"}:
+            if isinstance(parsed, dict) and parsed.get("type") == "image_generated":
                 logger.info("CEO agent returned %s", parsed.get("type"))
                 return parsed
         except (json.JSONDecodeError, TypeError):
@@ -355,6 +374,48 @@ def _find_image_generated_payload(response) -> dict | None:
             except (json.JSONDecodeError, TypeError):
                 continue
     return None
+
+
+_THINK_BLOCK_RE = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
+
+
+def _find_clarification_payload(response) -> dict | None:
+    """The MCQ the CEO is waiting on, taken from the final message.
+
+    ``ask_mcq_for_user`` is ``return_direct``, so when the CEO asks the founder
+    to approve publishing, that question is the last message.
+    """
+    content = _extract_content(response)
+    if not isinstance(content, str):
+        return None
+    try:
+        parsed = json.loads(content)
+    except (json.JSONDecodeError, TypeError):
+        return None
+    if isinstance(parsed, dict) and parsed.get("type") == "clarification_request":
+        return parsed
+    return None
+
+
+def _image_caption_message(result) -> str:
+    """The CEO's closing prose, reused as the caption of a generated image.
+
+    Returns "" when the last message is reasoning-only or a leaked tool
+    payload, so the caller falls back to the default caption.
+    """
+    content = _extract_content(result)
+    if not isinstance(content, str):
+        return ""
+    text = _THINK_BLOCK_RE.sub("", content).strip()
+    if not text:
+        return ""
+    try:
+        parsed = json.loads(text)
+    except (json.JSONDecodeError, TypeError):
+        return text
+    if isinstance(parsed, dict) and parsed.get("type"):
+        return ""
+    return text
 
 
 def _collect_usage(result: dict) -> dict:

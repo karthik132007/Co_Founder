@@ -171,12 +171,21 @@ def chat_with_user(
         question = reply.get("question", "")
         options = reply.get("options", [])
         multi_select = reply.get("multi_select", False)
+        # When the CEO asks the founder to approve publishing a generated
+        # graphic, the image rides along so it stays visible next to the buttons.
+        image_data_url = reply.get("image_data_url")
+        if not isinstance(image_data_url, str) or not image_data_url:
+            image_data_url = None
+
         # Store as text with multi_select flag preserved for reload
         stored_text = question
         if multi_select:
             stored_text = "[multi]\n" + stored_text
         if options:
             stored_text += "\n\nOptions: " + " | ".join(options)
+        if image_data_url:
+            # Session reload parses this "[image: url]" prefix back into the card.
+            stored_text = f"[image: {image_data_url}]\n\n" + stored_text
 
         # Persist directly to DB so the MCQ is immediately visible in history.
         # Also queue via Kafka for async consumers (chat memory, etc.).
@@ -196,6 +205,8 @@ def chat_with_user(
             },
             "session_id": session_id,
         }
+        if image_data_url:
+            response["image_data_url"] = image_data_url
         if is_new_session or title:
             response["title"] = title
             response["is_new_session"] = True
@@ -214,12 +225,17 @@ def chat_with_user(
             logger.error("CEO returned invalid generated image data: %s", exc)
             raise HTTPException(status_code=500, detail="Generated image data was invalid") from exc
 
-        # Save to storage to obtain permanent signed URL for CDN delivery
-        image_url = None
-        try:
-            image_url = save_generated_graphic(company_id, image_bytes)
-        except Exception:
-            logger.exception("Failed to save generated graphic to storage")
+        # The Graphic Designer already uploads the image (publishing tools need
+        # a URL), so only save it here when it did not provide one.
+        image_url = reply.get("image_url")
+        if isinstance(image_url, str) and image_url:
+            logger.info("Reusing graphic URL provided by the Graphic Designer")
+        else:
+            image_url = None
+            try:
+                image_url = save_generated_graphic(company_id, image_bytes)
+            except Exception:
+                logger.exception("Failed to save generated graphic to storage")
 
         final_image_url = image_url or image_data_url
 

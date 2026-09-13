@@ -1,4 +1,4 @@
-# Co_Founder — AI Co-Founder Platform v0.9.18
+# Co_Founder — AI Co-Founder Platform v0.9.19
 
 A full-stack multi-agent platform that acts as an early founding team. A founder chats with a CEO orchestrator, which delegates to specialist agents for research, writing, marketing, data analysis, and design.
 
@@ -8,13 +8,15 @@ A full-stack multi-agent platform that acts as an early founding team. A founder
 
 AI Co-Founder simulates a startup team around a CEO agent. A founder describes the business through chat; the CEO decides whether to answer directly, ask a clarification question, retrieve company knowledge, or delegate to a specialist.
 
-This release includes the Dockerized stack, async Kafka persistence, effort-based routing (Flash / Mid / Max), real-time streaming with buffered WebSocket observability, Google + email auth, live Razorpay billing, and Instagram plugin integration.
+This release includes the Dockerized stack, async Kafka persistence, effort-based routing (Flash / Mid / Max), real-time streaming with buffered WebSocket observability, Google + email auth, live Razorpay billing, Instagram plugin integration, and a generic connected-apps tool manager that lets agents read from and act in third-party tools.
 
 Key highlights:
 - **CEO orchestration** — one LangChain agent routes across 8 tools to specialist sub-agents, with MCQ clarifications and LLM-as-judge refinement.
 - **Company knowledge** — RAG over uploaded docs (semantic + keyword fusion) plus separate chat-memory retrieval.
+- **Connected apps** — a small MCP-style tool registry (`connections/tool_manager.py`) exposes each integration to agents as LangChain tools, with the company injected server-side. Agents can publish a generated graphic to Instagram after the founder approves it.
 - **Live observability** — token-by-token streaming and agent trace timeline in chat, with buffered replay so traces never go missing.
 - **Real billing** — Razorpay Checkout, HMAC verification, idempotent credit top-ups (1 credit = ₹1), invoice history.
+- **Guided onboarding** — a six-step spotlight product tour runs once for new accounts and is replayable from the profile menu.
 - **Evaluated** — RAG 95.00% pass rate; CEO e2e: 27 runs / 81 judge verdicts (see `docs/eval_report.md`).
 
 ## Architecture
@@ -49,7 +51,7 @@ Key highlights:
 
 ## Status
 
-Functional end-to-end production test (v0.9.18) — chat loop, multi-agent system, RAG, billing, auth, and plugins are operational. Known gaps (slow image gen, Supabase free-tier latency) are tracked in [`docs/technical.md`](docs/technical.md#status).
+Functional end-to-end production test (v0.9.19) — chat loop, multi-agent system, RAG, billing, auth, plugins, and connected-app publishing are operational. Known gaps (slow image gen, Supabase free-tier latency) are tracked in [`docs/technical.md`](docs/technical.md#status).
 
 ## License
 

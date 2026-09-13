@@ -1,4 +1,4 @@
-# Co_Founder — Technical Deep Dive (v0.9.18)
+# Co_Founder — Technical Deep Dive (v0.9.19)
 
 > Companion to the main [`README.md`](../README.md). This file holds all implementation details: agent system, RAG, backend, billing, frontend, observability, benchmarks, and performance work.
 
@@ -147,11 +147,11 @@ After:  "best selling product" → Data Analyst → reads CSV → actual data an
 ### CEO Orchestrator
 The CEO (`agents/CEO/CEO.py`) is a LangChain agent built with the stock `create_agent()` factory (`from langchain.agents import create_agent`). It is initialized with:
 - **System prompt**: A detailed persona describing the CEO's role, decision-making style, and constraint rules (flash effort swaps in a dedicated compact prompt, `get_ceo_system_prompt_flash`)
-- **Tool registry**: 8 tools that the CEO dynamically selects via LLM reasoning (all defined in `agents/CEO/ceo_agent_tools.py`)
+- **Tool registry**: 8 core tools that the CEO dynamically selects via LLM reasoning (all defined in `agents/CEO/ceo_agent_tools.py`), plus every connected-app tool bound to the company at build time (see [Agent tool manager](#agent-tool-manager-mcp-style))
 - **LLM backend**: OpenRouter with effort-based model selection via `get_best_llm(tasks, effort)` — picks DeepSeek, GLM, GPT-OSS, Gemma, or MIMO based on task type and effort level (flash/mid/max)
 - **Streaming (v0.9.15)**: `_invoke_agent()` (`agents/CEO/CEO.py:111`) uses `agent.stream(stream_mode=["messages","updates"])` when a `session_id` is present — batches `AIMessageChunk` deltas into `llm_token` WS events (24 tokens / 60ms) and reconstructs the final `{"messages": [...]}` from `updates` so MCQ/image flows stay compatible. Falls back to `invoke()` on stream error or when called without a session (evals/CLI).
 
-**CEO tool registry** (8 tools):
+**CEO tool registry** (8 core tools + connected apps):
 
 | Tool | Description |
 |---|---|
@@ -162,7 +162,8 @@ The CEO (`agents/CEO/CEO.py`) is a LangChain agent built with the stock `create_
 | `writing_request` | Delegates to Writer agent for content generation |
 | `marketing_request` | Delegates to CMO Marketing agent |
 | `data_analysis_request` | Delegates to Data Analyst with file references |
-| `graphic_design_request` | Delegates to Graphic Designer agent |
+| `graphic_design_request` | Delegates to Graphic Designer agent. Returns the generated graphic's public `image_url`; not `return_direct` so the CEO can ask for publishing approval |
+| *(connected apps)* | Every tool from the company's connected integrations, bound via `connections.connection_tools_for(company_id)` (e.g. `instagram_post_content`) |
 
 **Decision loop**:
 1. User message received via `POST /chat`
@@ -181,7 +182,7 @@ Each sub-agent follows a common pattern:
 |---|---|---|---|
 | Researcher | `agents/researcher/researcher.py` | Tavily web search API | ✅ effort-based |
 | Writer | `agents/util_agents/writer/writer.py` | Direct LLM generation | ✅ effort-based |
-| CMO Marketing | `agents/marketing/cmo.py` | SerpAPI (Trends, News, Shopping) + web search | ❌ |
+| CMO Marketing | `agents/marketing/cmo.py` | SerpAPI (Trends, News, Shopping) + web search + connected-app tools | ❌ |
 | Data Analyst | `agents/data_analyst/data_agent.py` | e2b code sandbox (Python, Pandas, Matplotlib) | ❌ (direct execution) |
 | Graphic Designer | `agents/graphic_design/graphic_designer.py` | OpenRouter `google/gemini-2.5-flash-image`, color palette tools | ❌ (direct generation) |
 | Judge | `agents/judge/llm_as_judge.py` | LLM-as-Judge prompt (GPT-OSS-120B) | N/A (evaluator) |
@@ -447,6 +448,49 @@ The Plugins page (`frontend/src/app/(app)/plugins/page.tsx`) provides a searchab
 
 Access tokens are never included in frontend API responses. Agent-side Instagram operations use `connections/instagram_connection_manager.py` to retrieve the token server-side.
 
+### Agent tool manager (MCP-style)
+
+Connection tools are declared once and shared by every agent through a small, MCP-style registry — deliberately no MCP SDK and no transport layer.
+
+| File | Role |
+|---|---|
+| `connections/tool_manager.py` | `Tool` + `ToolManager`: `add()`, `list_tools()`, `call_tool()`, `as_langchain_tools()` |
+| `connections/instagram_tools.py` | `register_instagram_tools()` — the Instagram tool specs |
+| `connections/global_connection_manager.py` | `Global_Connection_Manager` + module singleton `connections` |
+
+```python
+tools.add(
+    "instagram.post_content",
+    "Publish one image post to Instagram. Needs a public image URL.",
+    func=instagram_manager.post_instagram_content,
+    context=["company_id"],
+    params={"content": {"type": "object", "description": "{image_url, caption}"}},
+)
+
+tools.list_tools()                        # what an agent can see
+tools.call_tool("instagram.post_content", {"content": {...}}, company_id=1)
+tools.as_langchain_tools(company_id=1)    # hand to create_agent(tools=[...])
+```
+
+- **Namespaced names** (`instagram.post_content`). The LangChain adapter rewrites dots to underscores because OpenAI function names disallow them.
+- **`context` params are server-injected** (`company_id`) and stripped from the model-facing schema. Once bound, a context key is rejected as an argument, so a model cannot publish to another company.
+- **Sync or async handlers** are both supported; `call_tool` runs async handlers safely even inside a running event loop.
+- **Adding a connection** means writing `connections/<name>_tools.py` with `register_<name>_tools(manager)` and calling it from `Global_Connection_Manager._register_providers()`.
+
+Agents receive tools bound to their own company via `connections.connection_tools_for(company_id)` — currently the CEO (`_build_ceo_tools`) and the CMO (`_get_cmo_agent`).
+
+### Publishing a generated graphic
+
+Publishing tools download the image from a URL, so the flow is: generate → upload → approve → post.
+
+1. The Graphic Designer generates the PNG, uploads it to Supabase Storage (`save_generated_graphic`), and returns an `image_generated` payload containing `image_url` — a long-lived signed URL, so it works even though the bucket is private.
+2. `POST /chat` reuses that URL instead of saving a second copy.
+3. `graphic_design_request` is **not** `return_direct`, so the CEO stays in the loop and asks the founder to confirm with `ask_mcq_for_user`.
+4. `talk_to_ceo()` resolves the generated image once and, when a clarification is pending, attaches it as `image_data_url` so the founder sees the graphic beside the approval buttons.
+5. On approval the CEO calls the publishing tool with `content={"image_url": <that url>, "caption": ...}`.
+
+Both CEO prompts and the CMO prompt carry a generic **Connected Apps & Publishing** policy: the tool list is the source of truth, read-only tools are safe to call, write tools need explicit confirmation, integration data is never invented, and a missing connection points the user at the Plugins page.
+
 ### Local OAuth with ngrok
 
 Instagram requires an HTTPS redirect URI that is publicly reachable. For local development:
@@ -481,6 +525,23 @@ The redirect URI must match the Meta configuration exactly, including scheme, ho
 ## Frontend
 
 Frontend is a Next.js app with the main user flows in `frontend/src/app/` and shared chat/agent UI in `frontend/src/components/`. The important bits are the chat experience, onboarding, dashboard, drive, billing, and observability views plus a cinematic marketing landing.
+
+### Chat experience (`frontend/src/components/Chat.tsx:1`)
+
+- **Streaming**: the assistant bubble fills token by token while the WebSocket streams `llm_token` events (see [WebSocket Agent Trace](#websocket-agent-trace-v0915--buffered--real-time-llm-streaming)).
+- **Reasoning**: `<think>` / `<thinking>` / `<analysis>` / `<scratchpad>` blocks are split out of the answer and shown only in a collapsed "Thought process" dropdown — never inside the result.
+- **Markdown**: prose fences (`text`, `markdown`, or no language) render as a soft copy card while real code keeps the dark block. Both reset nested inline-code styling, so a caption can never render as red inline code.
+- **Generated graphics**: `GeneratedGraphicCard` shows a constrained preview with preview / copy / download actions. A graphic echoed inside the CEO's message is stripped so the same image never renders twice.
+- **Clarifications**: `McqCard` renders options as buttons (single or multi-select, plus a custom answer) and can display the graphic being approved above the question.
+- **Plain layout**: assistant turns carry no avatar and span a readable full width; user turns keep a right-aligned bubble.
+
+### Onboarding product tour (`frontend/src/components/ProductTour.tsx:1`)
+
+Six-step guided tour — New Chat, Drive, Plugins, Flash/Mid/Max, Credits & Billing, Recent Chats — with a dimmed backdrop, a spotlight cut-out over the target, keyboard navigation, and Back / Skip / Next.
+
+- Steps target `data-tour="..."` attributes and may declare a `route`; the tour navigates to `/chat` for the effort-modes step and polls until the target mounts.
+- Off-canvas targets (mobile slide-out sidebar, collapsed history list) fall back to a centred card.
+- **Only new accounts**: onboarding arms the tour in `sessionStorage` (`armProductTour`), so a returning user who just logs in never sees it. It is replayable from the profile menu via `startProductTour()`.
 
 ### Billing (`frontend/src/app/(app)/billing/page.tsx:1`)
 
@@ -544,7 +605,7 @@ The Data Analyst agent uses **e2b** (`agents/data_analyst/data_agent.py` + `e2b_
 ## Prompt System & Tool Registry
 
 ### CEO Tool Definitions
-All 8 CEO tools are defined in `agents/CEO/ceo_agent_tools.py` (see Agent System → CEO tool registry). Sub-agent tools live alongside their agents:
+The 8 core CEO tools are defined in `agents/CEO/ceo_agent_tools.py` (see Agent System → CEO tool registry). Connected-app tools are **not** defined per agent — they come from the shared registry in `connections/` and are bound to the company when the agent is built. Sub-agent tools live alongside their agents:
 - Researcher: `agents/researcher/researcher_agent_tools.py`
 - Writer: `agents/util_agents/writer/writer_agent_tools.py`
 - CMO: `agents/marketing/cmo_tools.py`
@@ -599,6 +660,6 @@ Real-time observability streamed to the frontend via WebSocket (`WS /chat/ws?ses
 
 ## Status
 
-Functional end-to-end production test release (v0.9.18). The core chat loop, multi-agent system, RAG pipeline, file management, **buffered WebSocket observability with live LLM streaming**, effort-based execution, Kafka async jobs, onboarding flow, Argon2id password hashing, Google OAuth, cookie-based session auth, **live Razorpay billing (₹100 minimum, payment_history invoices, INR/USD)**, and **Instagram OAuth plugin integration** are operational. v0.9.15 fixed the production-only invisible trace and added token-by-token answer streaming; v0.9.16 shipped the money path and a reworked landing/billing shell; v0.9.17 switches resource budgets to per-query enforcement (preventing multi-turn session lockouts) and consolidates agent trace observability into the chat conversation area; v0.9.18 adds the Plugins connector grid with the full Instagram connect/status/disconnect lifecycle. Known gaps:
+Functional end-to-end production test release (v0.9.19). The core chat loop, multi-agent system, RAG pipeline, file management, **buffered WebSocket observability with live LLM streaming**, effort-based execution, Kafka async jobs, onboarding flow, Argon2id password hashing, Google OAuth, cookie-based session auth, **live Razorpay billing (₹100 minimum, payment_history invoices, INR/USD)**, and **Instagram OAuth plugin integration** are operational. v0.9.15 fixed the production-only invisible trace and added token-by-token answer streaming; v0.9.16 shipped the money path and a reworked landing/billing shell; v0.9.17 switches resource budgets to per-query enforcement (preventing multi-turn session lockouts) and consolidates agent trace observability into the chat conversation area; v0.9.18 adds the Plugins connector grid with the full Instagram connect/status/disconnect lifecycle; v0.9.19 adds the MCP-style connected-app tool manager shared by the CEO and CMO, a generate → upload → approve → post publishing flow, a plain ChatGPT-style chat layout, and the six-step onboarding product tour. Known gaps:
 - Image generation uses OpenRouter `google/gemini-2.5-flash-image`; slow (~30s) and blocks the CEO pipeline
 - Supabase free tier REST API adds 3-7s latency per RPC call (embedding serialization overhead)

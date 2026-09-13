@@ -64,11 +64,26 @@ def _get_cmo_agent(company_id, effort: str = "flash", session_id: str = ""):
     company_data = get_company_data(company_id)
     if not company_data:
         logger.error("No company data found for company_id=%d", company_id)
+
+    from connections.global_connection_manager import connections
+
+    connection_tools = connections.connection_tools_for(company_id)
+    logger.info(
+        "CMO got %d connection tool(s) for company_id=%d: %s",
+        len(connection_tools), company_id, [t.name for t in connection_tools],
+    )
+
     cmo_agent = create_agent(
         name="CMO",
         system_prompt=get_cmo_system_prompt(company_data),
         model=get_best_llm([Task.RESEARCH, Task.CREATIVE, Task.PLANNING], effort=effort),
-        tools=[search_current_market_trends, search_web, extract_content_from_webpage, get_current_date],
+        tools=[
+            search_current_market_trends,
+            search_web,
+            extract_content_from_webpage,
+            get_current_date,
+            *connection_tools,
+        ],
     )
     logger.info("CMO agent created for company_id=%d", company_id)
     return cmo_agent

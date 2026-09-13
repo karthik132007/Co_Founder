@@ -240,8 +240,7 @@ def _build_ceo_tools(company_id: int):
 
     @tool(
         "graphic_design_request",
-        return_direct=True,
-        description="Delegate branded visual assets, graphics, Instagram posts, social media marketing visuals, and color-palette work to the Graphic Designer agent. Always use for Instagram posts or when an image is requested.",
+        description="Delegate branded visual assets, graphics, Instagram posts, social media marketing visuals, and color-palette work to the Graphic Designer agent. Always use for Instagram posts or when an image is requested. Returns a JSON result containing the generated image's publicly fetchable 'image_url' — pass that URL to publishing tools.",
     )
     def graphic_design_request(task: str):
         logger.info("graphic_design_request called: task='%s', company_id=%d, effort=%s", task, company_id, ceo_state._current_effort)
@@ -256,15 +255,22 @@ def _build_ceo_tools(company_id: int):
             result = spawn_graphic_designer(company_id, task, effort=ceo_state._current_effort)
             if sid:
                 event_bus.push(make_subagent_end(sid, "GraphicDesigner", (time.time() - t0) * 1000, str(result)))
-            # return_direct=True skips on_tool_end — push it manually
-            from agents.helpers.observability import _push_tool_end_manual
-            _push_tool_end_manual(sid, "graphic_design_request", (time.time() - t0) * 1000, str(result)[:200])
             logger.info("graphic_design_request completed for task: '%s'", task)
             return result
         except Exception as e:
             if sid:
                 event_bus.push(make_subagent_error(sid, "GraphicDesigner", str(e)))
             raise
+
+    # Connected third-party apps (Instagram, Google Ads, ...). Publishing tools
+    # need the publicly fetchable image URL returned by graphic_design_request.
+    from connections.global_connection_manager import connections
+
+    connection_tools = connections.connection_tools_for(company_id)
+    logger.info(
+        "CEO got %d connection tool(s) for company_id=%d: %s",
+        len(connection_tools), company_id, [t.name for t in connection_tools],
+    )
 
     return [
         view_all_agents,
@@ -275,4 +281,5 @@ def _build_ceo_tools(company_id: int):
         marketing_request,
         data_analysis_request,
         graphic_design_request,
+        *connection_tools,
     ]

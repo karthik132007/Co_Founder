@@ -1,6 +1,6 @@
 # Agent Rules
 
-These rules define how agents in the AI Co-Founder system should cooperate. They reflect the current architecture: **Agent Registry v2.0.0**, **System v0.9.14**. A CEO agent coordinates user interaction, delegates work to specialist agents, and merges specialist outputs into the final response.
+These rules define how agents in the AI Co-Founder system should cooperate. They reflect the current architecture: **Agent Registry v2.0.0**, **System v0.9.19**. A CEO agent coordinates user interaction, delegates work to specialist agents, and merges specialist outputs into the final response.
 
 ## 1. CEO Agent Owns User Context
 
@@ -32,7 +32,8 @@ The CEO Agent uses the following delegation tools, each backed by a specialist o
 - **`writing_request`** — Delegate drafting and content polishing to the Writer agent. Consumes `external_agents` budget.
 - **`marketing_request`** — Delegate market strategy, trend analysis, and growth planning to the CMO agent. Consumes `external_agents` budget.
 - **`data_analysis_request`** — Delegate data analysis, EDA, and file-based insights to the Data Analyst agent. Consumes `external_agents` budget. The Data Analyst discovers and loads the relevant files itself — do NOT call `knowledge_request` first to find files.
-- **`graphic_design_request`** — Delegate branded visual-asset creation and color-palette work to the Graphic Designer agent. `return_direct=True`; returns an `image_generated` payload resolved by `talk_to_ceo()`. Consumes `external_agents` budget.
+- **`graphic_design_request`** — Delegate branded visual-asset creation and color-palette work to the Graphic Designer agent. Returns a JSON `image_generated` payload (resolved by `talk_to_ceo()`) that includes `image_url` — a publicly fetchable URL of the uploaded graphic. Not `return_direct`, so the CEO can continue in the same turn and ask the founder to approve publishing it. Consumes `external_agents` budget.
+- **Connected-app tools** — every tool from the company's connected integrations (e.g. `instagram_post_content`) is attached to the CEO via `connections.connection_tools_for(company_id)`. The CEO must never publish/post/send without explicit founder confirmation, and must reuse the `image_url` from `graphic_design_request` rather than inventing a URL.
 - **`ask_mcq_for_user`** — Present interactive multiple-choice questions (MCQ) as clickable buttons in the chat. `return_direct=True`. Supports multi-select and custom-answer input. **Hard limit is effort-based** (flash: 1, mid: 2, max: 3 per session) — enforced both by the session resource budget AND by a backend `[SYSTEM DIRECTIVE]` guard that forces immediate execution once the limit is reached. Batch related questions into ONE `multi_select=True` call when possible.
 
 **Chat memory retrieval** happens automatically before the CEO receives the user message in non-flash effort modes. Relevant past conversation memories are fetched via `match_chat_memories` RPC and injected into the user prompt as context. The CEO should use these memories naturally without mentioning them to the user.
@@ -92,6 +93,7 @@ Each query has a Redis-backed resource budget (`agents/CEO/ceo_resources.py`, ke
 
 - The CMO reports to the CEO Agent and performs marketing strategy and market research.
 - Tools: `search_current_market_trends` (SerpAPI for Google Trends/News/Shopping), `search_web` (Tavily), `extract_content_from_webpages`, `get_current_date`. Searches consume the session `web_searches` budget.
+- Connected-app tools: whatever the company has connected on the Plugins page (social, advertising, analytics, messaging, ...) is registered in `connections/tool_manager.py`, bound to the company's `company_id`, and attached to the CMO. The available set varies per company, so the CMO's tool list is the source of truth — it must never assume an integration exists. Read-only tools may be called whenever they help; write actions (publishing, sending, changing campaigns/budgets) require an explicit user request. If an app is not connected the CMO must point the user to the Plugins page. These tools do not consume the `web_searches` budget.
 - The CMO should ground recommendations in real market data, competitor analysis, and current trends rather than generic advice.
 - The CMO should return structured Markdown with actionable strategy, campaign ideas, SEO recommendations, branding guidance, and growth plans.
 - The CMO should not fabricate market statistics or competitor data. If data is unavailable or uncertain, state that clearly.
@@ -128,7 +130,7 @@ Each query has a Redis-backed resource budget (`agents/CEO/ceo_resources.py`, ke
 - The designer must always respect the company's color palette in every visual asset.
 - The designer should adapt output to the requested format (Instagram post, email header, ad banner, etc.) and match the brand's positioning and audience.
 - The designer should not fabricate brand assets or use colors that conflict with the established palette.
-- **Image token flow:** The generated image is cached in `_generated_images` dict keyed by token. `talk_to_ceo()` scans tool outputs for the `image_generated` payload, resolves the token via `get_generated_image()` (one-shot read — popped on retrieval), and returns it to the chat API which saves the PNG to Supabase Storage (`save_generated_graphic`) in a background task.
+- **Image token flow:** The generated image is cached in `_generated_images` dict keyed by token. `spawn_graphic_designer()` peeks the token and uploads the PNG to Supabase Storage via `save_generated_graphic()`, returning a long-lived signed URL as `image_url` in the `image_generated` payload. `talk_to_ceo()` then scans tool outputs, resolves the token via `get_generated_image()` (one-shot read — popped on retrieval), and uses the CEO's closing text as the payload `message` (so an approval question is shown next to the image). `backend/api/chat.py` reuses the payload's `image_url` and only uploads itself when it is missing.
 - **No judge loop** — the Graphic Designer executes directly. Quality control is the CEO's responsibility during synthesis.
 
 ## 12. Judge Agent Rules

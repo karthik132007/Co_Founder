@@ -8,6 +8,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { API_BASE_URL, readApiError } from "@/lib/api";
 import { getSession, setOnboardingComplete, type CofounderSession } from "@/lib/session";
+import { armProductTour } from "@/components/ProductTour";
 
 const ACCENT = "#143620";
 
@@ -160,6 +161,8 @@ export default function OnboardingPage() {
       }
 
       setOnboardingComplete();
+      // Brand-new founder: let the app shell run the product tour once.
+      armProductTour(session.user.id);
       router.replace("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");

@@ -1,4 +1,31 @@
 
+## Changelog (v0.9.18 → v0.9.19)
+
+### Connected Apps — agent tool manager & publishing
+- **MCP-style tool manager**: added `connections/tool_manager.py`, a deliberately small registry (`Tool` / `ToolManager`) with `add`, `list_tools`, `call_tool`, and `as_langchain_tools`. An integration is declared once — name, description, argument schema, and which params are server-injected — and then exposed to any agent as LangChain tools. No MCP SDK or transport layer.
+- **Instagram tool provider**: added `connections/instagram_tools.py` registering `instagram.get_details`, `instagram.get_recent_activity`, and `instagram.post_content`.
+- **Company scoping**: `company_id` is injected server-side and stripped from the model-facing schema, and a bound context key is rejected as an argument, so an agent cannot act on another company's account.
+- **Connection registry**: `Global_Connection_Manager` now owns one `ToolManager` and exposes `connection_tools_for(company_id)`; the legacy `list_connections()` catalog is derived from the registry.
+- **Agents can act on integrations**: the CEO and CMO now receive every connected app's tools, so they can read account data and publish content.
+
+### Publish flow — generate, upload, approve, post
+- **Generated graphics are uploaded immediately**: the Graphic Designer now uploads the PNG to Supabase Storage and returns a publicly fetchable `image_url` in its `image_generated` payload (a long-lived signed URL, which works even though the bucket is private).
+- **No double upload**: `POST /chat` reuses that URL instead of saving a second copy.
+- **Approval before publishing**: `graphic_design_request` is no longer `return_direct`, so the CEO stays in the loop, asks the founder to confirm with buttons, and only then calls the publishing tool with the `image_url`.
+- **Clarifications carry the image**: `talk_to_ceo()` now resolves the generated image once and, when a clarification is pending, attaches it as `image_data_url` so the founder sees exactly what they are approving. A `[image: url]` + `Options:` message format keeps the pair intact across a session reload.
+- **Generic integration policy**: both CEO prompts and the CMO prompt describe connected apps without naming vendors — the tool list is the source of truth, read-only tools are safe, write tools need explicit confirmation, integration data is never invented, and a missing connection points the user at the Plugins page. Also fixed a stale `super_search` reference to `search_current_market_trends`.
+
+### Chat experience
+- **Fixed caption rendering**: fenced blocks without a language were misread as inline code (react-markdown v9 dropped the `inline` prop), which painted captions as red inline code on a dark background. Prose fences (`text`/`markdown`/no language) now render as a soft copy card, while real code keeps the dark block.
+- **No more duplicated graphics**: markdown images are constrained, and the graphic echoed inside the CEO's message is stripped from the result card.
+- **Thought process stays out of the answer**: reasoning is shown only in a collapsed "Thought process" dropdown, and the parser now also strips `<thinking>`, `<analysis>`, and `<scratchpad>` blocks.
+- **Plainer layout**: removed the assistant/platform avatar from chat; assistant turns render full-width like ChatGPT.
+- **Less icon noise**: Sparkles usage reduced from 23 occurrences across 8 files to 8 across 3.
+
+### Onboarding product tour
+- **Six-step guided tour** for new founders: New Chat, Drive, Plugins, Flash/Mid/Max, Credits & Billing, and Recent Chats — with a dimmed backdrop, a spotlight cut-out over the target, keyboard navigation, and Back / Skip / Next.
+- **Only for new accounts**: the tour is armed by the onboarding flow in `sessionStorage`, so a returning user who logs in never sees it. It can be replayed any time from the profile menu ("Product tour").
+
 ## Changelog (v0.9.17 → v0.9.18)
 
 ### Plugins & Instagram Integration

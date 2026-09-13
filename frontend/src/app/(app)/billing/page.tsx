@@ -11,7 +11,6 @@ import {
   Loader2,
   ReceiptText,
   ShieldCheck,
-  Sparkles,
   Info,
   History,
   TrendingUp,
@@ -537,8 +536,7 @@ export default function BillingPage() {
                     </span>
                   )}
                 </div>
-                <p className="mt-2 text-[12px] text-[#5f6f63] flex items-center gap-1.5">
-                  <Sparkles className="w-3 h-3 text-[#8d9d94]" />
+                <p className="mt-2 text-[12px] text-[#5f6f63]">
                   Credits never expire • used per AI request
                 </p>
               </div>

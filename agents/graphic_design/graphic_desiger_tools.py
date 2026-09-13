@@ -41,6 +41,11 @@ def has_generated_image(token: str) -> bool:
     return token in _generated_images
 
 
+def peek_generated_image(token: str) -> str | None:
+    """Read a cached image data URL without removing it (unlike get_generated_image)."""
+    return _generated_images.get(token)
+
+
 @tool("create_graphic", description="Create a graphic from a prompt and return it as a data URL.")
 def create_graphic(company_id: int, prompt: str, model: str = "google/gemini-2.5-flash-image"):
     """Generate a graphic for immediate display; persistence is handled by the chat API."""

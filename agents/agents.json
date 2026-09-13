@@ -147,6 +147,29 @@
           "name": "get_current_date",
           "description": "Return current date in YYYY-MM-DD format.",
           "args": {}
+        },
+        {
+          "id": "instagram_get_details",
+          "name": "instagram_get_details",
+          "description": "Get the connected Instagram account's profile (username, account type, media count).",
+          "args": {}
+        },
+        {
+          "id": "instagram_get_recent_activity",
+          "name": "instagram_get_recent_activity",
+          "description": "Get recent Instagram posts (caption, media type, image URL, permalink, date) from the last n_days.",
+          "args": {
+            "n_days": "Look-back window in days (default 7)",
+            "include_image_descriptions": "Also describe each image (default false)"
+          }
+        },
+        {
+          "id": "instagram_post_content",
+          "name": "instagram_post_content",
+          "description": "Publish one image post to the connected Instagram account. Requires a publicly reachable image URL.",
+          "args": {
+            "content": "Post payload: {image_url, caption}"
+          }
         }
       ],
       "enabled": true,

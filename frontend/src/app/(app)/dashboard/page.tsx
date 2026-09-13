@@ -7,7 +7,6 @@ import {
   MessageSquare,
   Coins,
   Clock,
-  Sparkles,
   Upload,
   FileText,
   Image as ImageIcon,
@@ -371,9 +370,6 @@ export default function DashboardPage() {
                       {company?.industry ?? "—"} · <span className="capitalize text-[#143620]">{company?.tone ?? "professional"}</span>
                     </p>
                   </div>
-                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[rgba(20,54,32,0.07)]">
-                    <Sparkles className="h-4 w-4 text-[#143620]" />
-                  </span>
                 </div>
                 <p className="mt-4 text-[13px] leading-relaxed text-[#5f6f63]">
                   {company?.small_description ?? "No description provided — add one in profile for better agent results."}

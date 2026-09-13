@@ -7,7 +7,6 @@ import remarkGfm from "remark-gfm";
 import {
   Send,
   Loader2,
-  Sparkles,
   User,
   AlertCircle,
   MessageSquare,
@@ -131,15 +130,33 @@ const markdownComponents: Components = {
   strong: ({ children }) => (
     <strong className="font-semibold text-[#0f2214]">{children}</strong>
   ),
+  img: ({ src, alt }) => (
+    // Markdown images are constrained so a pasted graphic URL can never blow up
+    // the message width. The dedicated graphic card handles featured images.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={typeof src === "string" ? src : undefined}
+      alt={alt ?? "Image"}
+      loading="lazy"
+      className="my-3 max-h-[320px] w-auto max-w-full rounded-xl border border-[#e8e9e3] object-contain"
+    />
+  ),
   code: ({ children, className, ...props }) => {
-    const isInline = !className?.includes("language-");
+    // react-markdown v9 dropped the `inline` prop. Inline code has neither a
+    // `language-*` class nor newlines, so both signals are used — and `pre`
+    // additionally resets code styling, so a missed case still looks right.
+    const text = typeof children === "string" ? children : "";
+    const isInline = !className?.includes("language-") && !text.includes("\n");
+    if (!isInline) {
+      return (
+        <code className={className} {...props}>
+          {children}
+        </code>
+      );
+    }
     return (
       <code
-        className={
-          isInline
-            ? "rounded-md bg-[#f6f5ef] border border-[#e8e9e3] px-1.5 py-0.5 text-[0.85em] font-medium text-[#ef4444]"
-            : className
-        }
+        className="rounded-md border border-[#e6e8e1] bg-[#f4f5f0] px-1.5 py-0.5 font-mono text-[0.85em] font-medium text-[#1a4a2b]"
         {...props}
       >
         {children}
@@ -158,8 +175,16 @@ const markdownComponents: Components = {
       return "";
     };
     const codeText = extractText(children);
+    const codeChild = Array.isArray(children) ? children[0] : children;
+    const codeClassName =
+      (codeChild as { props?: { className?: string } } | null)?.props?.className ?? "";
+    const language = (/language-([\w-]+)/.exec(codeClassName)?.[1] ?? "").toLowerCase();
 
-    return <CodeBlock code={codeText}>{children}</CodeBlock>;
+    return (
+      <CodeBlock code={codeText} language={language}>
+        {children}
+      </CodeBlock>
+    );
   },
   table: ({ children }) => (
     <table className="mb-3 min-w-full border-collapse text-left text-[13px] last:mb-0">
@@ -199,19 +224,27 @@ interface ParsedReasoning {
 function parseReasoningAndContent(raw: string): ParsedReasoning {
   if (!raw) return { reasoning: null, answer: "", isThinking: false };
 
-  // 1. Check for complete <think>...</think> tags
-  const thinkRegex = /<think(?:\s[^>]*)?>([\s\S]*?)<\/think>/gi;
+  // 1. Extract every complete reasoning block. Models label these differently
+  //    (<think>, <thinking>, <analysis>, <scratchpad>), so match them all —
+  //    reasoning must never be left behind in the rendered answer.
+  const reasoningTags = "think|thinking|analysis|scratchpad";
+  const thinkRegex = new RegExp(
+    `<(${reasoningTags})(?:\\s[^>]*)?>([\\s\\S]*?)<\\/\\1>`,
+    "gi",
+  );
   const thoughts: string[] = [];
   let match: RegExpExecArray | null;
   while ((match = thinkRegex.exec(raw)) !== null) {
-    if (match[1].trim()) {
-      thoughts.push(match[1].trim());
+    if (match[2].trim()) {
+      thoughts.push(match[2].trim());
     }
   }
 
-  // 2. Check for open/unclosed <think> tag (during live streaming)
+  // 2. Check for an open/unclosed reasoning tag (during live streaming)
   const remaining = raw.replace(thinkRegex, "");
-  const unclosedMatch = remaining.match(/<think(?:\s[^>]*)?>([\s\S]*)$/i);
+  const unclosedMatch = remaining.match(
+    new RegExp(`<(?:${reasoningTags})(?:\\s[^>]*)?>([\\s\\S]*)$`, "i"),
+  );
 
   if (thoughts.length > 0 || unclosedMatch) {
     let reasoning = thoughts.join("\n\n").trim();
@@ -221,7 +254,9 @@ function parseReasoningAndContent(raw: string): ParsedReasoning {
     if (unclosedMatch) {
       const streamPart = unclosedMatch[1].trim();
       reasoning = reasoning ? `${reasoning}\n\n${streamPart}` : streamPart;
-      answer = remaining.replace(/<think(?:\s[^>]*)?>[\s\S]*$/i, "").trim();
+      answer = remaining
+        .replace(new RegExp(`<(?:${reasoningTags})(?:\\s[^>]*)?>[\\s\\S]*$`, "i"), "")
+        .trim();
       isThinking = true;
     } else {
       answer = answer.trim();
@@ -364,6 +399,32 @@ function ReasoningDropdown({
   );
 }
 
+/**
+ * The CEO often echoes the graphic's own URL inside its message. The card
+ * already renders that image prominently, so drop the duplicate reference —
+ * otherwise the same picture appears twice (and the inline one is unconstrained).
+ */
+function stripEmbeddedGraphic(content: string, graphicUrl: string): string {
+  if (!content) return "";
+  const isSameUrl = (src: string) =>
+    Boolean(graphicUrl) &&
+    (src === graphicUrl || src.startsWith(graphicUrl) || graphicUrl.startsWith(src));
+
+  let out = content.replace(
+    /!\[[^\]]*\]\(\s*<?([^)\s>]+)>?\s*\)/g,
+    (match, src: string) => (isSameUrl(src) ? "" : match),
+  );
+
+  if (graphicUrl) {
+    out = out
+      .split("\n")
+      .filter((line) => line.trim().replace(/^<|>$/g, "") !== graphicUrl)
+      .join("\n");
+  }
+
+  return out.replace(/\n{3,}/g, "\n\n").trim();
+}
+
 function GeneratedGraphicCard({
   imageDataUrl,
   content,
@@ -377,7 +438,8 @@ function GeneratedGraphicCard({
   const [copiedText, setCopiedText] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
 
-  const { reasoning, answer: cleanContent } = parseReasoningAndContent(content || "");
+  const { reasoning, answer: rawContent } = parseReasoningAndContent(content || "");
+  const cleanContent = stripEmbeddedGraphic(rawContent, imageDataUrl);
 
   useEffect(() => {
     if (!isZoomed) return;
@@ -436,12 +498,16 @@ function GeneratedGraphicCard({
 
   return (
     <>
+      {/* Reasoning lives OUTSIDE the result card and stays collapsed: it is
+          working state, not part of the caption/copy the founder copies. */}
+      {reasoning && <ReasoningDropdown reasoning={reasoning} />}
+
       <div className="group relative my-3 overflow-hidden rounded-2xl border border-[#dce3db] bg-white shadow-sm transition-all duration-300 hover:border-[#ccd7cb] hover:shadow-md">
         {/* Header Bar */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[rgba(15,34,20,0.06)] bg-[#fafbfa] px-4 py-3">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#143620] text-white shadow-2xs">
-              <Sparkles className="h-3.5 w-3.5" />
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-[rgba(20,54,32,0.12)] bg-[rgba(20,54,32,0.07)] text-[#143620]">
+              <Palette className="h-3.5 w-3.5" />
             </span>
             <div className="flex items-center gap-2">
               <span className="text-[13px] font-semibold tracking-tight text-[#0f2214]">
@@ -497,13 +563,13 @@ function GeneratedGraphicCard({
         {/* Gallery Image Display Stage */}
         <div
           onClick={() => setIsZoomed(true)}
-          className="group/stage relative flex cursor-zoom-in items-center justify-center overflow-hidden bg-gradient-to-b from-[#f7f9f6] via-[#f3f6f2] to-[#edf1eb] p-4 sm:p-6"
+          className="group/stage relative flex cursor-zoom-in items-center justify-center overflow-hidden bg-gradient-to-b from-[#fafbf9] via-[#f5f7f3] to-[#eef1ec] p-4 sm:p-5"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={imageDataUrl}
             alt="Generated brand graphic"
-            className="max-h-[460px] w-auto max-w-full rounded-xl object-contain shadow-md shadow-black/5 transition-transform duration-300 group-hover/stage:scale-[1.015]"
+            className="max-h-[330px] w-auto max-w-full rounded-xl object-contain shadow-sm shadow-black/5 transition-transform duration-300 group-hover/stage:scale-[1.015] sm:max-h-[400px]"
           />
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/10 opacity-0 backdrop-blur-[1px] transition-opacity duration-200 group-hover/stage:opacity-100">
             <span className="inline-flex items-center gap-2 rounded-full bg-black/75 px-3.5 py-1.5 text-xs font-medium text-white shadow-lg backdrop-blur-md">
@@ -519,7 +585,7 @@ function GeneratedGraphicCard({
             <div className="mb-3 flex items-center justify-between border-b border-[rgba(15,34,20,0.05)] pb-2.5">
               <div className="flex items-center gap-2 text-[12px] font-semibold text-[#143620]">
                 <MessageSquare className="h-3.5 w-3.5 text-[#2b5837]" />
-                <span>Suggested Marketing Copy & Details</span>
+                <span>Caption &amp; creative copy</span>
               </div>
               <button
                 type="button"
@@ -530,18 +596,18 @@ function GeneratedGraphicCard({
                 {copiedText ? (
                   <>
                     <Check className="h-3 w-3 text-emerald-600" />
-                    <span className="text-emerald-600">Copied text</span>
+                    <span className="text-emerald-600">Copied</span>
                   </>
                 ) : (
                   <>
                     <Copy className="h-3 w-3" />
-                    <span>Copy copy</span>
+                    <span>Copy text</span>
                   </>
                 )}
               </button>
             </div>
 
-            {reasoning && <ReasoningDropdown reasoning={reasoning} />}
+            {/* Only the actual copy goes in the result area — never reasoning. */}
             <MarkdownMessage content={cleanContent} />
           </div>
         )}
@@ -684,9 +750,11 @@ function MessageCopyButton({
 
 function CodeBlock({
   code,
+  language,
   children,
 }: {
   code: string;
+  language?: string;
   children: React.ReactNode;
 }) {
   const [copied, setCopied] = useState(false);
@@ -711,12 +779,42 @@ function CodeBlock({
     }
   }, [code]);
 
+  // Prose fences (captions, ad copy, plain text) are content, not code — a
+  // terminal-dark block reads as an error to non-technical founders. Render
+  // them as a soft, readable copy card instead.
+  const proseLanguages = ["text", "txt", "markdown", "md", "plaintext", "caption"];
+  const normalized = (language ?? "").toLowerCase();
+  const isCode = normalized.length > 0 && !proseLanguages.includes(normalized);
+
+  if (!isCode) {
+    return (
+      <div className="relative my-3 overflow-hidden rounded-2xl border border-[#e6e8e1] bg-[#fafbf8]">
+        <button
+          type="button"
+          onClick={handleCopy}
+          aria-label={copied ? "Copied" : "Copy text"}
+          className="absolute right-2.5 top-2.5 z-10 inline-flex items-center gap-1 rounded-lg border border-[#e3e7de] bg-white/90 px-2 py-1 text-[11px] font-medium text-[#5f6f63] shadow-2xs backdrop-blur transition-all hover:border-[#cbd8c9] hover:bg-white hover:text-[#143620]"
+        >
+          {copied ? (
+            <Check className="h-3 w-3 text-emerald-600" />
+          ) : (
+            <Copy className="h-3 w-3" />
+          )}
+          <span>{copied ? "Copied" : "Copy"}</span>
+        </button>
+        <pre className="overflow-x-auto whitespace-pre-wrap break-words px-4 py-3.5 pr-20 font-sans text-[13.5px] leading-relaxed text-[#2f3e32] [&_code]:border-0 [&_code]:bg-transparent [&_code]:p-0 [&_code]:font-[inherit] [&_code]:text-[inherit]">
+          {children}
+        </pre>
+      </div>
+    );
+  }
+
   return (
     <div className="relative my-3">
       <button
         type="button"
         onClick={handleCopy}
-        className="absolute right-3 top-3 z-10 rounded-lg bg-white/10 border border-white/15 p-1.5 text-white/80 backdrop-blur-sm transition-all hover:bg-white/15 hover:text-white hover:scale-105 shadow-sm"
+        className="absolute right-3 top-3 z-10 rounded-lg border border-white/15 bg-white/10 p-1.5 text-white/80 shadow-sm backdrop-blur-sm transition-all hover:scale-105 hover:bg-white/15 hover:text-white"
         aria-label={copied ? "Copied" : "Copy code"}
       >
         {copied ? (
@@ -725,7 +823,7 @@ function CodeBlock({
           <Copy className="h-3.5 w-3.5" />
         )}
       </button>
-      <pre className="overflow-x-auto rounded-xl bg-[#09090b] border border-[#1a4a2b] shadow-[0_8px_30px_rgb(0,0,0,0.12)] px-4 py-3.5 pr-12 text-[13px] leading-relaxed text-[#e4e4e7] font-mono">
+      <pre className="overflow-x-auto rounded-2xl border border-[#183a24] bg-[#0b120d] px-4 py-3.5 pr-12 font-mono text-[13px] leading-relaxed text-[#e6e9e4] shadow-[0_10px_30px_-14px_rgba(11,18,13,0.55)] [&_code]:border-0 [&_code]:bg-transparent [&_code]:p-0 [&_code]:text-[inherit]">
         {children}
       </pre>
     </div>
@@ -738,10 +836,13 @@ function CodeBlock({
 
 function McqCard({
   clarification,
+  imageDataUrl,
   onAnswer,
   disabled,
 }: {
   clarification: Clarification;
+  /** Optional graphic shown above the question (e.g. a publishing approval). */
+  imageDataUrl?: string;
   onAnswer: (answer: string) => void;
   disabled: boolean;
 }) {
@@ -759,6 +860,14 @@ function McqCard({
 
   return (
     <div className="rounded-2xl border border-[#e8e9e3] bg-white p-4 shadow-sm">
+      {imageDataUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={imageDataUrl}
+          alt="Generated brand graphic"
+          className="mb-3 max-h-[360px] w-full rounded-xl border border-[#e8e9e3] bg-[#f7f9f6] object-contain"
+        />
+      )}
       <p className="text-sm font-semibold text-[#0f2214] leading-snug">
         {clarification.question}
       </p>
@@ -1015,6 +1124,8 @@ export default function Chat({
             content: "",
             timestamp: Date.now(),
             clarification: response.clarification,
+            // Approval questions can carry the graphic being approved.
+            imageDataUrl: response.image_data_url,
             traceRuns: traceRuns.length > 0 ? traceRuns : undefined,
           };
           setMessages((prev) => [...prev, mcqMsg]);
@@ -1223,25 +1334,17 @@ export default function Chat({
                 transition={{ duration: 0.22 }}
                 className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
-                {msg.role === "assistant" && (
-                  <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
-                    style={{ background: ACCENT }}
-                  >
-                    <Sparkles className="w-4 h-4 text-white" />
-                  </div>
-                )}
-
                 <div
                   className={`min-w-0 ${
                     msg.role === "user"
                       ? "max-w-[75%] bg-[#0f2214] text-white rounded-[20px] rounded-tr-[4px] px-5 py-3 shadow-md shadow-black/5"
-                      : "max-w-[85%] py-1.5"
+                      : "w-full max-w-[min(100%,860px)] py-1.5"
                   }`}
                 >
                   {msg.role === "assistant" && msg.clarification ? (
                     <McqCard
                       clarification={msg.clarification}
+                      imageDataUrl={msg.imageDataUrl}
                       disabled={sending}
                       onAnswer={(answer) =>
                         handleMcqAnswer(
@@ -1279,7 +1382,7 @@ export default function Chat({
                     >
                       {formatTime(msg.timestamp)}
                     </span>
-                    {!msg.imageDataUrl && (
+                    {!(msg.imageDataUrl && !msg.clarification) && (
                       <MessageCopyButton
                         content={
                           msg.clarification?.question
@@ -1309,13 +1412,7 @@ export default function Chat({
                 animate={{ opacity: 1, y: 0 }}
                 className="flex gap-3"
               >
-                <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
-                  style={{ background: ACCENT }}
-                >
-                  <Sparkles className="w-4 h-4 text-white" />
-                </div>
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0 w-full max-w-[min(100%,860px)]">
                   <AgentTimeline runs={runs} isStreaming />
                 </div>
               </motion.div>
@@ -1331,12 +1428,6 @@ export default function Chat({
                 exit={{ opacity: 0 }}
                 className="flex gap-3"
               >
-                <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                  style={{ background: ACCENT }}
-                >
-                  <Sparkles className="w-4 h-4 text-white" />
-                </div>
                 <div className="flex items-center gap-1.5 py-2">
                   {[0, 150, 300].map((delay) => (
                     <span
@@ -1363,13 +1454,7 @@ export default function Chat({
                   exit={{ opacity: 0 }}
                   className="flex gap-3"
                 >
-                  <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
-                    style={{ background: ACCENT }}
-                  >
-                    <Sparkles className="w-4 h-4 text-white" />
-                  </div>
-                  <div className="min-w-0 max-w-[85%] py-1.5 flex-1">
+                  <div className="min-w-0 w-full max-w-[min(100%,860px)] py-1.5">
                     <div className="rounded-[20px] rounded-tl-[4px] border border-[#e8e9e3] bg-white px-4 py-3 shadow-sm">
                       {streamReasoning && (
                         <ReasoningDropdown
@@ -1425,7 +1510,7 @@ export default function Chat({
       <div className="shrink-0 pt-4 pb-2 relative z-10 before:absolute before:inset-0 before:bg-gradient-to-t before:from-[#fdfcf8] before:via-[#fdfcf8]/90 before:to-transparent before:-z-10 before:pointer-events-none">
         <div className="bg-white border border-[#e8e9e3] rounded-2xl px-4 py-2.5 flex items-center gap-3 focus-within:border-[#143620] focus-within:ring-4 focus-within:ring-[#143620]/10 transition-all shadow-[0_2px_12px_-4px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_20px_-4px_rgba(0,0,0,0.08)]">
           {/* Effort dropdown */}
-          <div className="relative shrink-0">
+          <div data-tour="effort" className="relative shrink-0">
             <select
               value={effort}
               onChange={(e) => setEffort(e.target.value as Effort)}
