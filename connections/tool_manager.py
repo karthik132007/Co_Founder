@@ -201,3 +201,4 @@ def _run(coro: Any) -> Any:
         return asyncio.run(coro)
     with ThreadPoolExecutor(max_workers=1) as pool:
         return pool.submit(asyncio.run, coro).result()
+
