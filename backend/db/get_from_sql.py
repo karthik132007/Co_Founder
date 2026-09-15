@@ -1,6 +1,7 @@
 import json
 import logging
 
+from backend.logo import IMAGE_FILE_EXTENSIONS, LOGO_FILE_NAME
 from backend.models import CompanyData
 import supabase
 from backend.utils import get_supabase_client
@@ -103,6 +104,64 @@ def get_user_files(company_id: int) -> List[Dict[str, Any]]:
     )
     files = response.data if response.data else []
     return files
+
+
+# Columns needed to identify a logo — keeps the logo lookup a tiny query.
+_LOGO_COLUMNS = (
+    "id,file_name,original_file_name,storage_path,bucket_name,mime_type,file_extension,created_at,updated_at"
+)
+
+
+def find_canonical_logo(files: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """Return the record stored under the canonical `logo.png` name, if any.
+
+    Matches both the dedicated upload (`storage_path == "logo.png"`) and a
+    hand-uploaded file the founder happened to name `logo.png`.
+    """
+    for record in files:
+        storage_path = (record.get("storage_path") or "").strip().lower()
+        if storage_path == LOGO_FILE_NAME or storage_path.endswith(f"/{LOGO_FILE_NAME}"):
+            return record
+        for key in ("file_name", "original_file_name"):
+            if (record.get(key) or "").strip().lower() == LOGO_FILE_NAME:
+                return record
+    return None
+
+
+def find_company_logo(files: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """Return the file record acting as the company logo, or None.
+
+    Preference order: the canonical `logo.png`, then any hand-uploaded
+    `logo.<image extension>` file (e.g. `logo.jpg`).
+    """
+    canonical = find_canonical_logo(files)
+    if canonical:
+        return canonical
+
+    for record in files:
+        for key in ("original_file_name", "file_name"):
+            name = (record.get(key) or "").strip().lower()
+            stem, _, extension = name.rpartition(".")
+            if stem == "logo" and extension in IMAGE_FILE_EXTENSIONS:
+                return record
+    return None
+
+
+def get_company_logo(company_id: int) -> Optional[Dict[str, Any]]:
+    """Return the company's logo file record, or None when no logo exists.
+
+    Only rows that could *be* a logo (`logo.<ext>` names) are fetched, so this
+    stays a tiny query even for companies with hundreds of files.
+    """
+    response = (
+        supabase_client.table("files")
+        .select(_LOGO_COLUMNS)
+        .eq("company_id", company_id)
+        .or_("original_file_name.ilike.logo.%,file_name.ilike.logo.%,storage_path.ilike.logo.%")
+        .order("created_at", desc=True)
+        .execute()
+    )
+    return find_company_logo(response.data or [])
 
 
 def get_file_by_id(file_id: int) -> Optional[Dict[str, Any]]:

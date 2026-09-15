@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { getSession } from "@/lib/session";
+import AddLogoPrompt from "@/components/AddLogoPrompt";
 import {
   fetchDashboard,
   fetchChatSessions,
@@ -115,6 +116,8 @@ export default function DashboardPage() {
           {error} <button onClick={() => setError("")} className="ml-3 underline">Dismiss</button>
         </motion.div>
       )}
+
+      {userId && <AddLogoPrompt userId={userId} className="mb-6" />}
 
       {loading ? (
         <div className="flex items-center justify-center py-24">

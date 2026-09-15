@@ -433,6 +433,21 @@ def add_meta_to_file(
     raise RuntimeError("Failed to insert file metadata")
 
 
+def update_file_meta(file_id: int, **fields: Any) -> Optional[Dict[str, Any]]:
+    """Update selected columns of an existing file row. Returns the row or None."""
+    if not fields:
+        logger.warning("update_file_meta called with no fields — file_id=%s", file_id)
+        return None
+
+    response = _client.table("files").update(fields).eq("id", file_id).execute()
+    if response.data:
+        logger.info("File metadata updated — file_id=%s, fields=%s", file_id, list(fields.keys()))
+        return response.data[0]
+
+    logger.warning("File metadata update matched no rows — file_id=%s", file_id)
+    return None
+
+
 def add_document_chunks(
     file_id: int,
     company_id: int,

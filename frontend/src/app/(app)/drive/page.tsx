@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   HardDrive,
   Sparkles,
+  Star,
   Upload,
   FileText,
   Image as ImageIcon,
@@ -26,8 +27,39 @@ import {
   formatFileSize,
 } from "@/lib/api";
 import type { DriveFile } from "@/lib/api";
+import AddLogoPrompt, { invalidateLogoStatus } from "@/components/AddLogoPrompt";
 
 const ACCENT = "#143620";
+
+const LOGO_IMAGE_EXTENSIONS = new Set([
+  "png",
+  "jpg",
+  "jpeg",
+  "webp",
+  "gif",
+  "svg",
+  "bmp",
+  "avif",
+  "ico",
+]);
+
+/**
+ * Mirrors backend/db/get_from_sql.find_company_logo: the canonical `logo.png`
+ * (or a hand-uploaded `logo.<image ext>`) is the company's brand mark, so it is
+ * badged like an AI graphic instead of a plain upload.
+ */
+function isCompanyLogo(file: DriveFile): boolean {
+  const names = [file.original_file_name, file.file_name, file.storage_path]
+    .filter((value): value is string => Boolean(value))
+    .map((value) => value.trim().toLowerCase());
+
+  return names.some((name) => {
+    const base = name.split("/").pop() ?? name;
+    const dot = base.lastIndexOf(".");
+    if (dot <= 0) return false;
+    return base.slice(0, dot) === "logo" && LOGO_IMAGE_EXTENSIONS.has(base.slice(dot + 1));
+  });
+}
 
 function ImageThumbnail({
   src,
@@ -123,6 +155,8 @@ export default function DrivePage() {
     setDeleting(fileId);
     try {
       await deleteFile(userId, fileId);
+      // The deleted file may have been the logo — re-check on the next mount.
+      invalidateLogoStatus(userId);
       if (previewFile?.id === fileId) setPreviewFile(null);
       await loadFiles();
     } catch (err) {
@@ -154,6 +188,9 @@ export default function DrivePage() {
       )}
 
       <div className="space-y-6">
+        {/* Founders without a logo.png in the Drive get nudged to add one. */}
+        {userId && <AddLogoPrompt userId={userId} onLogoAdded={() => void loadFiles()} />}
+
         {/* Header section */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -286,12 +323,17 @@ export default function DrivePage() {
                       ext={f.file_extension}
                     />
 
-                    {/* AI Generated tag */}
-                    {f.bucket_name === "genrated_buckets" && (
+                    {/* Brand mark / AI-generated tag */}
+                    {isCompanyLogo(f) ? (
+                      <div className="absolute top-2 left-2 z-10 flex items-center gap-1 rounded-full border border-[#143620]/10 bg-white/95 px-2 py-0.5 text-[10px] font-semibold text-[#143620] shadow-sm backdrop-blur-sm">
+                        <Star className="h-2.5 w-2.5" />
+                        <span>Company Logo</span>
+                      </div>
+                    ) : f.bucket_name === "genrated_buckets" ? (
                       <div className="absolute top-2 left-2 z-10 flex items-center gap-1 bg-[#143620]/90 text-white text-[10px] font-medium px-2 py-0.5 rounded-full shadow-sm backdrop-blur-sm">
                         <span>AI Graphic</span>
                       </div>
-                    )}
+                    ) : null}
 
                     {/* Quick View Hover overlay */}
                     {isImg && (
@@ -386,7 +428,11 @@ export default function DrivePage() {
               {/* Modal Header */}
               <div className="flex items-center justify-between px-5 py-3.5 border-b border-[rgba(15,34,20,0.08)] bg-white">
                 <div className="min-w-0 flex items-center gap-2.5 mr-3">
-                  {previewFile.bucket_name === "genrated_buckets" ? (
+                  {isCompanyLogo(previewFile) ? (
+                    <span className="inline-flex items-center gap-1 bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold px-2 py-0.5 rounded-full shrink-0">
+                      <Star className="w-3 h-3 text-amber-600" /> Company Logo
+                    </span>
+                  ) : previewFile.bucket_name === "genrated_buckets" ? (
                     <span className="inline-flex items-center gap-1 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold px-2 py-0.5 rounded-full shrink-0">
                       <Sparkles className="w-3 h-3 text-emerald-600" /> AI Graphic
                     </span>

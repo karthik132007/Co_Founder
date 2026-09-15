@@ -1,6 +1,6 @@
 # Agent Rules
 
-These rules define how agents in the AI Co-Founder system should cooperate. They reflect the current architecture: **Agent Registry v2.0.0**, **System v0.9.19**. A CEO agent coordinates user interaction, delegates work to specialist agents, and merges specialist outputs into the final response.
+These rules define how agents in the AI Co-Founder system should cooperate. They reflect the current architecture: **Agent Registry v2.0.0**, **System v0.9.20**. A CEO agent coordinates user interaction, delegates work to specialist agents, and merges specialist outputs into the final response.
 
 ## 1. CEO Agent Owns User Context
 
@@ -26,7 +26,7 @@ Sub-agents should return task results, not final user responses, unless the CEO 
 
 The CEO Agent uses the following delegation tools, each backed by a specialist or system:
 
-- **`view_all_agents`** — List all available agents and their descriptions (reads `agents/agents.json`) so the CEO can decide which to delegate to.
+- **`view_all_agents`** — List all available agents and their descriptions (reads `../agents/agents.json`) so the CEO can decide which to delegate to.
 - **`knowledge_request`** — Search company **documents only** (files, chunks) via the RAG engine. Does NOT search chat memories (those are injected separately, non-flash only). Consumes `rag_calls` budget.
 - **`research_request`** — Delegate fact-finding and web research to the Researcher agent. Consumes `web_searches` budget (Researcher's own searches draw from the same budget).
 - **`writing_request`** — Delegate drafting and content polishing to the Writer agent. Consumes `external_agents` budget.
@@ -40,7 +40,7 @@ The CEO Agent uses the following delegation tools, each backed by a specialist o
 
 ## 4. Effort Levels (flash / mid / max)
 
-Every chat request carries an `effort` parameter (`backend/api/chat.py`, frontend dropdown, default `flash`) that controls the entire pipeline:
+Every chat request carries an `effort` parameter (`../backend/api/chat.py`, frontend dropdown, default `flash`) that controls the entire pipeline:
 
 | Aspect | ⚡ Flash | ⚖️ Mid | 🎯 Max |
 |--------|---------|--------|-------|
@@ -54,11 +54,11 @@ Every chat request carries an `effort` parameter (`backend/api/chat.py`, fronten
 | Expected latency | ~30-60s | ~2-4min | ~5-7min |
 
 - Flash mode uses a dedicated compact CEO prompt (`get_ceo_system_prompt_flash`) that tells the CEO its exact resource limits and instructs it to minimize agents (one agent should research AND write, analyze AND summarize, etc.).
-- Model selection for every agent goes through `get_best_llm(tasks, effort)` in `agents/helpers/choose_llm.py`.
+- Model selection for every agent goes through `get_best_llm(tasks, effort)` in `../agents/helpers/choose_llm.py`.
 
 ## 5. Query Resource Budget
 
-Each query has a Redis-backed resource budget (`agents/CEO/ceo_resources.py`, key `session_resources:{id}`, 1h TTL) initialized/reset at the start of each user query turn:
+Each query has a Redis-backed resource budget (`../agents/CEO/ceo_resources.py`, key `session_resources:{id}`, 1h TTL) initialized/reset at the start of each user query turn:
 
 | Resource | ⚡ Flash | ⚖️ Mid | 🎯 Max |
 |----------|---------|--------|-------|
@@ -93,7 +93,7 @@ Each query has a Redis-backed resource budget (`agents/CEO/ceo_resources.py`, ke
 
 - The CMO reports to the CEO Agent and performs marketing strategy and market research.
 - Tools: `search_current_market_trends` (SerpAPI for Google Trends/News/Shopping), `search_web` (Tavily), `extract_content_from_webpages`, `get_current_date`. Searches consume the session `web_searches` budget.
-- Connected-app tools: whatever the company has connected on the Plugins page (social, advertising, analytics, messaging, ...) is registered in `connections/tool_manager.py`, bound to the company's `company_id`, and attached to the CMO. The available set varies per company, so the CMO's tool list is the source of truth — it must never assume an integration exists. Read-only tools may be called whenever they help; write actions (publishing, sending, changing campaigns/budgets) require an explicit user request. If an app is not connected the CMO must point the user to the Plugins page. These tools do not consume the `web_searches` budget.
+- Connected-app tools: whatever the company has connected on the Plugins page (social, advertising, analytics, messaging, ...) is registered in `../connections/tool_manager.py`, bound to the company's `company_id`, and attached to the CMO. The available set varies per company, so the CMO's tool list is the source of truth — it must never assume an integration exists. Read-only tools may be called whenever they help; write actions (publishing, sending, changing campaigns/budgets) require an explicit user request. If an app is not connected the CMO must point the user to the Plugins page. These tools do not consume the `web_searches` budget.
 - The CMO should ground recommendations in real market data, competitor analysis, and current trends rather than generic advice.
 - The CMO should return structured Markdown with actionable strategy, campaign ideas, SEO recommendations, branding guidance, and growth plans.
 - The CMO should not fabricate market statistics or competitor data. If data is unavailable or uncertain, state that clearly.
@@ -130,7 +130,7 @@ Each query has a Redis-backed resource budget (`agents/CEO/ceo_resources.py`, ke
 - The designer must always respect the company's color palette in every visual asset.
 - The designer should adapt output to the requested format (Instagram post, email header, ad banner, etc.) and match the brand's positioning and audience.
 - The designer should not fabricate brand assets or use colors that conflict with the established palette.
-- **Image token flow:** The generated image is cached in `_generated_images` dict keyed by token. `spawn_graphic_designer()` peeks the token and uploads the PNG to Supabase Storage via `save_generated_graphic()`, returning a long-lived signed URL as `image_url` in the `image_generated` payload. `talk_to_ceo()` then scans tool outputs, resolves the token via `get_generated_image()` (one-shot read — popped on retrieval), and uses the CEO's closing text as the payload `message` (so an approval question is shown next to the image). `backend/api/chat.py` reuses the payload's `image_url` and only uploads itself when it is missing.
+- **Image token flow:** The generated image is cached in `_generated_images` dict keyed by token. `spawn_graphic_designer()` peeks the token and uploads the PNG to Supabase Storage via `save_generated_graphic()`, returning a long-lived signed URL as `image_url` in the `image_generated` payload. `talk_to_ceo()` then scans tool outputs, resolves the token via `get_generated_image()` (one-shot read — popped on retrieval), and uses the CEO's closing text as the payload `message` (so an approval question is shown next to the image). `../backend/api/chat.py` reuses the payload's `image_url` and only uploads itself when it is missing.
 - **No judge loop** — the Graphic Designer executes directly. Quality control is the CEO's responsibility during synthesis.
 
 ## 12. Judge Agent Rules
@@ -153,7 +153,7 @@ These agents are utility (not core) agents. They do not interact with the user d
 
 ## 14. Knowledge Engine & RAG
 
-The Knowledge Engine (`RAG_Engine/rag.py`) provides hybrid search across company **documents only** when called via `knowledge_request` (which passes `include_chat_memory=False`):
+The Knowledge Engine (`../RAG_Engine/rag.py`) provides hybrid search across company **documents only** when called via `knowledge_request` (which passes `include_chat_memory=False`):
 
 - **Semantic search** — Uses embeddings (text-embedding-3-small via OpenRouter) with Supabase pgvector RPC (`semantic_search`).
 - **Keyword search** — Full-text keyword search via Supabase RPC (`keyword_search`) as a fallback for exact term matching.
@@ -168,7 +168,7 @@ The Knowledge Engine (`RAG_Engine/rag.py`) provides hybrid search across company
 The chat memory system captures and persists long-term knowledge from conversations:
 
 - **Extraction** — After each CEO response, `chat.py` queues the conversation pair to the Kafka `chat_memory` topic (`queue_chat_memory()`, all effort levels); the `chat_memory_job` consumer calls `store_chat_memory()` which runs the Chat Memory Agent and persists structured memories with title, category, importance, and source fields.
-- **Storage** — Memories are stored in the `chat_memories` Supabase table with embeddings for semantic retrieval via the `match_chat_memories` RPC function (`schemas/match_chat_memories.sql`).
+- **Storage** — Memories are stored in the `chat_memories` Supabase table with embeddings for semantic retrieval via the `match_chat_memories` RPC function (`../schemas/match_chat_memories.sql`).
 - **Retrieval** — Before the CEO processes a new message (non-flash only), `talk_to_ceo()` calls `_get_relevant_chat_memories()` to fetch semantically similar memories. These are injected into the user prompt with "Hey CEO, here are retrieved relevant memories from past conversations..."
 - **Usage** — The CEO uses memories to remember past decisions, business goals, user preferences, and key facts without needing to ask again. Memories should inform responses without being explicitly mentioned.
 - **RPC fallback** — If the `match_chat_memories` RPC is unavailable, the system falls back to loading all memories for the company and computing cosine similarity locally.
@@ -229,7 +229,7 @@ When the CEO's response contains content the founder will copy and use directly 
 
 ## 21. Agent Registry
 
-The `agents/agents.json` file is the central registry of all agents. Each entry includes id, name, role, description, tools (with args), enabled flag, and metadata kind (core / review / utility). The CEO reads this registry via `view_all_agents` to know which specialists are available. The registry's CEO tool list must stay in sync with `_build_ceo_tools()` in `agents/CEO/ceo_agent_tools.py`.
+The `../agents/agents.json` file is the central registry of all agents. Each entry includes id, name, role, description, tools (with args), enabled flag, and metadata kind (core / review / utility). The CEO reads this registry via `view_all_agents` to know which specialists are available. The registry's CEO tool list must stay in sync with `_build_ceo_tools()` in `agents/CEO/ceo_agent_tools.py`.
 
 ## 22. Observability & WebSocket Trace
 
@@ -243,11 +243,11 @@ The `agents/agents.json` file is the central registry of all agents. Each entry 
 
 - **CEO agent caching** — Built LangChain CEO agents are cached in-process keyed by `(company_id, effort)`; `invalidate_ceo_agent_cache()` evicts one or all entries. Company data used to build prompts is cached in Redis.
 - **Request state** — Each `talk_to_ceo` call stores `{sid, effort}` in Redis under `ceo_req:{uuid}` (5-min TTL) and sets the key in a contextvar; tools read it via `ceo_state._current_session_id` / `ceo_state._current_effort` (thread-safe, no globals).
-- **Data caching** — Company data (1h), user→company mapping (24h), chat session lists (2min), session messages (30s), and embeddings (1h, by sha256) are cached in Redis (`backend/db/redis_client.py`).
+- **Data caching** — Company data (1h), user→company mapping (24h), chat session lists (2min), session messages (30s), and embeddings (1h, by sha256) are cached in Redis (`../backend/db/redis_client.py`).
 
 ## 24. Kafka Async Jobs (message persistence)
 
-Background persistence is decoupled from the request path via Kafka (`docker-compose.yaml`, Confluent Kafka 7.8.9 KRaft, port 9092; `confluent_kafka` in requirements):
+Background persistence is decoupled from the request path via Kafka (`../docker-compose.yaml`, Confluent Kafka 7.8.9 KRaft, port 9092; `confluent_kafka` in requirements):
 
 | Topic | Producer helper | Consumer job | What it does |
 |-------|-----------------|--------------|--------------|
@@ -255,8 +255,8 @@ Background persistence is decoupled from the request path via Kafka (`docker-com
 | `session_title_creation` | `queue_title_creation()` | `session_title_creation_job.py` | Generates + persists chat session titles |
 | `add_message_to_session` | `queue_session_message()` | `add_message_to_session_job.py` | Persists a message row into a chat session |
 
-- **Producers** live in `backend/kafka_jobs/producers/producer.py` — lazy singleton producer, JSON payload, `flush()` per message. The chat API (`backend/api/chat.py`) queues on the request path; the request is NOT blocked by the downstream work.
+- **Producers** live in `../backend/kafka_jobs/producers/producer.py` — lazy singleton producer, JSON payload, `flush()` per message. The chat API (`backend/api/chat.py`) queues on the request path; the request is NOT blocked by the downstream work.
 - **Consumers** run as separate processes (`python backend/kafka_jobs/run_consumers.py` launches all three). Each uses its own consumer group, processes one message at a time with per-message try/except isolation, and commits offsets synchronously only after success (`auto.offset.reset=earliest`, so crashes re-deliver uncommitted messages).
-- **Import isolation** — consumers import persistence helpers from `backend/db/chat_memory_helpers.py` (`store_chat_memory`, `store_chat_title`), NOT `main.py` or the agent stack, to keep consumer processes lightweight.
+- **Import isolation** — consumers import persistence helpers from `../backend/db/chat_memory_helpers.py` (`store_chat_memory`, `store_chat_title`), NOT `main.py` or the agent stack, to keep consumer processes lightweight.
 - **Fallback behavior** — Kafka must be running: producer failures on the regular chat path propagate (no silent data loss). The only best-effort path is the MCQ side-queue (`queue_session_message` is wrapped in try/except because the message is already persisted to the DB synchronously and must remain visible in history even if Kafka is down).
 - **MCQ messages** are persisted to the DB synchronously (immediately visible in history) and also queued via `queue_session_message()` for downstream consumers.

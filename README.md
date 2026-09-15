@@ -1,4 +1,4 @@
-# Co_Founder — AI Co-Founder Platform v0.9.19
+# Co_Founder — AI Co-Founder Platform v0.9.20
 
 A full-stack multi-agent platform that acts as an early founding team. A founder chats with a CEO orchestrator, which delegates to specialist agents for research, writing, marketing, data analysis, and design.
 
@@ -45,13 +45,13 @@ Key highlights:
 | File | What it covers |
 |---|---|
 | [`docs/technical.md`](docs/technical.md) | Full technical details — agents, RAG, backend, billing, frontend, observability, benchmarks |
-| [`Agents_rules.md`](Agents_rules.md) | Agent cooperation rules — CEO ownership, delegation contract, system prompts |
-| [`release_notes.md`](release_notes.md) | Version changelog — what changed in each release |
+| [`docs/Agents_rules.md`](docs/Agents_rules.md) | Agent cooperation rules — CEO ownership, delegation contract, system prompts |
+| [`docs/release_notes.md`](docs/release_notes.md) | Version changelog — what changed in each release |
 | [`docs/eval_report.md`](docs/eval_report.md) | CEO agent e2e evaluation — 27 runs, 81 judge verdicts, findings |
 
 ## Status
 
-Functional end-to-end production test (v0.9.19) — chat loop, multi-agent system, RAG, billing, auth, plugins, and connected-app publishing are operational. Known gaps (slow image gen, Supabase free-tier latency) are tracked in [`docs/technical.md`](docs/technical.md#status).
+Functional end-to-end production test (v0.9.20) — chat loop, multi-agent system, RAG, billing, auth, plugins, connected-app publishing, Drive branding, and image download fixes are operational. Known gaps (slow image gen, Supabase free-tier latency) are tracked in [`docs/technical.md`](docs/technical.md#status).
 
 ## License
 

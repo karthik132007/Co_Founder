@@ -404,25 +404,46 @@ function ReasoningDropdown({
  * already renders that image prominently, so drop the duplicate reference —
  * otherwise the same picture appears twice (and the inline one is unconstrained).
  */
+const STORAGE_OBJECT_TEST = /\/storage\/v1\/object\//;
+const STORAGE_OBJECT_GLOBAL = /https?:\/\/[^\s)\]]*\/storage\/v1\/object\/[^\s)\]]*/g;
+
 function stripEmbeddedGraphic(content: string, graphicUrl: string): string {
   if (!content) return "";
   const isSameUrl = (src: string) =>
     Boolean(graphicUrl) &&
     (src === graphicUrl || src.startsWith(graphicUrl) || graphicUrl.startsWith(src));
+  // Anything that points at our own storage (or is the graphic itself) is noise:
+  // the card already renders that image, and a signed URL is unreadable.
+  const isOwnStorage = (src: string) =>
+    Boolean(src) &&
+    (src.startsWith("data:image/") || STORAGE_OBJECT_TEST.test(src) || isSameUrl(src));
 
-  let out = content.replace(
-    /!\[[^\]]*\]\(\s*<?([^)\s>]+)>?\s*\)/g,
-    (match, src: string) => (isSameUrl(src) ? "" : match),
+  let out = content;
+
+  // ![alt](url)
+  out = out.replace(
+    /!\[[^\[\]]*\]\(\s*<?([^)\s>]+)>?\s*\)/g,
+    (match, src: string) => (isOwnStorage(src) ? "" : match),
   );
 
-  if (graphicUrl) {
-    out = out
-      .split("\n")
-      .filter((line) => line.trim().replace(/^<|>$/g, "") !== graphicUrl)
-      .join("\n");
-  }
+  // [label](url) — drop the whole link when it targets our storage
+  out = out.replace(
+    /\[([^\[\]\n]*)\]\(\s*<?([^)\s>]+)>?\s*\)/g,
+    (match, _label: string, src: string) => (isOwnStorage(src) ? "" : match),
+  );
 
-  return out.replace(/\n{3,}/g, "\n\n").trim();
+  // leftover "[image: …]" markers (with or without markdown inside)
+  out = out.replace(/\[image:[^\]\n]*\]?/gi, "");
+
+  // bare storage URLs the CEO pasted on their own
+  out = out.replace(STORAGE_OBJECT_GLOBAL, "");
+
+  return out
+    .split("\n")
+    .map((line) => line.trimEnd())
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 function GeneratedGraphicCard({
@@ -452,13 +473,28 @@ function GeneratedGraphicCard({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [isZoomed]);
 
-  const handleDownload = () => {
-    const link = document.createElement("a");
-    link.href = imageDataUrl;
-    link.download = `brand-graphic-${timestamp ?? Date.now()}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleDownload = async () => {
+    const stamp = timestamp ?? Date.now();
+    try {
+      // Fetch first, then download from a blob: URL. The `download` attribute is
+      // ignored for cross-origin URLs, so linking the Supabase URL directly just
+      // navigated to the image instead of saving it.
+      const res = await fetch(imageDataUrl);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const extension = (blob.type.split("/")[1] || "png").replace("jpeg", "jpg");
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = `brand-graphic-${stamp}.${extension}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 10_000);
+    } catch {
+      // Last resort: open the image so the founder can still save it by hand.
+      window.open(imageDataUrl, "_blank", "noreferrer");
+    }
   };
 
   const handleCopyImage = async () => {

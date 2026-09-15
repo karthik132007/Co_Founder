@@ -1,5 +1,6 @@
 import logging
 
+from backend.logo import LOGO_FILE_NAME, LOGO_MIME_TYPE
 from backend.utils import get_supabase_client
 
 logger = logging.getLogger(__name__)
@@ -47,6 +48,26 @@ def upload_to_cloud(company_id, content, file_name, content_type):
             "status": False,
             "message": str(e)
         }
+
+
+def upload_company_logo(company_id: int, content: bytes) -> str:
+    """Store the company logo under its canonical path and return that path.
+
+    The object is always written to `{company_id}/logo.png` with upsert, so
+    re-uploading a logo replaces the previous one instead of orphaning it.
+    Raises RuntimeError when the upload fails.
+    """
+    result = upload_to_cloud(
+        company_id=company_id,
+        content=content,
+        file_name=LOGO_FILE_NAME,
+        content_type=LOGO_MIME_TYPE,
+    )
+    if not result.get("status"):
+        logger.error("Company logo upload failed — company_id=%s: %s", company_id, result.get("message"))
+        raise RuntimeError(f"Failed to upload company logo: {result.get('message')}")
+    logger.info("Company logo uploaded — company_id=%s, path=%s/%s", company_id, company_id, LOGO_FILE_NAME)
+    return LOGO_FILE_NAME
 
 
 def upload_generated_graphic(company_id: int, content: bytes, file_name: str) -> str:

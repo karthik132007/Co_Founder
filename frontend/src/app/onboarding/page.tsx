@@ -1,16 +1,20 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, Check, Loader2, ChevronLeft } from "lucide-react";
+import { ArrowRight, Check, ImagePlus, Loader2, ChevronLeft, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { API_BASE_URL, readApiError } from "@/lib/api";
+import { API_BASE_URL, readApiError, uploadLogo } from "@/lib/api";
 import { getSession, setOnboardingComplete, type CofounderSession } from "@/lib/session";
 import { armProductTour } from "@/components/ProductTour";
 
 const ACCENT = "#143620";
+
+// Must match backend/api/logo.py (MAX_LOGO_BYTES default).
+const MAX_LOGO_BYTES = 5 * 1024 * 1024;
+const LOGO_ACCEPT = "image/png,image/jpeg,image/webp,image/gif";
 
 type OnboardingForm = {
   fullName: string;
@@ -21,7 +25,7 @@ type OnboardingForm = {
 };
 
 type Step = {
-  key: keyof OnboardingForm;
+  key: keyof OnboardingForm | "logo";
   label: string;
   title: string;
   helper: string;
@@ -58,6 +62,12 @@ const steps: Step[] = [
     title: "Pick your brand tone.",
     helper: "This helps the agents match how your company should sound.",
   },
+  {
+    key: "logo",
+    label: "Logo",
+    title: "Add your company logo.",
+    helper: "Optional — we save it to your Drive as logo.png. You can add or replace it later.",
+  },
 ];
 
 const initialForm: OnboardingForm = {
@@ -93,6 +103,17 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [hydrated, setHydrated] = useState(false);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
+  const logoPreview = useMemo(() => (logoFile ? URL.createObjectURL(logoFile) : null), [logoFile]);
+
+  // Object URLs are leaked unless revoked once the preview changes/unmounts.
+  useEffect(() => {
+    return () => {
+      if (logoPreview) URL.revokeObjectURL(logoPreview);
+    };
+  }, [logoPreview]);
 
   const currentStep = steps[stepIndex];
   const descriptionWords = useMemo(
@@ -122,7 +143,31 @@ export default function OnboardingPage() {
     setError("");
   };
 
+  // Narrowing of `currentStep.key` is lost inside JSX callbacks, so re-check it
+  // here before writing to a text field.
+  const updateCurrentField = (value: string) => {
+    if (currentStep.key === "logo") return;
+    updateField(currentStep.key, value);
+  };
+
+  const selectLogo = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setError("Logo must be an image file (PNG, JPG, WEBP or GIF)");
+      return;
+    }
+    if (file.size > MAX_LOGO_BYTES) {
+      setError("Logo must be 5MB or smaller");
+      return;
+    }
+    setError("");
+    setLogoFile(file);
+  };
+
   const validateCurrentStep = () => {
+    // The logo step is optional — never blocks progress.
+    if (currentStep.key === "logo") return "";
     const value = form[currentStep.key];
     if (typeof value === "string" && !value.trim()) {
       return `${currentStep.label} is required`;
@@ -163,6 +208,18 @@ export default function OnboardingPage() {
       setOnboardingComplete();
       // Brand-new founder: let the app shell run the product tour once.
       armProductTour(session.user.id);
+
+      // The logo is optional, and the company already exists at this point — a
+      // failed upload must never block onboarding. The app prompts for a
+      // missing logo.png afterwards instead.
+      if (logoFile) {
+        try {
+          await uploadLogo(session.user.id, logoFile);
+        } catch (logoError) {
+          console.warn("Logo upload failed during onboarding", logoError);
+        }
+      }
+
       router.replace("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -345,7 +402,46 @@ export default function OnboardingPage() {
                   <p className="mt-1.5 text-sm text-[#5f6f63]">{currentStep.helper}</p>
                 </div>
 
-                {currentStep.key === "smallDescription" ? (
+                {currentStep.key === "logo" ? (
+                  <div>
+                    <input
+                      ref={logoInputRef}
+                      type="file"
+                      accept={LOGO_ACCEPT}
+                      onChange={selectLogo}
+                      className="hidden"
+                    />
+                    {logoPreview ? (
+                      <div className="flex items-center gap-4 rounded-xl border border-[#e8e9e3] bg-white p-4">
+                        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border border-[#e8e9e3] bg-[#f6f6f2] overflow-hidden">
+                          <img src={logoPreview} alt="Logo preview" className="h-full w-full object-contain" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold text-[#0f2214]">{logoFile?.name}</p>
+                          <p className="text-xs text-[#8d9d94]">Saved to your Drive as logo.png</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setLogoFile(null)}
+                          className="shrink-0 rounded-lg border border-[#e8e9e3] p-1.5 text-[#8d9d94] hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                          title="Remove logo"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => logoInputRef.current?.click()}
+                        className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-[#c2c9c0] bg-white px-4 py-9 text-center transition-colors hover:border-[#143620] hover:bg-[#eaf0e8]/40"
+                      >
+                        <ImagePlus className="h-6 w-6 text-[#143620]/60" />
+                        <span className="text-sm font-semibold text-[#0f2214]">Upload logo</span>
+                        <span className="text-xs text-[#8d9d94]">PNG, JPG, WEBP or GIF · up to 5MB</span>
+                      </button>
+                    )}
+                  </div>
+                ) : currentStep.key === "smallDescription" ? (
                   <div>
                     <textarea
                       id={currentStep.key}
@@ -391,7 +487,7 @@ export default function OnboardingPage() {
                     id={currentStep.key}
                     type="text"
                     value={form[currentStep.key]}
-                    onChange={(e) => updateField(currentStep.key, e.target.value)}
+                    onChange={(e) => updateCurrentField(e.target.value)}
                     required
                     className="input px-3.5 py-2.5 text-sm"
                     placeholder={
@@ -438,6 +534,17 @@ export default function OnboardingPage() {
                 )}
               </button>
             </div>
+
+            {/* The logo is optional — let founders move on without one. */}
+            {isLastStep && !loading && (
+              <button
+                type="button"
+                onClick={() => { setLogoFile(null); void submitOnboarding(); }}
+                className="mt-4 w-full text-center text-xs font-medium text-[#8d9d94] underline underline-offset-2 hover:text-[#143620]"
+              >
+                Skip for now — I&apos;ll add it later
+              </button>
+            )}
           </form>
         </motion.div>
       </div>

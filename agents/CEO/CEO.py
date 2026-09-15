@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 from agents.CEO.ceo_agent_tools import _build_ceo_tools
 from agents.helpers.choose_llm import Task, get_best_llm
+from agents.helpers.context_guard import guard_history, strip_inline_images
 from agents.CEO.ceo_prompts import get_ceo_system_prompt,get_ceo_system_prompt_flash
 from backend.db.get_from_sql import get_company_data
 
@@ -281,14 +282,15 @@ def talk_to_ceo(company_id: int, message: str, history: list[dict] | None = None
             messages.append({"role": "system", "content": resource_prompt})
 
     if history:
-        recent = history[-20:]
-        for turn in recent:
+        # Guard against context blow-ups: strip inline base64 images (a single
+        # stored preview can be ~400k tokens) and keep the history inside a
+        # character budget, newest-first.
+        for turn in guard_history(history):
             role = turn.get("role")
-            # DB stores the text in "message"; some callers may use "content".
             content = turn.get("content") or turn.get("message") or ""
             if role in ("user", "assistant") and content.strip():
                 messages.append({"role": role, "content": content.strip()})
-    messages.append({"role": "user", "content": user_message})
+    messages.append({"role": "user", "content": strip_inline_images(user_message)})
 
 
 

@@ -1,4 +1,4 @@
-# Co_Founder — Technical Deep Dive (v0.9.19)
+# Co_Founder — Technical Deep Dive (v0.9.20)
 
 > Companion to the main [`README.md`](../README.md). This file holds all implementation details: agent system, RAG, backend, billing, frontend, observability, benchmarks, and performance work.
 
@@ -199,6 +199,16 @@ The CEO uses the `ask_mcq_for_user` tool to present **multiple-choice question c
 - On confirmation, the raw answer (not a verbose wrapper) is sent to the backend, keeping LLM context clean
 - **Critical fix (v0.8.0):** DB columns use `message` not `content`. `talk_to_ceo` now reads `turn.get("content") or turn.get("message")` — without this, ALL conversation history was silently dropped and the CEO had zero context (`agents/CEO/CEO.py:141`).
 
+## Company Logo
+
+Every company has at most one canonical logo, stored in the `company_files` bucket as `logo.png` (`{company_id}/logo.png`) so any subsystem can find it by name.
+
+- **Onboarding** (`frontend/src/app/onboarding/page.tsx`) ends with an optional "Logo" step — image preview, remove, and "Skip for now". Upload happens *after* company creation, and a failed upload never blocks finishing.
+- **Existing accounts** with no `logo.png` see `AddLogoPrompt` on the dashboard and Drive pages — a one-click upload, dismissible for the session (`sessionStorage`). Detection accepts the canonical `logo.png` *or* a hand-uploaded `logo.<image ext>` file.
+- **Backend** (`backend/api/logo.py`, conventions in `backend/logo.py`): `GET /user/logo` returns `{has_logo, file_id, …}`; `POST /user/logo` transcodes any raster upload (jpg/webp/gif/bmp) to real PNG bytes with Pillow, upserts to `{company_id}/logo.png`, and keeps a single canonical `files` row (`file_id` is reused when replacing). Guards: 400 empty/non-image/corrupt, 404 no company, 413 over `MAX_LOGO_BYTES` (default 5 MB), 502 storage failure, IP-throttled.
+- **Drive badge** (`frontend/src/app/(app)/drive/page.tsx`): a file recognized as the company logo gets a "Company Logo" pill — on the grid card and in the preview modal — the same way AI-generated files get their "AI Graphic" pill. Detection is the frontend mirror of `find_company_logo` (`isCompanyLogo()`: `logo.png` or `logo.<image ext>`).
+- The logo is metadata-only — no document chunks or embeddings are created, so it never enters RAG retrieval.
+
 ## RAG Engine
 
 The RAG pipeline (`RAG_Engine/rag.py`) is the shared knowledge layer. Data flow:
@@ -258,15 +268,17 @@ Co_Founder/
 │   ├── util_agents/         # Chat memory, title, description, image description, writer agents
 │   └── helpers/             # LLM selection, datetime, utilities
 ├── backend/
-│   ├── app.py               # FastAPI app, CORS, router registration (auth/user/drive/chat/credits/payments/payment_history/connections)
+│   ├── app.py               # FastAPI app, CORS, router registration (auth/user/drive/chat/credits/payments/payment_history/connections/logo)
 │   ├── models.py            # SQLAlchemy models
 │   ├── utils.py             # Supabase client init, helpers
+│   ├── logo.py              # Company logo conventions (logo.png) + Pillow PNG normalization
 │   ├── security.py          # Argon2id hashing + HMAC session cookies
 │   ├── api/
 │   │   ├── auth.py          # /auth/signup, /auth/login, /auth/google, /auth/me, /auth/logout, Instagram OAuth
 │   │   ├── chat.py          # POST /chat, session CRUD, WS /chat/ws, MCQ guard
 │   │   ├── user.py          # /user/onboarding, /user/dashboard, /user/files, /user/profile
 │   │   ├── drive.py         # POST /upload, DELETE /file/{id}
+│   │   ├── logo.py          # GET/POST /user/logo (company logo as logo.png)
 │   │   ├── credits.py       # POST /credits/add, GET /credits/{company_id}
 │   │   ├── payments.py      # POST /payments/create-order, POST /payments/verify-payment (Razorpay)
 │   │   ├── payment_history.py  # CRUD /payment-history (list/create/update/delete)
@@ -312,6 +324,8 @@ Co_Founder/
 | POST | `/upload` | Upload file (PDF, image, CSV, Excel, JSON, Parquet) |
 | GET | `/user/files` | List company files |
 | GET | `/user/files/{id}/download` | Download/view a file |
+| GET | `/user/logo` | Report whether the company has a logo (`logo.png`) |
+| POST | `/user/logo` | Upload a logo — normalized to PNG and stored as `logo.png` |
 | DELETE | `/file/{file_id}` | Delete file |
 | POST | `/chat` | Send message to CEO agent (auto-creates session if `session_id` omitted, `effort` flash/mid/max) |
 | GET | `/chat/sessions` | List user's chat sessions |
@@ -491,6 +505,16 @@ Publishing tools download the image from a URL, so the flow is: generate → upl
 
 Both CEO prompts and the CMO prompt carry a generic **Connected Apps & Publishing** policy: the tool list is the source of truth, read-only tools are safe to call, write tools need explicit confirmation, integration data is never invented, and a missing connection points the user at the Plugins page.
 
+### Context guard (`agents/helpers/context_guard.py:1`)
+
+Conversation history is replayed into the CEO prompt on every turn, so a single oversized message in `chat_messages` can take down the whole session. Two guards prevent that:
+
+- **Inline images are stripped from prompts.** The graphic tools keep the real base64 image outside the model context and hand the LLM a small `image_token`. That protection is lost as soon as a `data:image/png;base64,…` URL is stored in a chat message — one 2400x2400 preview is ~1.6 MB of base64 (~400k tokens) and exceeds the 131k window, failing the request with an OpenRouter 400. `strip_inline_images()` replaces such payloads with `[image]`; `guard_history()` applies it to every history turn (and clips messages to 20k chars, dropping the oldest turns past a 120k-char budget, ≈30k tokens).
+- **Megabyte payloads are never persisted.** `POST /chat` pipes approval-card and generated-graphic images through `safe_image_reference()` / `_durable_image_reference()`, which upload the image (`save_generated_graphic`) and store the resulting signed URL. Inline `data:` references are only kept when they are small; larger ones are dropped from the stored text.
+- **Signed URLs are stripped from assistant text.** `strip_storage_urls()` removes our own object-storage URLs (bare, or wrapped in markdown / `[image: …]` markers) from the stored caption and MCQ question, so a raw signed URL never reaches the founder or the model. Both CEO prompts also forbid pasting a graphic URL into the reply.
+
+Symptom to recognise: `BadRequestResponseError: This endpoint's maximum context length is 131072 tokens. However, you requested about N tokens` in the backend log while every turn of one session fails with a 500.
+
 ### Local OAuth with ngrok
 
 Instagram requires an HTTPS redirect URI that is publicly reachable. For local development:
@@ -531,7 +555,7 @@ Frontend is a Next.js app with the main user flows in `frontend/src/app/` and sh
 - **Streaming**: the assistant bubble fills token by token while the WebSocket streams `llm_token` events (see [WebSocket Agent Trace](#websocket-agent-trace-v0915--buffered--real-time-llm-streaming)).
 - **Reasoning**: `<think>` / `<thinking>` / `<analysis>` / `<scratchpad>` blocks are split out of the answer and shown only in a collapsed "Thought process" dropdown — never inside the result.
 - **Markdown**: prose fences (`text`, `markdown`, or no language) render as a soft copy card while real code keeps the dark block. Both reset nested inline-code styling, so a caption can never render as red inline code.
-- **Generated graphics**: `GeneratedGraphicCard` shows a constrained preview with preview / copy / download actions. A graphic echoed inside the CEO's message is stripped so the same image never renders twice.
+- **Generated graphics**: `GeneratedGraphicCard` shows a constrained preview with preview / copy / download actions. A graphic echoed inside the CEO's message is stripped so the same image never renders twice — `stripEmbeddedGraphic()` removes markdown images/links, `[image: …]` markers and bare signed URLs that point at our own storage (external links the CEO cites are preserved). **Download** fetches the image and saves it from a `blob:` URL: the `download` attribute is ignored on cross-origin URLs, so linking the Supabase URL directly only navigated to the image instead of saving it.
 - **Clarifications**: `McqCard` renders options as buttons (single or multi-select, plus a custom answer) and can display the graphic being approved above the question.
 - **Plain layout**: assistant turns carry no avatar and span a readable full width; user turns keep a right-aligned bubble.
 
@@ -660,6 +684,6 @@ Real-time observability streamed to the frontend via WebSocket (`WS /chat/ws?ses
 
 ## Status
 
-Functional end-to-end production test release (v0.9.19). The core chat loop, multi-agent system, RAG pipeline, file management, **buffered WebSocket observability with live LLM streaming**, effort-based execution, Kafka async jobs, onboarding flow, Argon2id password hashing, Google OAuth, cookie-based session auth, **live Razorpay billing (₹100 minimum, payment_history invoices, INR/USD)**, and **Instagram OAuth plugin integration** are operational. v0.9.15 fixed the production-only invisible trace and added token-by-token answer streaming; v0.9.16 shipped the money path and a reworked landing/billing shell; v0.9.17 switches resource budgets to per-query enforcement (preventing multi-turn session lockouts) and consolidates agent trace observability into the chat conversation area; v0.9.18 adds the Plugins connector grid with the full Instagram connect/status/disconnect lifecycle; v0.9.19 adds the MCP-style connected-app tool manager shared by the CEO and CMO, a generate → upload → approve → post publishing flow, a plain ChatGPT-style chat layout, and the six-step onboarding product tour. Known gaps:
+Functional end-to-end production test release (v0.9.20). The core chat loop, multi-agent system, RAG pipeline, file management, **buffered WebSocket observability with live LLM streaming**, effort-based execution, Kafka async jobs, onboarding flow, Argon2id password hashing, Google OAuth, cookie-based session auth, **live Razorpay billing (₹100 minimum, payment_history invoices, INR/USD)**, **Instagram OAuth plugin integration**, and the latest **Drive branding + graphic safety** work are operational. v0.9.15 fixed the production-only invisible trace and added token-by-token answer streaming; v0.9.16 shipped the money path and a reworked landing/billing shell; v0.9.17 switches resource budgets to per-query enforcement (preventing multi-turn session lockouts) and consolidates agent trace observability into the chat conversation area; v0.9.18 adds the Plugins connector grid with the full Instagram connect/status/disconnect lifecycle; v0.9.19 adds the MCP-style connected-app tool manager shared by the CEO and CMO, a generate → upload → approve → post publishing flow, a plain ChatGPT-style chat layout, and the six-step onboarding product tour; v0.9.20 hardens the graphic pipeline by stripping inline payloads before prompting, uploading and storing signed image URLs instead of base64 blobs, and adds the Drive `Company Logo` badge along with a reliable `blob:` download for generated graphics. Known gaps:
 - Image generation uses OpenRouter `google/gemini-2.5-flash-image`; slow (~30s) and blocks the CEO pipeline
 - Supabase free tier REST API adds 3-7s latency per RPC call (embedding serialization overhead)

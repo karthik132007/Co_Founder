@@ -373,6 +373,44 @@ export async function uploadFile(
   return res.json() as Promise<{ message: string; file_name: string }>;
 }
 
+/** ── Company logo ────────────────────────────────────────────────────────
+ * The logo always lives in the company files as `logo.png`; these helpers are
+ * used by onboarding (optional step) and the "add your logo" prompt shown to
+ * founders whose Drive has no logo.png yet.
+ */
+export type LogoStatus = {
+  has_logo: boolean;
+  file_id: number | null;
+  original_file_name: string | null;
+  updated_at: string | null;
+};
+
+export async function fetchLogo(userId: number): Promise<LogoStatus> {
+  const res = await fetch(`${API_BASE_URL}/user/logo?user_id=${userId}`);
+  if (!res.ok) {
+    throw new Error(await readApiError(res, "Failed to load logo"));
+  }
+  return res.json() as Promise<LogoStatus>;
+}
+
+export async function uploadLogo(
+  userId: number,
+  file: File,
+): Promise<{ status: string; has_logo: boolean; file_id: number; message: string }> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch(`${API_BASE_URL}/user/logo?user_id=${userId}`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!res.ok) {
+    throw new Error(await readApiError(res, "Logo upload failed"));
+  }
+  return res.json();
+}
+
 export function formatFileSize(bytes: number | null): string {
   if (bytes == null || bytes === 0) return "—";
   const units = ["B", "KB", "MB", "GB"];

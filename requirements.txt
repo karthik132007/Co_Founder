@@ -12,6 +12,7 @@ openai
 serpapi
 supabase
 pymupdf
+Pillow
 openrouter
 httpx
 tavily

@@ -1,9 +1,24 @@
 
+## Changelog (v0.9.19 → v0.9.20)
+
+### Context Guard & Graphic Safety
+- **A single oversized image no longer kills the session**: the CEO now strips inline `data:` payloads and oversized history entries before a prompt is sent, preventing `context length exceeded` 500s from a stored generated graphic.
+- **Signed storage URLs no longer leak into the UI**: the backend strips object-storage URLs from assistant text, and the frontend removes nested `[image: …]` + markdown URL patterns before rendering the message.
+- **Download works reliably**: generated-image cards now fetch the image as a `blob` and trigger a proper browser save instead of trying to `download` a cross-origin signed Supabase URL directly.
+
+### Drive branding polish
+- **Company logos are labeled like AI graphics**: the Drive now shows a `Company Logo` badge in both the grid card and preview modal, while AI-generated images keep their `AI Graphic` tag.
+- **Logo detection is consistent**: canonical logo names like `logo.png` or `logo.jpg` are recognilogozed the same way as the backend does, with an explicit `isCompanyLogo()` check in the Drive UI.
+
+### Stalogobility & cleanup
+- **Prompt guardrails tightened**: the CEO is explicitly told never to paste the image URL or markdown image link back into the response when the graphic is already rendered by the app.
+- **Reglogoression tested**: the real-world MCQ failure mode was reproduced and fixed; the poisoned session payload was reduced from ~400k tokens to ~188 tokens without losing the options text.
+
 ## Changelog (v0.9.18 → v0.9.19)
 
 ### Connected Apps — agent tool manager & publishing
-- **MCP-style tool manager**: added `connections/tool_manager.py`, a deliberately small registry (`Tool` / `ToolManager`) with `add`, `list_tools`, `call_tool`, and `as_langchain_tools`. An integration is declared once — name, description, argument schema, and which params are server-injected — and then exposed to any agent as LangChain tools. No MCP SDK or transport layer.
-- **Instagram tool provider**: added `connections/instagram_tools.py` registering `instagram.get_details`, `instagram.get_recent_activity`, and `instagram.post_content`.
+- **MCP-style tool manager**: added `../connections/tool_manager.py`, a deliberately small registry (`Tool` / `ToolManager`) with `add`, `list_tools`, `call_tool`, and `as_langchain_tools`. An integration is declared once — name, description, argument schema, and which params are server-injected — and then exposed to any agent as LangChain tools. No MCP SDK or transport layer.
+- **Instagram tool provider**: added `../connections/instagram_tools.py` registering `instagram.get_details`, `instagram.get_recent_activity`, and `instagram.post_content`.
 - **Company scoping**: `company_id` is injected server-side and stripped from the model-facing schema, and a bound context key is rejected as an argument, so an agent cannot act on another company's account.
 - **Connection registry**: `Global_Connection_Manager` now owns one `ToolManager` and exposes `connection_tools_for(company_id)`; the legacy `list_connections()` catalog is derived from the registry.
 - **Agents can act on integrations**: the CEO and CMO now receive every connected app's tools, so they can read account data and publish content.
@@ -117,7 +132,7 @@
 - Env: `SESSION_SECRET`, `SESSION_COOKIE_SECURE`, `SESSION_MAX_AGE_DAYS`
 
 ### Database
-- Applied `schemas/migrations/add_supabase_user_id.sql` (adds `users.supabase_user_id` + unique constraint)
+- Applied `../schemas/migrations/add_supabase_user_id.sql` (adds `users.supabase_user_id` + unique constraint)
 
 ### Bug Fixes
 - Google OAuth callback no longer always lands users on `/chat`
@@ -129,19 +144,19 @@
 ### Kafka Async Job Pipeline
 - **Decoupled background work**: chat memory extraction, session title generation, and message persistence moved off FastAPI `BackgroundTasks` onto Kafka topics
 - **Topics + consumers**: `chat_memory` → `chat_memory_job.py`, `session_title_creation` → `session_title_creation_job.py`, `add_message_to_session` → `add_message_to_session_job.py`
-- **Producer module**: `backend/kafka_jobs/producers/producer.py` with `queue_session_message()`, `queue_chat_memory()`, `queue_title_creation()` (lazy singleton producer, JSON payloads, flush per message)
+- **Producer module**: `../backend/kafka_jobs/producers/producer.py` with `queue_session_message()`, `queue_chat_memory()`, `queue_title_creation()` (lazy singleton producer, JSON payloads, flush per message)
 - **Consumer jobs**: one process per topic, own consumer group, per-message error isolation, synchronous offset commit after success, `auto.offset.reset=earliest`
 - **`run_consumers.py`**: launches all three consumers as subprocesses from a single command
-- **`chat_memory_helpers.py`**: `store_chat_memory()` / `store_chat_title()` extracted from `main.py` so consumers can import persistence without the agent stack (CEO, LLM clients)
-- **`main.py` slimmed** to the `chat()` entry point only
-- **`docker-compose.yaml`**: Confluent Kafka 7.8.9 single-node KRaft broker on port 9092
+- **`chat_memory_helpers.py`**: `store_chat_memory()` / `store_chat_title()` extracted from `../main.py` so consumers can import persistence without the agent stack (CEO, LLM clients)
+- **`../main.py` slimmed** to the `chat()` entry point only
+- **`../docker-compose.yaml`**: Confluent Kafka 7.8.9 single-node KRaft broker on port 9092
 - **MCQ persistence**: clarification replies are written to the DB directly (immediately visible in history) and side-queued to Kafka
 - **All efforts get memory/titles**: flash mode no longer skips chat memory extraction or title generation — they run async via Kafka, so the response path is unaffected
 - **`connectors/base.py`**: `BaseConnector` abstraction (`connect` / `disconnect` / `get_status`) added as the foundation for pluggable external connectors
-- **`requirements.txt`**: added `confluent_kafka`
+- **`../requirements.txt`**: added `confluent_kafka`
 
 ### Agent Registry & Routing Updates
-- CEO tools in `agents/agents.json` expanded: `ask_mcq_for_user`, `research_request`, `writing_request`, `marketing_request` with agent-routing descriptions (e.g. `data_analysis_request` explicitly scoped to company files; `knowledge_request` documents only)
+- CEO tools in `../agents/agents.json` expanded: `ask_mcq_for_user`, `research_request`, `writing_request`, `marketing_request` with agent-routing descriptions (e.g. `data_analysis_request` explicitly scoped to company files; `knowledge_request` documents only)
 - CMO `super_search` renamed to `search_current_market_trends`; CMO gained `get_current_date`
 
 ### Flash Response Optimizations
@@ -149,5 +164,5 @@
 - Flash latency improved ~40% via reduced model hops and skipped non-essential pipeline stages
 
 ### Resource Guard Rails
-- Session resource budget (`agents/CEO/ceo_resources.py`) enforced for `external_agents`, `web_searches`, `rag_calls`, `mcqs` (flash: 1/2/1/1, mid: 2/3/3/2, max: 5/4/5/3)
+- Session resource budget (`../agents/CEO/ceo_resources.py`) enforced for `external_agents`, `web_searches`, `rag_calls`, `mcqs` (flash: 1/2/1/1, mid: 2/3/3/2, max: 5/4/5/3)
 - Exhausted resources return explicit errors; agents must synthesize from collected data instead of retrying

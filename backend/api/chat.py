@@ -18,6 +18,7 @@ from backend.db.delete_from_sql import delete_chat_session
 from uuid import uuid4
 from typing import Optional
 from agents.helpers.utils import base64_to_img
+from agents.helpers.context_guard import safe_image_reference, strip_storage_urls
 from backend.db.put_to_drive import save_generated_graphic
 from backend.api.connection_manager import manager, event_bus
 from backend.api.observability_events import (
@@ -47,6 +48,32 @@ def _get_mcq_limit_for_effort(effort: str) -> int:
         return 2
     else:  # max
         return 3
+
+
+def _durable_image_reference(company_id: int, image_url: str | None) -> str | None:
+    """Return a compact, durable reference for an image that must be stored.
+
+    Approval cards carry the generated graphic so the founder sees what they
+    are approving. The graphic tools hand it over as an inline
+    `data:image/png;base64,…` URL, which must never be written into
+    `chat_messages`: the next turn replays that text into the prompt and a
+    single preview can exceed the model's whole context window (see
+    `agents/helpers/context_guard.py`). Upload it once and keep the URL.
+    """
+    if not image_url:
+        return None
+    if not image_url.startswith("data:"):
+        return image_url  # already a URL
+    try:
+        image_bytes = base64_to_img(image_url)
+        stored_url = save_generated_graphic(company_id, image_bytes)
+        if stored_url:
+            logger.info("Uploaded chat image to storage — history keeps its URL")
+            return stored_url
+        logger.warning("Storage returned no URL for chat image — falling back to inline reference")
+    except Exception:
+        logger.exception("Failed to upload chat image to storage — falling back to inline reference")
+    return safe_image_reference(image_url)
 
 
 def _count_mcqs_in_history(history: list[dict]) -> int:
@@ -178,14 +205,19 @@ def chat_with_user(
             image_data_url = None
 
         # Store as text with multi_select flag preserved for reload
-        stored_text = question
+        # The CEO occasionally echoes the image URL in the question text — the
+        # card renders the image, so the URL is noise.
+        stored_text = strip_storage_urls(question)
         if multi_select:
             stored_text = "[multi]\n" + stored_text
         if options:
             stored_text += "\n\nOptions: " + " | ".join(options)
         if image_data_url:
             # Session reload parses this "[image: url]" prefix back into the card.
-            stored_text = f"[image: {image_data_url}]\n\n" + stored_text
+            # Only a compact reference is stored — never a megabyte of base64.
+            stored_image_ref = _durable_image_reference(company_id, image_data_url)
+            if stored_image_ref:
+                stored_text = f"[image: {stored_image_ref}]\n\n" + stored_text
 
         # Persist directly to DB so the MCQ is immediately visible in history.
         # Also queue via Kafka for async consumers (chat memory, etc.).
@@ -213,7 +245,9 @@ def chat_with_user(
         return response
 
     if isinstance(reply, dict) and reply.get("type") == "image_generated":
-        generated_message = reply.get("message") or "Here is the generated graphic."
+        # The CEO sometimes pastes the graphic's own (signed) URL into its copy; the
+        # card renders the image, so keep the URL out of the stored/returned text.
+        generated_message = strip_storage_urls(reply.get("message") or "") or "Here is the generated graphic."
         image_data_url = reply.get("image_data_url")
         if not isinstance(image_data_url, str):
             logger.error("CEO returned an invalid generated-image payload")
@@ -239,8 +273,11 @@ def chat_with_user(
 
         final_image_url = image_url or image_data_url
 
-        # Store with image marker so it persists on reload and session switch
-        stored_message = f"[image: {final_image_url}]\n\n{generated_message}"
+        # Store with image marker so it persists on reload and session switch.
+        # `safe_image_reference` refuses multi-hundred-KB inline payloads, which
+        # would otherwise be replayed into the prompt on the next turn.
+        stored_image_ref = safe_image_reference(final_image_url)
+        stored_message = f"[image: {stored_image_ref}]\n\n{generated_message}" if stored_image_ref else generated_message
         add_message_to_session(session_id, "assistant", stored_message)
 
         try:
