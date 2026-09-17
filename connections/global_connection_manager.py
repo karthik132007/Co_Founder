@@ -8,7 +8,8 @@
 """
 
 from connections.tool_manager import ToolManager
-from connections.instagram_tools import register_instagram_tools
+from connections.meta.instagram.instagram_tools import register_instagram_tools
+from connections.google.gmail.gmail_tools import register_gmail_tools
 
 
 class Global_Connection_Manager:
@@ -16,7 +17,18 @@ class Global_Connection_Manager:
 
     def __init__(self):
         self.tools = ToolManager()
+        self._register_providers()
+
+    def _register_providers(self):
+        """Every connection's tool specs, in one place.
+
+        Registering a provider does not mean it is connected — the tools are
+        always visible to the model, and each call fails with a "connect it on
+        the Plugins page" message until the company has actually connected it
+        (see docs/Agents_rules.md).
+        """
         register_instagram_tools(self.tools)
+        register_gmail_tools(self.tools)
 
     def list_tools(self):
         """Every tool from every connection."""

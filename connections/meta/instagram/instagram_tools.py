@@ -12,7 +12,7 @@ def register_instagram_tools(tools: ToolManager, client=None) -> None:
     manager. ``company_id`` is server-injected so the model never passes it.
     """
     if client is None:
-        from connections.instagram_connection_manager import instagram_manager
+        from connections.meta.instagram.instagram_connection_manager import instagram_manager
 
         client = instagram_manager
 

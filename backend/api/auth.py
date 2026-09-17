@@ -23,7 +23,7 @@ from backend.security import hash_password, create_session_token, verify_session
 from backend.api.rate_limit import SlidingWindowRateLimiter
 from backend.utils import get_supabase_client
 from backend.db.get_from_sql import get_company_id
-from connections.instagram_connection_manager import Instagram_Connection_Manager
+from connections.meta.instagram.instagram_connection_manager import Instagram_Connection_Manager
 from supabase_auth.errors import (
     AuthApiError,
     AuthInvalidJwtError,

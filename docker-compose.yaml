@@ -75,6 +75,13 @@ services:
       - ./backend:/app/backend
       - ./agents:/app/agents
       - ./RAG_Engine:/app/RAG_Engine
+      # Mounted for edit-without-rebuild parity with ./backend. Without these,
+      # changes to the connector code / pricing / sandbox are only picked up by
+      # rebuilding the image, which reads as "my change did nothing" (uvicorn
+      # --reload can only see files that are actually mounted).
+      - ./connections:/app/connections
+      - ./credits_engine:/app/credits_engine
+      - ./e2b_sandbox:/app/e2b_sandbox
       - ./main.py:/app/main.py
       - ./logger_config.py:/app/logger_config.py
     env_file:
@@ -187,6 +194,10 @@ services:
         # https://get-cofounder.tech/auth/callback (NOT the bare domain).
         # The app appends /auth/callback to a bare base as a safety net.
         NEXT_PUBLIC_AUTH_REDIRECT_URL: ${NEXT_PUBLIC_AUTH_REDIRECT_URL:-}
+        # Public Razorpay key id — read from the root .env. Inlined into the
+        # client bundle at build time, so changing it needs a rebuild:
+        #   docker compose build frontend && docker compose up -d frontend
+        NEXT_PUBLIC_RAZORPAY_KEY_ID: ${NEXT_PUBLIC_RAZORPAY_KEY_ID:-}
     container_name: frontend
     ports:
       - "127.0.0.1:3000:3000"

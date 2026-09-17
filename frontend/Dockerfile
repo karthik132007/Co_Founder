@@ -14,6 +14,15 @@
 #                                   e.g. https://get-cofounder.tech/auth/callback
 #                                   (NOT the bare domain). If omitted, the app
 #                                   derives it from the site origin.
+#   NEXT_PUBLIC_RAZORPAY_KEY_ID     public Razorpay key id (rzp_…) for checkout.
+#                                   Only the id — RAZORPAY_KEY_SECRET stays
+#                                   backend-only.
+#
+# NOTE: every `NEXT_PUBLIC_*` variable the app reads must be declared here AND
+# passed from docker-compose.yaml (frontend.build.args). `node server.js` runs
+# the Next standalone server, so scripts/run-next.js — which is what loads the
+# repo-root .env for `npm run dev` — never executes inside the container,
+# and these values are inlined into the client bundle at build time anyway.
 # ─────────────────────────────────────────────────────────────────────────────
 FROM node:22-alpine AS deps
 WORKDIR /app
@@ -43,6 +52,11 @@ ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 ARG NEXT_PUBLIC_AUTH_REDIRECT_URL
 ENV NEXT_PUBLIC_AUTH_REDIRECT_URL=$NEXT_PUBLIC_AUTH_REDIRECT_URL
+
+# Public Razorpay key id for the browser checkout. Without it the billing page
+# disables top-ups (the KEY_SECRET is backend-only and never inlined).
+ARG NEXT_PUBLIC_RAZORPAY_KEY_ID
+ENV NEXT_PUBLIC_RAZORPAY_KEY_ID=$NEXT_PUBLIC_RAZORPAY_KEY_ID
 
 RUN npm run build
 

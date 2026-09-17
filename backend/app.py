@@ -24,9 +24,30 @@ from backend.api.connection_manager import event_bus
 
 logger = logging.getLogger(__name__)
 
+
+def _log_connector_config() -> None:
+    """Boot-time visibility for optional connectors.
+
+    Without this, a missing OAuth credential is only discovered when a founder
+    clicks Connect and gets a 500. Names only — never values.
+    """
+    from connections.google.google_connection_manager import Google_Connection_Manager
+
+    missing = Google_Connection_Manager().missing_config
+    if missing:
+        logger.warning(
+            "Gmail connector disabled — missing env var(s): %s "
+            "(see docs/technical.md → Gmail connection flow)",
+            ", ".join(missing),
+        )
+    else:
+        logger.info("Gmail connector configured")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     event_bus.set_event_loop(asyncio.get_running_loop())
+    _log_connector_config()
     yield
 
 app = FastAPI(lifespan=lifespan)

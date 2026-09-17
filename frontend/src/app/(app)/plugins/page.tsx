@@ -3,16 +3,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
-  CalendarDays,
   Check,
   CircleAlert,
   CircleCheck,
-  Cloud,
   FileText,
-  Hash,
   Link2,
   Loader2,
-  Mail,
   Plus,
   Search,
   SlidersHorizontal,
@@ -21,9 +17,11 @@ import type { LucideIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getSession } from "@/lib/session";
 import {
+  disconnectGoogle,
   disconnectInstagram,
   fetchConnections,
   fetchProfile,
+  gmailConnectUrl,
   instagramConnectUrl,
   type ConnectionInfo,
 } from "@/lib/api";
@@ -32,19 +30,19 @@ type ConnectorDef = {
   id: string;
   name: string;
   description: string;
-  img?: string; // public SVG logo
-  Icon?: LucideIcon; // lucide fallback when no SVG is available
+  img?: string; // public logo (SVG or PNG)
+  Icon?: LucideIcon; // lucide fallback when no logo is available
   tint: string; // brand colour for the logo tile
 };
 
 const CONNECTORS: ConnectorDef[] = [
   { id: "instagram", name: "Instagram", description: "Publish content and pull insights from Instagram", img: "/instagram.svg", tint: "#E1306C" },
   { id: "google_sheets", name: "Google Sheets", description: "Sync data and reports from your spreadsheets", img: "/google-sheets.svg", tint: "#34A853" },
-  { id: "google_drive", name: "Google Drive", description: "Search, read, and upload files instantly", Icon: Cloud, tint: "#FBBC04" },
-  { id: "gmail", name: "Gmail", description: "Draft replies, summarize threads & search your inbox", Icon: Mail, tint: "#EA4335" },
-  { id: "google_calendar", name: "Google Calendar", description: "Manage your schedule and coordinate meetings", Icon: CalendarDays, tint: "#4285F4" },
+  { id: "google_drive", name: "Google Drive", description: "Search, read, and upload files instantly", img: "/google-drive.png", tint: "#FBBC04" },
+  { id: "gmail", name: "Gmail", description: "Draft replies, summarize threads & search your inbox", img: "/gmail.png", tint: "#EA4335" },
+  { id: "google_calendar", name: "Google Calendar", description: "Manage your schedule and coordinate meetings", img: "/google-calendar.png", tint: "#4285F4" },
+  { id: "google_ads", name: "Google Ads", description: "Monitor campaigns and pull ad performance data", img: "/google-ads.png", tint: "#FBBC04" },
   { id: "notion", name: "Notion", description: "Connect your Notion workspace to power workflows", Icon: FileText, tint: "#1f2937" },
-  { id: "slack", name: "Slack", description: "Send messages and fetch Slack data", Icon: Hash, tint: "#4A154B" },
   { id: "shopify", name: "Shopify", description: "Orders & sales data", img: "/shopify.svg", tint: "#96BF48" },
 ];
 
@@ -58,6 +56,28 @@ const FILTERS: { id: Filter; label: string }[] = [
 
 type Notice = { type: "success" | "error"; text: string } | null;
 
+// OAuth callbacks land back on this page as `?<param>=connected|error&detail=…`.
+const OAUTH_NOTICE_PARAMS: Record<string, string> = {
+  instagram: "Instagram",
+  gmail: "Gmail",
+};
+
+/** Read the OAuth outcome from the URL once, during the initial client render. */
+function readOAuthNotice(params: URLSearchParams): Notice {
+  for (const [param, label] of Object.entries(OAUTH_NOTICE_PARAMS)) {
+    const status = params.get(param);
+    if (!status) continue;
+    if (status === "connected") {
+      return { type: "success", text: `${label} connected successfully.` };
+    }
+    return {
+      type: "error",
+      text: params.get("detail") || `${label} connection failed. Please try again.`,
+    };
+  }
+  return null;
+}
+
 export default function PluginsPage() {
   const router = useRouter();
   const session = getSession();
@@ -68,25 +88,14 @@ export default function PluginsPage() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const [filterOpen, setFilterOpen] = useState(false);
-  const [connecting, setConnecting] = useState(false);
+  const [connectingId, setConnectingId] = useState<string | null>(null);
 
-  // Read the OAuth callback outcome (?instagram=connected|error) once during
+  // Read the OAuth callback outcome (?instagram=… / ?gmail=…) once during
   // the initial client render. This page only renders after the app layout has
   // hydrated (guarded by the session), so window is always available here.
   const [notice, setNotice] = useState<Notice>(() => {
     if (typeof window === "undefined") return null;
-    const params = new URLSearchParams(window.location.search);
-    const status = params.get("instagram");
-    if (status === "connected") {
-      return { type: "success", text: "Instagram connected successfully." };
-    }
-    if (status === "error") {
-      return {
-        type: "error",
-        text: params.get("detail") || "Instagram connection failed. Please try again.",
-      };
-    }
-    return null;
+    return readOAuthNotice(new URLSearchParams(window.location.search));
   });
 
   const loadConnections = useCallback(async () => {
@@ -106,7 +115,7 @@ export default function PluginsPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
-    if (params.get("instagram")) {
+    if (Object.keys(OAUTH_NOTICE_PARAMS).some((param) => params.get(param))) {
       router.replace("/plugins", { scroll: false });
     }
   }, [router]);
@@ -154,36 +163,51 @@ export default function PluginsPage() {
   if (!session || !userId) return null;
 
   const handleConnect = async (connector: ConnectorDef) => {
-    if (connector.id !== "instagram" || connecting) return;
-    setConnecting(true);
+    if (connectingId) return;
+    setConnectingId(connector.id);
     setNotice(null);
+    const redirectTo = `${window.location.origin}/plugins`;
     try {
-      const profile = await fetchProfile(userId);
-      // Full-page redirect → Instagram → backend callback → back to /plugins.
-      window.location.assign(
-        instagramConnectUrl(profile.company.id, `${window.location.origin}/plugins`),
-      );
+      if (connector.id === "instagram") {
+        const profile = await fetchProfile(userId);
+        // Full-page redirect → Instagram → backend callback → back to /plugins.
+        window.location.assign(instagramConnectUrl(profile.company.id, redirectTo));
+        return;
+      }
+      if (connector.id === "gmail") {
+        // Full-page redirect → Google → backend callback → back to /plugins.
+        window.location.assign(gmailConnectUrl(userId, redirectTo));
+        return;
+      }
     } catch {
       setNotice({
         type: "error",
-        text: "Could not start the Instagram connection. Please try again.",
+        text: `Could not start the ${connector.name} connection. Please try again.`,
       });
-      setConnecting(false);
     }
+    setConnectingId(null);
   };
 
   const handleDisconnect = async (connector: ConnectorDef) => {
-    if (connector.id !== "instagram") return;
-    if (!window.confirm("Disconnect Instagram?")) return;
+    if (connector.id !== "instagram" && connector.id !== "gmail") return;
+    const prompt =
+      connector.id === "gmail"
+        ? "Disconnect Gmail? This revokes the shared Google connection for every Google connector."
+        : `Disconnect ${connector.name}?`;
+    if (!window.confirm(prompt)) return;
     setNotice(null);
     try {
-      await disconnectInstagram(userId);
-      setNotice({ type: "success", text: "Instagram disconnected." });
+      if (connector.id === "instagram") {
+        await disconnectInstagram(userId);
+      } else {
+        await disconnectGoogle(userId);
+      }
+      setNotice({ type: "success", text: `${connector.name} disconnected.` });
       await loadConnections();
     } catch (e) {
       setNotice({
         type: "error",
-        text: e instanceof Error ? e.message : "Failed to disconnect Instagram.",
+        text: e instanceof Error ? e.message : `Failed to disconnect ${connector.name}.`,
       });
     }
   };
@@ -293,7 +317,7 @@ export default function PluginsPage() {
             const info = connectionById.get(c.id);
             const connected = info?.connected ?? false;
             const available = info?.available ?? false;
-            const isConnecting = connecting && c.id === "instagram";
+            const isConnecting = connectingId === c.id;
             return (
               <motion.div
                 key={c.id}

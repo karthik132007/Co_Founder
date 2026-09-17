@@ -288,7 +288,7 @@ export default function BillingPage() {
     if (!RAZORPAY_KEY_ID) {
       setNotice({
         type: "error",
-        text: "Razorpay isn't configured — add NEXT_PUBLIC_RAZORPAY_KEY_ID to frontend/.env.local.",
+        text: "Razorpay isn't configured — set NEXT_PUBLIC_RAZORPAY_KEY_ID in the repo-root .env, then restart the dev server (or rebuild the frontend image: docker compose build frontend).",
       });
       return;
     }

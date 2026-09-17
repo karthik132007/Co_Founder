@@ -18,7 +18,7 @@
 
 ### Connected Apps — agent tool manager & publishing
 - **MCP-style tool manager**: added `../connections/tool_manager.py`, a deliberately small registry (`Tool` / `ToolManager`) with `add`, `list_tools`, `call_tool`, and `as_langchain_tools`. An integration is declared once — name, description, argument schema, and which params are server-injected — and then exposed to any agent as LangChain tools. No MCP SDK or transport layer.
-- **Instagram tool provider**: added `../connections/instagram_tools.py` registering `instagram.get_details`, `instagram.get_recent_activity`, and `instagram.post_content`.
+- **Instagram tool provider**: added `../connections/meta/instagram/instagram_tools.py` registering `instagram.get_details`, `instagram.get_recent_activity`, and `instagram.post_content`.
 - **Company scoping**: `company_id` is injected server-side and stripped from the model-facing schema, and a bound context key is rejected as an argument, so an agent cannot act on another company's account.
 - **Connection registry**: `Global_Connection_Manager` now owns one `ToolManager` and exposes `connection_tools_for(company_id)`; the legacy `list_connections()` catalog is derived from the registry.
 - **Agents can act on integrations**: the CEO and CMO now receive every connected app's tools, so they can read account data and publish content.

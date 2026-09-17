@@ -221,6 +221,8 @@ export type ConnectionInfo = {
   available: boolean;
   connected: boolean;
   instagram_user_id?: string;
+  /** Google account bound to the company (Google connectors only). */
+  google_email?: string;
   expires_at?: string;
   created_at?: string;
 };
@@ -263,6 +265,35 @@ export function instagramConnectUrl(companyId: number, redirectTo: string): stri
     redirect_to: redirectTo,
   });
   return `${API_BASE_URL}/auth/instagram/login?${params.toString()}`;
+}
+
+/**
+ * Build the URL that starts the Gmail OAuth handshake. The backend resolves the
+ * caller's company from the session cookie (or `user_id`), so only the user id
+ * is needed here. The callback returns to `redirectTo` with
+ * `?gmail=connected|error` appended.
+ */
+export function gmailConnectUrl(userId: number, redirectTo: string): string {
+  const params = new URLSearchParams({
+    user_id: String(userId),
+    redirect_to: redirectTo,
+  });
+  return `${API_BASE_URL}/connections/google/gmail/connect?${params.toString()}`;
+}
+
+/**
+ * Revoke the company's Google grant. Every Google connector shares one grant,
+ * so this disconnects Gmail (and any future Google connector) at once.
+ */
+export async function disconnectGoogle(userId: number): Promise<{ status: string }> {
+  const res = await fetch(`${API_BASE_URL}/connections/google?user_id=${userId}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!res.ok) {
+    throw new Error(await readApiError(res, "Failed to disconnect Google"));
+  }
+  return res.json() as Promise<{ status: string }>;
 }
 
 /* ── Dashboard ── */

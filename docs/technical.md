@@ -38,7 +38,7 @@ If you are reviewing this project, these are the engineering decisions worth loo
 - **Agent orchestration:** `agents/CEO/CEO.py` and `agents/CEO/ceo_agent_tools.py` show how one CEO agent routes to specialist agents while preserving tool-based reasoning.
 - **Retrieval quality:** `RAG_Engine/` combines semantic search, keyword search, fusion, reranking, document chunks, and separate chat-memory retrieval.
 - **Streaming observability:** `backend/api/connection_manager.py`, `backend/api/observability_events.py`, `frontend/src/lib/observability.ts`, and `frontend/src/components/AgentTracePanel.tsx` solve the production race between `POST /chat` and WebSocket connection startup.
-- **Plugin connections:** `backend/api/connections.py`, `backend/api/auth.py`, `connections/instagram_connection_manager.py`, and `frontend/src/app/(app)/plugins/page.tsx` implement the Instagram connection lifecycle and connector catalog.
+- **Plugin connections:** `backend/api/connections.py`, `backend/api/auth.py`, `../connections/meta/instagram/instagram_connection_manager.py`, `../connections/google/google_connection_manager.py`, and `frontend/src/app/(app)/plugins/page.tsx` implement the Instagram + Gmail connection lifecycle and connector catalog.
 - **Async product behavior:** `backend/kafka_jobs/` moves chat message persistence, memory extraction, and title generation out of the request path.
 - **Real billing path:** `backend/api/payments.py`, `backend/db/credits.py`, `backend/db/payment_history.py`, and `frontend/src/app/(app)/billing/page.tsx` cover checkout, verification, idempotency, balance updates, and invoice history.
 - **Evaluation culture:** `evals/`, [Evals & Benchmarks](#evals--benchmarks), and [`eval_report.md`](eval_report.md) capture both the RAG numbers and CEO e2e judge results, including limitations and confounders.
@@ -282,7 +282,7 @@ Co_Founder/
 │   │   ├── credits.py       # POST /credits/add, GET /credits/{company_id}
 │   │   ├── payments.py      # POST /payments/create-order, POST /payments/verify-payment (Razorpay)
 │   │   ├── payment_history.py  # CRUD /payment-history (list/create/update/delete)
-│   │   ├── connections.py  # /connections catalog, Instagram status, disconnect
+│   │   ├── connections.py  # /connections catalog, Instagram status/disconnect, Google (Gmail) OAuth connect/callback
 │   │   ├── connection_manager.py    # ConnectionManager + SessionEventBus (buffered replay, WS traces)
 │   │   └── observability_events.py  # Agent trace event types/factories (incl. llm_token)
 │   ├── kafka_jobs/          # Async Kafka pipeline (producers + consumers)
@@ -297,6 +297,8 @@ Co_Founder/
 │       ├── delete_from_sql.py
 │       ├── put_to_drive.py  # Supabase Storage uploads
 │       ├── credits.py       # company_credits CRUD + Redis cache (60s) + add/deduct with quantize
+│       ├── connections.py   # instagram_connections CRUD (Upsert/read/delete)
+│       ├── google_connections.py  # google_connections CRUD (shared Google grant, refresh token preserved on re-connect)
 │       ├── payment_history.py  # payment_history CRUD (create/list/count/get/update/delete)
 │       └── redis_client.py  # Redis client singleton
 ├── credits_engine/          # get_usage / get_total_usage pricing (MARKUP 2×, USD_INR 100, 1 credit = ₹1)
@@ -346,6 +348,10 @@ Co_Founder/
 | DELETE | `/connections/instagram?user_id=` | Disconnect Instagram and remove the stored token |
 | GET | `/auth/instagram/login?company_id=&redirect_to=` | Start Instagram OAuth; stores an expiring Redis state and redirects to Instagram |
 | GET | `/auth/instagram/callback` | Exchange the Instagram authorization code, persist the long-lived token, and redirect back to the Plugins page |
+| GET | `/connections/google?user_id=` | Google grant status — bound account, scopes, and which connectors the scopes cover |
+| DELETE | `/connections/google?user_id=` | Revoke the shared Google grant (disconnects every Google connector) |
+| GET | `/connections/google/gmail/connect?user_id=&redirect_to=` | Start the Gmail OAuth handshake; stores the company + return URL in an expiring single-use Redis state and redirects to Google |
+| GET | `/connections/google/gmail/callback` | Exchange the Google authorization code, persist the grant (access + refresh token, granted scopes), and redirect back to the Plugins page with `?gmail=connected|error` |
 
 ### Async Kafka Pipeline
 
@@ -383,6 +389,7 @@ POST /chat
 - Returns the same shape as `/auth/login` (`{id, email, message}`) plus `is_new`; the frontend then saves the session and redirects to `/chat`
 - Required env vars:
   - Frontend (`NEXT_PUBLIC_*`, inlined at build time, read from the **repo-root `.env`** via `frontend/scripts/run-next.js` — no separate `frontend/.env.local` needed): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, optional `NEXT_PUBLIC_AUTH_REDIRECT_URL`, plus `NEXT_PUBLIC_RAZORPAY_KEY_ID` for checkout
+  - ⚠️ The Docker image never runs `run-next.js` (the container starts `node server.js`, Next standalone) and `NEXT_PUBLIC_*` values are frozen into the client bundle at build time, so **every one of them must also be declared in `frontend/Dockerfile` (`ARG` + `ENV`) and passed from `docker-compose.yaml` → `frontend.build.args`**, sourced from the root `.env`. A variable that is only in `.env` works under `npm run dev` and silently renders as `undefined` in the container. Changing one requires `docker compose build frontend && docker compose up -d frontend`.
   - Backend (root `.env`, already used by the REST layer): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `SESSION_SECRET`, `SESSION_COOKIE_SECURE`, `SESSION_MAX_AGE_DAYS`
   - Configure the OAuth redirect URL in Supabase → Authentication → URL Configuration (e.g. `http://localhost:3000/auth/callback`)
 - Database: `public.users` gains `supabase_user_id uuid` (nullable, unique) — see `schemas/migrations/add_supabase_user_id.sql`
@@ -442,12 +449,12 @@ The Plugins page (`frontend/src/app/(app)/plugins/page.tsx`) provides a searchab
 | Connector | Status | Capabilities |
 |---|---|---|
 | Instagram | Available | OAuth connection, long-lived token storage, account binding, status, disconnect |
+| Gmail | Available | Google OAuth connection (offline access), refresh-token storage, scope-derived status, disconnect, agent tools (`gmail.search`, `gmail.get_message`, `gmail.get_thread`, `gmail.list_labels`, `gmail.create_draft` — draft-only, no send) |
 | Google Sheets | Coming soon | Catalog entry only |
 | Google Drive | Coming soon | Catalog entry only |
-| Gmail | Coming soon | Catalog entry only |
 | Google Calendar | Coming soon | Catalog entry only |
 | Notion | Coming soon | Catalog entry only |
-| Slack | Coming soon | Catalog entry only |
+| Google Ads | Coming soon | Catalog entry only |
 | Shopify | Coming soon | Catalog entry only |
 
 ### Instagram connection flow
@@ -460,7 +467,59 @@ The Plugins page (`frontend/src/app/(app)/plugins/page.tsx`) provides a searchab
 6. The backend redirects to the original Plugins URL with `?instagram=connected` or `?instagram=error`.
 7. The frontend reloads the connection catalog and displays the connected state. Disconnect removes the stored token through `DELETE /connections/instagram`.
 
-Access tokens are never included in frontend API responses. Agent-side Instagram operations use `connections/instagram_connection_manager.py` to retrieve the token server-side.
+Access tokens are never included in frontend API responses. Agent-side Instagram operations use `../connections/meta/instagram/instagram_connection_manager.py` to retrieve the token server-side.
+
+### Gmail (Google) connection flow
+
+Every Google connector shares **one** OAuth client and therefore **one grant per company**: Gmail is available today, and Sheets / Drive / Calendar are switched on by adding their scope to `CONNECTOR_SCOPES` in `../connections/google/google_connection_manager.py`. The handshake lives in the connections router (not `/auth`, which is for sign-in):
+
+1. The user opens **Plugins** and selects **Connect** on Gmail.
+2. The frontend opens `GET /connections/google/gmail/connect?user_id=…&redirect_to=…`. The backend resolves the caller (session cookie preferred, `user_id` fallback — a mismatch is a `403`) to their company, so a browser can never bind a mailbox to a company it does not own.
+3. The company id, connector, resolved `redirect_uri` and validated return URL are stored in Redis for ten minutes; `redirect_to` is rejected unless it is absolute `http(s)` (no open redirect).
+4. The backend redirects to Google's consent screen with `access_type=offline`, `prompt=consent` and `include_granted_scopes=true` — that combination is what guarantees a **refresh token** and keeps scopes from previously connected Google connectors.
+5. Google redirects to `GET /connections/google/gmail/callback` with the authorization code.
+6. The backend consumes the single-use state (deleted on read, so a replay cannot re-bind a token), exchanges the code for tokens, fetches the Google identity (`sub` + `email`), and upserts the grant into `google_connections`. When Google omits a refresh token on re-connect, the stored one is **preserved** rather than overwritten with `NULL`.
+7. The backend redirects to the original Plugins URL with `?gmail=connected` or `?gmail=error&detail=…`. Denials (`error=access_denied`, no `code`) return the same redirect instead of a 422.
+8. The frontend reloads the catalog. Because connectors share the grant, **Disconnect** calls `DELETE /connections/google` and revokes every Google connector at once.
+
+Required backend env vars (root `.env`), plus the redirect URI registered on the Google Cloud OAuth client:
+
+```dotenv
+GOOGLE_OAUTH_CLIENT_ID=<google oauth client id>
+GOOGLE_OAUTH_CLIENT_SECRET=<google oauth client secret>
+GOOGLE_OAUTH_REDIRECT_URI=https://get-cofounder.tech/api/connections/google/gmail/callback
+```
+
+The redirect URI must match the Google configuration exactly, including scheme, host, path and `/api` prefix where applicable — Google rejects the token exchange otherwise. Register **every** URI you actually use locally (they are not interchangeable):
+
+```
+http://127.0.0.1:8000/connections/google/gmail/callback
+http://localhost:8000/connections/google/gmail/callback
+https://get-cofounder.tech/api/connections/google/gmail/callback   # production
+```
+
+Local setup, in the Google Cloud console (a Supabase Google client works too — add these scopes and redirect URIs to it and reuse the same id/secret):
+
+1. **Enable the Gmail API** for the project (APIs & Services → Library → Gmail API → Enable). Without it the token exchange fails with `access_not_configured`.
+2. On the **OAuth consent screen** add the scopes `openid`, `email`, `https://www.googleapis.com/auth/gmail.readonly`, `https://www.googleapis.com/auth/gmail.compose`. While the app is in **Testing**, add your own account under **Test users** — otherwise Google returns `access_denied` before the callback runs.
+3. Create an **OAuth client ID → Web application** and paste the redirect URIs above. Two traps produce `Error 400: redirect_uri_mismatch` even when `.env` is correct:
+   - The URI belongs in **Authorized redirect URIs**, not *Authorized JavaScript origins*, and the client **Application type** must be *Web application* (desktop/iOS/Android clients refuse custom loopback paths).
+   - The **project picker silently resets** — confirm the **Client ID** on the page matches `GOOGLE_OAUTH_CLIENT_ID` in `.env` character-for-character. Editing a same-named client in another project changes nothing.
+   The value is compared byte-exactly, so `localhost` ≠ `127.0.0.1`, a trailing `/` breaks it, and console changes can take a couple of minutes to propagate. The resolved URI is logged on every connect attempt (`Starting Gmail OAuth — … redirect_uri=…`), which is the string to compare against.
+4. Put the credentials in the repo-root `.env` and **restart the backend** — `load_dotenv()` runs at import time, so `--reload` (which only watches `.py` files) will not pick up `.env` changes. The startup log states `Gmail connector configured` or lists the missing variable names.
+5. Apply `schemas/migrations/create_google_connections.sql` in the Supabase SQL editor.
+
+If any of this is missing, `GET /connections/google/gmail/connect` fails fast with `500 Gmail integration is not configured (missing: …)` rather than sending the browser to a Google error page.
+
+**Testing-mode caveats** (an unverified app):
+
+- Accounts missing from **Audience → Test users** are blocked *at Google* with `Error 403: access_denied` ("has not completed the Google verification process"). Test users are capped at 100.
+- **Refresh tokens issued in Testing expire after 7 days**, so a connected mailbox stops working a week later (the agent gets "Gmail is not connected … connect it from the Plugins page") and the founder must reconnect. `gmail.readonly` / `gmail.compose` are *restricted* scopes, so publishing for real founders needs Google's verification (and, for restricted scopes, a security assessment) — plan for it before enabling the connector beyond test users.
+- Consent-screen edits (test users, scopes) take a minute or two to apply, and a browser tab parked on Google's error page keeps replaying the stale failure — always restart the flow from `/plugins` instead of reloading.
+
+**Debugging a failure without a browser.** The request never reaching `/connections/google/gmail/callback` is the key signal, and it separates the two failure classes: `redirect_uri_mismatch` is thrown by Google *before* login, `access_denied` *after* it. Google validates `redirect_uri` pre-login, so the authorize URL can be probed with `curl` (no credentials needed): an accepted request 302s to `/v3/signin/identifier`, a rejected one to `/signin/oauth/error?authError=…` — base64-decode that parameter for Google's exact reason. The resolved URI is logged on every attempt (`Starting Gmail OAuth — … redirect_uri=…`), which is the string to compare against the console.
+
+Tokens are backend-only: `/connections` responses expose the bound `google_email`, the granted `scopes` and timestamps, never `access_token` or `refresh_token`. Agent-side tools call `Google_Connection_Manager.get_access_token(company_id)`, which returns a live token and transparently refreshes it (60s before expiry). Status is scope-derived — `connector_is_connected(scopes, connector_id)` decides whether a connector shows as **Connected**, so a grant without the Gmail scope leaves Gmail untouched. Table: `schemas/google_connections.sql` (one row per company, `unique(company_id)`).
 
 ### Agent tool manager (MCP-style)
 
@@ -469,7 +528,9 @@ Connection tools are declared once and shared by every agent through a small, MC
 | File | Role |
 |---|---|
 | `connections/tool_manager.py` | `Tool` + `ToolManager`: `add()`, `list_tools()`, `call_tool()`, `as_langchain_tools()` |
-| `connections/instagram_tools.py` | `register_instagram_tools()` — the Instagram tool specs |
+| `../connections/meta/instagram/instagram_tools.py` | `register_instagram_tools()` — the Instagram tool specs |
+| `../connections/google/gmail/gmail_tools.py` | `register_gmail_tools()` — the Gmail tool specs |
+| `../connections/google/gmail/gmail_connection_manager.py` | `Gmail_Connection_Manager` + `gmail_manager` singleton — Gmail REST calls, MIME parsing, draft building |
 | `connections/global_connection_manager.py` | `Global_Connection_Manager` + module singleton `connections` |
 
 ```python
@@ -492,6 +553,24 @@ tools.as_langchain_tools(company_id=1)    # hand to create_agent(tools=[...])
 - **Adding a connection** means writing `connections/<name>_tools.py` with `register_<name>_tools(manager)` and calling it from `Global_Connection_Manager._register_providers()`.
 
 Agents receive tools bound to their own company via `connections.connection_tools_for(company_id)` — currently the CEO (`_build_ceo_tools`) and the CMO (`_get_cmo_agent`).
+
+#### Gmail tools (`gmail.*`)
+
+Six tools, all bound to the company's shared Google grant (`Google_Connection_Manager.get_access_token`, auto-refreshed) — a plain REST client over `https://gmail.googleapis.com/gmail/v1/users/me`, no Google SDK:
+
+| Tool | Gmail method | Notes |
+|---|---|---|
+| `gmail.get_profile` | `users.getProfile` | Which inbox is connected + totals |
+| `gmail.search` | `users.messages.list` | Gmail search syntax (`from:`, `newer_than:7d`, `is:unread`); hits are hydrated concurrently with `format=metadata` (sender/subject/date/snippet/attachment names, no bodies) |
+| `gmail.get_message` | `users.messages.get` | Full headers + decoded body, plain text preferred over HTML |
+| `gmail.get_thread` | `users.threads.get` | Whole conversation, oldest first |
+| `gmail.list_labels` | `users.labels.list` | Label ids for search filters |
+| `gmail.create_draft` | `users.drafts.create` | Builds the MIME message; `in_reply_to_message_id` adds `In-Reply-To`/`References` and the original `threadId` so it lands in the conversation |
+
+- **No send tool by design.** Outbound email stays a human action: the agent can read and draft, the founder reviews and sends in Gmail. The CEO/CMO prompts say so explicitly and forbid claiming an email was sent.
+- **Context-window guard**: bodies are truncated (`_MAX_BODY_CHARS` 4000, 2000 per message inside a thread) and attachments are returned as metadata only — a 200 KB HTML newsletter would otherwise be ~100k tokens. `search_messages` never returns bodies; it is capped at 25 hits (`_MAX_SEARCH_RESULTS`).
+- **Errors are actionable**: HTTP failures are translated to a message the model can relay ("reconnect Gmail from the Plugins page" on 401, missing-scope/quota hint on 403). A company without a Google connection gets that same guidance instead of a stack trace.
+- **Tool schemas**: Gmail params are declared explicitly in `register_gmail_tools()` because `ToolManager` treats *any* param without a `"default"` as required (array/object params cannot be inferred from type hints). Optional params therefore carry `"default": []` / `"default": ""`.
 
 ### Publishing a generated graphic
 
