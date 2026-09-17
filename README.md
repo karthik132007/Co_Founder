@@ -1,9 +1,33 @@
-# Co_Founder — AI Co-Founder Platform v0.9.20
+<div align="center">
 
-A full-stack multi-agent platform that acts as an early founding team. A founder chats with a CEO orchestrator, which delegates to specialist agents for research, writing, marketing, data analysis, and design.
+<img src="frontend/public/icon.png" alt="Co-Founder Logo" width="120">
 
-> **For technical details, see [`docs/technical.md`](docs/technical.md)** — agent system, RAG pipeline, backend APIs, billing, frontend, observability, benchmarks, and performance work.
-Try this live at https://get-cofounder.tech/
+# Co_Founder
+
+### AI Co-Founder Platform · v0.9.20
+
+<p>
+  A full-stack multi-agent platform that acts as an early founding team.
+  <br>
+  Chat with a CEO orchestrator and delegate work to specialist AI agents.
+</p>
+
+<br>
+
+<a href="https://get-cofounder.tech/">
+  <strong>🚀 TRY CO-FOUNDER — LIVE DEMO</strong>
+</a>
+
+<br><br>
+
+<a href="https://get-cofounder.tech/">
+  https://get-cofounder.tech/
+</a>
+
+</div>
+
+---
+
 ## Overview
 
 AI Co-Founder simulates a startup team around a CEO agent. A founder describes the business through chat; the CEO decides whether to answer directly, ask a clarification question, retrieve company knowledge, or delegate to a specialist.
