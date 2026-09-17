@@ -490,6 +490,8 @@ GOOGLE_OAUTH_CLIENT_SECRET=<google oauth client secret>
 GOOGLE_OAUTH_REDIRECT_URI=https://get-cofounder.tech/api/connections/google/gmail/callback
 ```
 
+`GOOGLE_OAUTH_REDIRECT_URI` is effectively **required in production**: nginx strips `/api` before proxying to the backend, so the fallback path (reconstructing the URI from `X-Forwarded-*` headers) would emit `https://get-cofounder.tech/connections/google/gmail/callback` — missing the prefix and rejected by Google. Keep the `127.0.0.1` value in a dev machine's `.env` and the deployed value in the server's `.env` (the same token-grant plumbing then works in both); the server also wants `FRONTEND_URL=https://get-cofounder.tech` so the post-callback redirect falls back to the real site when `redirect_to` is absent. Whichever value is active must be registered on the OAuth client, because a localhost URI is useless in the browser-facing consent flow of a deployed app.
+
 The redirect URI must match the Google configuration exactly, including scheme, host, path and `/api` prefix where applicable — Google rejects the token exchange otherwise. Register **every** URI you actually use locally (they are not interchangeable):
 
 ```
@@ -623,7 +625,9 @@ For production behind the current `/api` reverse-proxy path, use:
 INSTAGRAM_REDIRECT_URI=https://get-cofounder.tech/api/auth/instagram/callback
 ```
 
-The redirect URI must match the Meta configuration exactly, including scheme, host, path, and `/api` prefix where applicable.
+The redirect URI must match the Meta configuration exactly, including scheme, host, path, and `/api` prefix where applicable. `INSTAGRAM_REDIRECT_URI` is effectively **required in production** for the same reason as Google's (nginx strips `/api`, so the header-based fallback would lose the prefix), and unlike Google there is **no loopback exception** — Meta rejects `http://localhost` / `http://127.0.0.1`, which is why local development goes through ngrok.
+
+The value resolved at login is pinned into the Redis state and reused for the token exchange, so both legs always send the same string (Instagram rejects the exchange otherwise). That also means switching environments is just: change the env var on the machine, restart the backend, and register the new URI in the Meta app. For non-tester accounts the Meta app must additionally be **Live** — in Development mode only app roles/testers can sign in, and the `instagram_business_*` permissions need App Review.
 
 ## Frontend
 

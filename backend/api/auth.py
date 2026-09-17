@@ -173,7 +173,14 @@ async def instagram_login(
 
     state = secrets.token_urlsafe(32)
     state_payload = json.dumps(
-        {"company_id": str(company_id), "redirect_to": redirect_to}
+        {
+            "company_id": str(company_id),
+            "redirect_to": redirect_to,
+            # Pinned so the callback's token exchange sends the exact same
+            # value, even if the env changes or the proxy headers differ
+            # between the two legs (Instagram requires them to match).
+            "redirect_uri": redirect_uri,
+        }
     )
     _redis_client.setex(
         f"instagram_oauth:{state}",
@@ -230,6 +237,7 @@ async def instagram_callback(
     # exact frontend URL they came from, even on early failures.
     redirect_to: str | None = None
     company_id: str | None = None
+    state_redirect_uri: str | None = None
     if state:
         state_key = f"instagram_oauth:{state}"
         raw_state = _redis_client.get(state_key)
@@ -245,6 +253,7 @@ async def instagram_callback(
                 if isinstance(state_data, dict):
                     redirect_to = state_data.get("redirect_to") or None
                     company_id = state_data.get("company_id") or None
+                    state_redirect_uri = state_data.get("redirect_uri") or None
                 else:
                     # Legacy state payloads stored the raw company_id string.
                     company_id = raw_state_str
@@ -270,7 +279,9 @@ async def instagram_callback(
 
     manager = Instagram_Connection_Manager()
     try:
-        short_token = await manager.exchange_instagram_code(code)
+        short_token = await manager.exchange_instagram_code(
+            code, redirect_uri=state_redirect_uri or _instagram_redirect_uri(request)
+        )
         access_token = short_token.get("access_token")
         instagram_user_id = short_token.get("user_id")
         if not access_token or not instagram_user_id:

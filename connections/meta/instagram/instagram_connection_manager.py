@@ -48,13 +48,26 @@ class Instagram_Connection_Manager():
             raise RuntimeError(f"Failed to store Instagram access token: {e}")
         
 
-    async def exchange_instagram_code(self,code: str):
+    async def exchange_instagram_code(self, code: str, redirect_uri: str | None = None):
+        """Swap the authorization code for a short-lived token.
+
+        `redirect_uri` MUST be byte-identical to the one used on the authorize
+        request, so the caller passes the value it resolved (the OAuth state
+        carries it). The instance attribute is only a fallback: it is read from
+        the env when this module is imported, so it can be stale or missing.
+        """
+        resolved_redirect_uri = redirect_uri or self.INSTAGRAM_REDIRECT_URI
+        if not resolved_redirect_uri:
+            raise RuntimeError(
+                "INSTAGRAM_REDIRECT_URI is not configured — set it in the root "
+                ".env and restart the backend"
+            )
 
         data = {
             "client_id": self.INSTAGRAM_APP_ID,
             "client_secret": self.INSTAGRAM_APP_SECRET,
             "grant_type": "authorization_code",
-            "redirect_uri": self.INSTAGRAM_REDIRECT_URI,
+            "redirect_uri": resolved_redirect_uri,
             "code": code,
         }
 
