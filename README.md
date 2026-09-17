@@ -2,7 +2,7 @@
 
 <img src="frontend/public/icon.png" alt="Co-Founder Logo" width="120">
 
-# Co_Founder
+# Co-Founder
 
 ### AI Co-Founder Platform · v0.9.20
 
