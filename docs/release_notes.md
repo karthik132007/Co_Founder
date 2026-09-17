@@ -1,4 +1,13 @@
 
+## Changelog (v0.9.20 → v0.9.21)
+
+### Connector & OAuth production hardening
+- **Google Gmail integration is live**: Google OAuth flow, callback handling, company-scoped connection persistence, and Gmail API access were added and verified against a real mailbox.
+- **Agent tool access for Gmail**: Gmail read/search/draft tools were exposed through the shared connection tool manager so the CEO and other agents can use them within the normal tool-contract flow.
+- **Production redirect fixes**: exact redirect URI matching, Google testing-user requirements, and environment-specific callback correctness were resolved for Gmail and other OAuth connectors.
+- **Instagram parity fix**: the redirect mismatch bug was corrected by preserving the exact redirect URI from the initial connection request and reusing it during token exchange.
+- **Plugin catalog refresh**: Google Drive, Google Calendar, Gmail, and Google Ads assets were added/updated in the frontend plugin gallery, and the Slack tile was replaced with the Google Ads connector.
+- **Build env cleanup**: frontend build arguments and Docker wiring were corrected so public environment keys are available in production-style builds.
 ## Changelog (v0.9.19 → v0.9.20)
 
 ### Context Guard & Graphic Safety

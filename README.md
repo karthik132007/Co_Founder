@@ -4,7 +4,7 @@
 
 # Co-Founder
 
-### AI Co-Founder Platform · v0.9.20
+### AI Co-Founder Platform · v0.9.21
 
 <p>
   A full-stack multi-agent platform that acts as an early founding team.
@@ -75,7 +75,7 @@ Key highlights:
 
 ## Status
 
-Functional end-to-end production test (v0.9.20) — chat loop, multi-agent system, RAG, billing, auth, plugins, connected-app publishing, Drive branding, and image download fixes are operational. Known gaps (slow image gen, Supabase free-tier latency) are tracked in [`docs/technical.md`](docs/technical.md#status).
+Functional end-to-end production test (v0.9.21) — chat loop, multi-agent system, RAG, billing, auth, plugins, connected-app publishing, Drive branding, OAuth integrations, and connector production fixes are operational. Known gaps (slow image gen, Supabase free-tier latency) are tracked in [`docs/technical.md`](docs/technical.md#status).
 
 ## License
 

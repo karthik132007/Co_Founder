@@ -1,4 +1,4 @@
-# Co_Founder — Technical Deep Dive (v0.9.20)
+# Co_Founder — Technical Deep Dive (v0.9.21)
 
 > Companion to the main [`README.md`](../README.md). This file holds all implementation details: agent system, RAG, backend, billing, frontend, observability, benchmarks, and performance work.
 
@@ -30,6 +30,18 @@ The important bits:
 - **Billing:** live Razorpay Standard Checkout with ₹100 minimum top-up, HMAC-SHA256 verification, authoritative `order.fetch`, Redis idempotency, company credits, and invoice-style payment history.
 - **Observability:** buffered WebSocket trace replay fixed the production race where agent traces could disappear; CEO responses now stream token-by-token through `agent.stream()`.
 - **Benchmarks:** latest RAG benchmark: 95.00% pass rate, 0.950 Average Recall@5, 0.883 Average MRR. CEO e2e eval: 27 runs / 81 judge verdicts; `normal` prompt + `flash` mode currently leads at 8.62 overall.
+
+## Session Summary (v0.9.21)
+
+This chat focused on turning the connector layer from a partially configured prototype into a production-ready integration pattern. The work completed included:
+
+- **Google/Gmail OAuth flow**: added the shared connection flow, callback handling, company-scoped persistence, and status/disconnect APIs so Gmail can be connected from the app and used by the agent.
+- **Live Gmail agent tooling**: registered Gmail search, profile, thread, label, and draft tools in the shared tool manager and bound them to the active company so the CEO can act on the mailbox without exposing raw tokens to the frontend.
+- **Google OAuth debugging and production hardening**: resolved redirect URI mismatches, validated the Google Console allowlist, confirmed testing-user restrictions, and fixed the callback-target inconsistency across local and production environments.
+- **Plugin UI update**: refreshed the connector catalog with Google Drive, Calendar, Gmail, and Google Ads brand assets and replaced the previous Slack placeholder tile.
+- **Frontend build and deployment correctness**: fixed Docker build-time env injection so `NEXT_PUBLIC_*` variables are available in the compiled Next app, including payment keys and connector-related public config.
+- **Instagram parity fix**: applied the same exact-redirect handling pattern to the Meta flow so the saved callback URL matched the original request and no longer failed in production.
+- **Documentation/version alignment**: updated the project docs and release notes to reflect the connector work and the current system version as part of this release pass.
 
 ## Interviewer's Map
 
@@ -767,6 +779,6 @@ Real-time observability streamed to the frontend via WebSocket (`WS /chat/ws?ses
 
 ## Status
 
-Functional end-to-end production test release (v0.9.20). The core chat loop, multi-agent system, RAG pipeline, file management, **buffered WebSocket observability with live LLM streaming**, effort-based execution, Kafka async jobs, onboarding flow, Argon2id password hashing, Google OAuth, cookie-based session auth, **live Razorpay billing (₹100 minimum, payment_history invoices, INR/USD)**, **Instagram OAuth plugin integration**, and the latest **Drive branding + graphic safety** work are operational. v0.9.15 fixed the production-only invisible trace and added token-by-token answer streaming; v0.9.16 shipped the money path and a reworked landing/billing shell; v0.9.17 switches resource budgets to per-query enforcement (preventing multi-turn session lockouts) and consolidates agent trace observability into the chat conversation area; v0.9.18 adds the Plugins connector grid with the full Instagram connect/status/disconnect lifecycle; v0.9.19 adds the MCP-style connected-app tool manager shared by the CEO and CMO, a generate → upload → approve → post publishing flow, a plain ChatGPT-style chat layout, and the six-step onboarding product tour; v0.9.20 hardens the graphic pipeline by stripping inline payloads before prompting, uploading and storing signed image URLs instead of base64 blobs, and adds the Drive `Company Logo` badge along with a reliable `blob:` download for generated graphics. Known gaps:
+Functional end-to-end production test release (v0.9.21). The core chat loop, multi-agent system, RAG pipeline, file management, **buffered WebSocket observability with live LLM streaming**, effort-based execution, Kafka async jobs, onboarding flow, Argon2id password hashing, Google OAuth, cookie-based session auth, **live Razorpay billing (₹100 minimum, payment_history invoices, INR/USD)**, **Instagram OAuth plugin integration**, and the latest **Drive branding + graphic safety** work are operational. v0.9.15 fixed the production-only invisible trace and added token-by-token answer streaming; v0.9.16 shipped the money path and a reworked landing/billing shell; v0.9.17 switches resource budgets to per-query enforcement (preventing multi-turn session lockouts) and consolidates agent trace observability into the chat conversation area; v0.9.18 adds the Plugins connector grid with the full Instagram connect/status/disconnect lifecycle; v0.9.19 adds the MCP-style connected-app tool manager shared by the CEO and CMO, a generate → upload → approve → post publishing flow, a plain ChatGPT-style chat layout, and the six-step onboarding product tour; v0.9.20 hardens the graphic pipeline by stripping inline payloads before prompting, uploading and storing signed image URLs instead of base64 blobs, and adds the Drive `Company Logo` badge along with a reliable `blob:` download for generated graphics. Known gaps:
 - Image generation uses OpenRouter `google/gemini-2.5-flash-image`; slow (~30s) and blocks the CEO pipeline
 - Supabase free tier REST API adds 3-7s latency per RPC call (embedding serialization overhead)
