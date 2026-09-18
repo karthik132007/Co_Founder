@@ -7,6 +7,7 @@ import { ArrowLeft, ArrowRight, X } from "lucide-react";
 
 const ACCENT = "#143620";
 const TOUR_EVENT = "cofounder:start-tour";
+export const TOUR_DONE_EVENT = "cofounder:tour-done";
 
 type Placement = "auto" | "right" | "left" | "top" | "bottom";
 
@@ -89,6 +90,7 @@ export default function ProductTour({ storageKey }: { storageKey?: string | numb
     try {
       window.localStorage.setItem(storageId, "done");
       window.sessionStorage.removeItem(armedId);
+      window.dispatchEvent(new Event(TOUR_DONE_EVENT));
     } catch {
       // Private mode / storage disabled — the tour simply reappears next time.
     }
@@ -120,10 +122,16 @@ export default function ProductTour({ storageKey }: { storageKey?: string | numb
     } catch {
       return; // Storage unavailable — never surprise the user with a tour.
     }
+    // Give the welcome-credit celebration time to finish before opening the tour.
     const timer = window.setTimeout(() => {
+      try {
+        if (window.localStorage.getItem(storageId) === "done") return;
+      } catch {
+        return;
+      }
       setIndex(0);
       setOpen(true);
-    }, 900);
+    }, 6000);
     return () => window.clearTimeout(timer);
   }, [armedId, storageId, storageKey]);
 
@@ -378,7 +386,7 @@ export default function ProductTour({ storageKey }: { storageKey?: string | numb
   );
 }
 
-/** Replay the tour from anywhere (used by the profile menu). */
+/** Replay the tour from anywhere. */
 export function startProductTour() {
   if (typeof window !== "undefined") {
     window.dispatchEvent(new Event(TOUR_EVENT));

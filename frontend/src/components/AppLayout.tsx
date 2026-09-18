@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Bell, LogOut, Menu,
   ChevronRight, MessageSquare, HardDrive,
   Plus, Clock, Trash2, Loader2,
-  Puzzle, ChevronUp, Settings, CreditCard, Coins, HelpCircle,
+  Puzzle, ChevronUp, Settings, CreditCard, Coins, HelpCircle, X,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -14,7 +14,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { clearSession, getSession, parseSessionUser, saveSession } from "@/lib/session";
 import { fetchChatSessions, deleteChatSession, fetchMe, logoutUser, fetchProfile, fetchCreditBalance, type ChatSession } from "@/lib/api";
 import SettingsModal from "./SettingsModal";
-import ProductTour, { startProductTour } from "./ProductTour";
+import ProductTour, { startProductTour, TOUR_DONE_EVENT } from "./ProductTour";
+import CreditCelebration from "./CreditCelebration";
 
 const ACCENT = "#143620";
 
@@ -36,6 +37,8 @@ export default function AppLayout({ children }: Props) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [credits, setCredits] = useState<number | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [showCreditCelebration, setShowCreditCelebration] = useState(false);
+  const [showTourButton, setShowTourButton] = useState(true);
   const userId = session?.user?.id;
 
   // Only redirect once the page has hydrated. During SSR/hydration the server
@@ -44,6 +47,36 @@ export default function AppLayout({ children }: Props) {
   useEffect(() => {
     setHydrated(true);
   }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    let timer: number | undefined;
+    try {
+      if (window.sessionStorage.getItem("cofounder:onboarding-credit-award") === "50") {
+        window.sessionStorage.removeItem("cofounder:onboarding-credit-award");
+        timer = window.setTimeout(() => setShowCreditCelebration(true), 0);
+      }
+    } catch {
+      // Storage may be disabled; the credit award itself is unaffected.
+    }
+    return () => {
+      if (timer !== undefined) window.clearTimeout(timer);
+    };
+  }, [hydrated]);
+
+  useEffect(() => {
+    if (!hydrated || !userId) return;
+    const hideTourButton = () => setShowTourButton(false);
+    try {
+      if (window.localStorage.getItem(`cofounder:tour:v1:${userId}`) === "done") {
+        window.setTimeout(hideTourButton, 0);
+      }
+    } catch {
+      // The tour remains available when browser storage is disabled.
+    }
+    window.addEventListener(TOUR_DONE_EVENT, hideTourButton);
+    return () => window.removeEventListener(TOUR_DONE_EVENT, hideTourButton);
+  }, [hydrated, userId]);
 
   // Load the company's available credits for the sidebar badge. Reloads on
   // route change so the badge refreshes after visiting /billing.
@@ -169,6 +202,7 @@ export default function AppLayout({ children }: Props) {
 
   return (
     <div className="min-h-screen bg-[#fdfcf8] flex text-[#0f2214]">
+      {showCreditCelebration && <CreditCelebration onDone={() => setShowCreditCelebration(false)} />}
       {/* Mobile overlay */}
       <AnimatePresence>
         {sidebarOpen && (
@@ -313,16 +347,6 @@ export default function AppLayout({ children }: Props) {
                   <Settings className="w-4 h-4 text-[#8d9d94]" />
                   Settings
                 </button>
-                <button
-                  onClick={() => {
-                    setProfileOpen(false);
-                    startProductTour();
-                  }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium text-[#2f3e32] hover:bg-[rgba(16,36,24,0.05)] transition-colors"
-                >
-                  <HelpCircle className="w-4 h-4 text-[#8d9d94]" />
-                  Product tour
-                </button>
                 <Link
                   href="/billing"
                   onClick={() => setProfileOpen(false)}
@@ -352,6 +376,40 @@ export default function AppLayout({ children }: Props) {
             <Menu className="w-4 h-4 text-[#2f3e32]" />
           </button>
           <div className="flex-1" />
+          {showTourButton && (
+            <div className="flex items-center gap-1 rounded-lg border border-[rgba(15,34,20,0.08)] bg-white pl-3 pr-1">
+              <button
+                onClick={() => {
+                  try {
+                    window.localStorage.setItem(`cofounder:tour:v1:${userId}`, "done");
+                  } catch {
+                    // The tour can still open when browser storage is disabled.
+                  }
+                  setShowTourButton(false);
+                  startProductTour();
+                }}
+                className="flex h-9 items-center gap-2 text-[12px] font-medium text-[#2f3e32] hover:text-[#143620]"
+              >
+                <HelpCircle className="h-4 w-4 text-[#5f6f63]" />
+                Product tour
+              </button>
+              <button
+                onClick={() => {
+                  try {
+                    window.localStorage.setItem(`cofounder:tour:v1:${userId}`, "done");
+                  } catch {
+                    // Best effort only when browser storage is disabled.
+                  }
+                  setShowTourButton(false);
+                }}
+                aria-label="Dismiss product tour button"
+                title="Dismiss product tour"
+                className="flex h-7 w-7 items-center justify-center rounded-md text-[#8d9d94] hover:bg-[rgba(16,36,24,0.05)] hover:text-[#143620]"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
           <button className="w-9 h-9 rounded-lg border border-[rgba(15,34,20,0.08)] bg-white hover:bg-[#fdfcf8] flex items-center justify-center relative">
             <Bell className="w-4 h-4 text-[#5f6f63]" />
             <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full" style={{ background: ACCENT }} />

@@ -5,6 +5,7 @@ from fastapi import APIRouter, Path
 from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel
 from backend.db.insert_to_sql import create_company, update_user_name
+from backend.db.credits import create_company_credits
 from backend.models import CompanyCreate
 
 from backend.db.get_from_sql import (
@@ -40,6 +41,16 @@ def onboarding(company: CompanyCreate):
         if not updated_name:
             logger.warning("Could not update user name during onboarding — user_id=%s", company.user_id)
 
+    existing = get_company_by_user(company.user_id)
+    if existing:
+        logger.info("Onboarding already completed — user_id=%s, company_id=%s", company.user_id, existing["id"])
+        return {
+            "id": existing["id"],
+            "company_name": existing["company_name"],
+            "message": "Onboarding already completed",
+            "credits_awarded": 0,
+        }
+
     created = create_company(
         company_name=company.company_name,
         small_description=company.small_description,
@@ -48,8 +59,14 @@ def onboarding(company: CompanyCreate):
         user_id=company.user_id,
     )
     if created:
+        create_company_credits(created.id, 50)
         logger.info("Company created successfully — id=%s, name=%s", created.id, created.company_name)
-        return {"id": created.id, "company_name": created.company_name, "message": "Company created"}
+        return {
+            "id": created.id,
+            "company_name": created.company_name,
+            "message": "Company created",
+            "credits_awarded": 50,
+        }
     logger.error("Failed to create company for user_id=%s", company.user_id)
     raise HTTPException(status_code=400, detail="Failed to create company")
 

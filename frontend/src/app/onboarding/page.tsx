@@ -205,7 +205,15 @@ export default function OnboardingPage() {
         throw new Error(await readApiError(response, "Onboarding failed"));
       }
 
+      const onboardingResult = (await response.json()) as { credits_awarded?: number };
       setOnboardingComplete();
+      if (onboardingResult.credits_awarded === 50) {
+        try {
+          window.sessionStorage.setItem("cofounder:onboarding-credit-award", "50");
+        } catch {
+          // The celebration is best-effort and must not block onboarding.
+        }
+      }
       // Brand-new founder: let the app shell run the product tour once.
       armProductTour(session.user.id);
 
