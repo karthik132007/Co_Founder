@@ -268,22 +268,30 @@ export function instagramConnectUrl(companyId: number, redirectTo: string): stri
 }
 
 /**
- * Build the URL that starts the Gmail OAuth handshake. The backend resolves the
- * caller's company from the session cookie (or `user_id`), so only the user id
- * is needed here. The callback returns to `redirectTo` with
- * `?gmail=connected|error` appended.
+ * Build the URL that starts the Google OAuth handshake for a connector. The
+ * backend resolves the caller's company from the session cookie (or `user_id`),
+ * so only the user id is needed here. The callback returns to `redirectTo` with
+ * `?<connector>=connected|error` appended.
+ *
+ * Every Google connector shares one grant, so connecting a second one (e.g.
+ * Sheets after Gmail) just widens the scopes already granted.
  */
-export function gmailConnectUrl(userId: number, redirectTo: string): string {
+export function googleConnectUrl(
+  userId: number,
+  connector: string,
+  redirectTo: string,
+): string {
   const params = new URLSearchParams({
+    connector,
     user_id: String(userId),
     redirect_to: redirectTo,
   });
-  return `${API_BASE_URL}/connections/google/gmail/connect?${params.toString()}`;
+  return `${API_BASE_URL}/connections/google/connect?${params.toString()}`;
 }
 
 /**
  * Revoke the company's Google grant. Every Google connector shares one grant,
- * so this disconnects Gmail (and any future Google connector) at once.
+ * so this disconnects Gmail, Sheets (and any future Google connector) at once.
  */
 export async function disconnectGoogle(userId: number): Promise<{ status: string }> {
   const res = await fetch(`${API_BASE_URL}/connections/google?user_id=${userId}`, {
@@ -522,10 +530,14 @@ export type ChatMessage = {
   role: "user" | "assistant" | "system";
   content: string;
   created_at: string | null;
+  /** Credits this message cost (assistant replies; user rows are 0). */
+  credits_used?: number;
 };
 
 export type SessionMessagesResponse = {
   session_id: string;
+  /** Total credits used by the whole session (header pill). */
+  session_credits_used?: number;
   messages: ChatMessage[];
 };
 
@@ -533,7 +545,7 @@ export async function sendChatMessage(
   userId: number,
   message: string,
   sessionId?: string,
-  effort: "flash" | "mid" | "max" = "flash",
+  effort: "flash" | "mid" | "max" = "mid",
 ): Promise<ChatResponse> {
   const formData = new FormData();
   formData.append("user_id", String(userId));

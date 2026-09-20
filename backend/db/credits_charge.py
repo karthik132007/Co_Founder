@@ -10,7 +10,7 @@ from typing import Any, Dict, Optional
 
 from credits_engine.usage import get_total_usage
 from backend.db.credits import deduct_credits, InsufficientCreditsError
-from backend.db.insert_to_sql import add_credits_to_session
+from backend.db.insert_to_sql import add_credits_to_session, add_credits_to_message
 
 logger = logging.getLogger(__name__)
 
@@ -62,8 +62,13 @@ def process_credit_charge(data: Dict[str, Any]) -> Dict[str, Any]:
             "company_id": 1,
             "usage": [{"model": "...", "input_tokens": 100, "output_tokens": 50}],
             "no_of_images": 0,
-            "session_id": "session_uuid"
+            "session_id": "session_uuid",
+            "assistant_message_id": 123
         }
+
+    ``message_id`` deduplicates redeliveries; ``assistant_message_id`` (the
+    ``chat_messages`` row that carries this reply) receives the per-message
+    cost attribution. Both are optional and independent.
     """
     company_id = data.get("company_id")
     if company_id is None:
@@ -111,6 +116,16 @@ def process_credit_charge(data: Dict[str, Any]) -> Dict[str, Any]:
             logger.exception(
                 "Failed to record session credits session_id=%s — balance already deducted",
                 session_id,
+            )
+
+    assistant_message_id = data.get("assistant_message_id")
+    if assistant_message_id:
+        try:
+            add_credits_to_message(int(assistant_message_id), credits_to_deduct)
+        except Exception:
+            logger.exception(
+                "Failed to record message credits message_id=%s — balance already deducted",
+                assistant_message_id,
             )
 
     return {

@@ -11,12 +11,12 @@ from backend.kafka_jobs.producers.producer import (
     queue_chat_memory,
     queue_title_creation,
 )
-from main import chat
-from backend.db.get_from_sql import get_company_id, get_chats_in_session, get_chat_sessions
+from main import chat, _queue_usage_charge
+from backend.db.get_from_sql import get_company_id, get_chats_in_session, get_chat_sessions, get_chat_session
 from backend.db.insert_to_sql import create_chat_session, add_message_to_session
 from backend.db.delete_from_sql import delete_chat_session
 from uuid import uuid4
-from typing import Optional
+from typing import Any, Optional
 from agents.helpers.utils import base64_to_img
 from agents.helpers.context_guard import safe_image_reference, strip_storage_urls
 from backend.db.put_to_drive import save_generated_graphic
@@ -30,6 +30,15 @@ from backend.api.observability_events import (
 from backend.api.rate_limit import SlidingWindowRateLimiter
 
 logger = logging.getLogger(__name__)
+
+
+def _quick_chat_title(message: str) -> str:
+    """Create an immediate provisional title while the LLM title job runs."""
+    words = " ".join((message or "").strip().split()).strip(" .!?;:")
+    if not words:
+        return "New Chat"
+    words = words[:80].rsplit(" ", 1)[0] if len(words) > 80 else words
+    return words[:1].upper() + words[1:]
 
 router = APIRouter()
 
@@ -76,6 +85,17 @@ def _durable_image_reference(company_id: int, image_url: str | None) -> str | No
     return safe_image_reference(image_url)
 
 
+def _safe_credit_amount(value: object) -> float:
+    """Coerce a credits_used DB value to float (0.0 when missing/unparsable).
+
+    Rows written before the per-message migration have no value at all.
+    """
+    try:
+        return float(value or 0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
 def _count_mcqs_in_history(history: list[dict]) -> int:
     """Count consecutive MCQ questions asked by the CEO for the current turn/flow.
     Stops when a completed assistant response (without options) is encountered."""
@@ -118,7 +138,7 @@ def chat_with_user(
     # If no session_id provided, create a new session with a title
     if not session_id:
         session_id = str(uuid4())
-        title = "New Chat"
+        title = _quick_chat_title(message)
         logger.info("Creating new chat session — session_id=%s, company_id=%s", session_id, company_id)
         create_chat_session(session_id, company_id, title=title)
         
@@ -133,7 +153,7 @@ def chat_with_user(
         history = get_chats_in_session(session_id)
         if not history:
             logger.info("Session %s not found — creating it now", session_id)
-            title = "New Chat"
+            title = _quick_chat_title(message)
             create_chat_session(session_id, company_id, title=title)
             
             try:
@@ -174,6 +194,17 @@ def chat_with_user(
         # user sees corresponds exactly to THIS request.
         event_bus.begin_query(session_id)
         reply = chat(company_id, ceo_message, history, effort=effort, session_id=session_id)
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("chat agent failed for session_id=%s", session_id)
+        # The reply was never stored, so there is no message row to attribute
+        # the cost to — but the LLM run still burned tokens, so charge anyway.
+        _queue_usage_charge(company_id, session_id)
+        raise HTTPException(
+            status_code=500,
+            detail="I ran into an internal issue handling that request. Please try again.",
+        )
     finally:
         # Signal the WebSocket drain loop that no more events are coming.
         # Safe to call even if nobody is listening on the WS for this session.
@@ -221,12 +252,14 @@ def chat_with_user(
 
         # Persist directly to DB so the MCQ is immediately visible in history.
         # Also queue via Kafka for async consumers (chat memory, etc.).
-        add_message_to_session(session_id, "assistant", stored_text)
+        mcq_row = add_message_to_session(session_id, "assistant", stored_text)
+        # Charge now that the reply row exists, so the cost lands on it.
+        _queue_usage_charge(company_id, session_id, assistant_message_id=mcq_row.id)
         try:
             queue_session_message(session_id, company_id, "assistant", stored_text)
         except Exception:
             logger.exception("Kafka side-queue failed for MCQ reply — already saved to DB")
-        response = {
+        response: dict[str, Any] = {
             "status": "success",
             "type": "clarification_request",
             "clarification": {
@@ -278,13 +311,14 @@ def chat_with_user(
         # would otherwise be replayed into the prompt on the next turn.
         stored_image_ref = safe_image_reference(final_image_url)
         stored_message = f"[image: {stored_image_ref}]\n\n{generated_message}" if stored_image_ref else generated_message
-        add_message_to_session(session_id, "assistant", stored_message)
+        image_row = add_message_to_session(session_id, "assistant", stored_message)
+        _queue_usage_charge(company_id, session_id, assistant_message_id=image_row.id)
 
         try:
             queue_chat_memory(company_id, message, generated_message)
         except Exception:
             logger.warning("Failed to queue chat memory — best effort", exc_info=True)
-        response = {
+        response: dict[str, Any] = {
             "status": "success",
             "type": "image_generated",
             "message": generated_message,
@@ -299,16 +333,18 @@ def chat_with_user(
     # Any other dict shape is unexpected — refuse to persist it as a message.
     if isinstance(reply, dict):
         logger.error("CEO returned unexpected dict reply for session_id=%s: %s", session_id, reply)
+        _queue_usage_charge(company_id, session_id)
         raise HTTPException(status_code=500, detail="Unexpected response from CEO agent")
 
-    add_message_to_session(session_id, "assistant", reply)
+    assistant_row = add_message_to_session(session_id, "assistant", reply)
+    _queue_usage_charge(company_id, session_id, assistant_message_id=assistant_row.id)
     
     try:
         queue_chat_memory(company_id, message, reply)
     except Exception:
         logger.warning("Failed to queue chat memory — best effort", exc_info=True)
 
-    response = {
+    response: dict[str, Any] = {
         "status": "success",
         "message": reply,
         "session_id": session_id,
@@ -364,14 +400,21 @@ def get_session_messages(
         raise HTTPException(status_code=404, detail="Session not found")
 
     logger.info("Returning %d messages for session_id=%s", len(messages), session_id)
+    session_row = get_chat_session(session_id) or {}
+    try:
+        session_credits = float(session_row.get("credits_used") or 0)
+    except (TypeError, ValueError):
+        session_credits = 0.0
     return {
         "session_id": session_id,
+        "session_credits_used": session_credits,
         "messages": [
             {
                 "id": m["id"],
                 "role": m["role"],
                 "content": m["message"],
                 "created_at": m.get("created_at"),
+                "credits_used": _safe_credit_amount(m.get("credits_used")),
             }
             for m in messages
         ],

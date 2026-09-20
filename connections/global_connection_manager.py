@@ -9,7 +9,10 @@
 
 from connections.tool_manager import ToolManager
 from connections.meta.instagram.instagram_tools import register_instagram_tools
+from connections.google.calendar.calendar_tools import register_calendar_tools
+from connections.google.drive.drive_tools import register_drive_tools
 from connections.google.gmail.gmail_tools import register_gmail_tools
+from connections.google.sheets.sheets_tools import register_sheets_tools
 
 
 class Global_Connection_Manager:
@@ -29,6 +32,9 @@ class Global_Connection_Manager:
         """
         register_instagram_tools(self.tools)
         register_gmail_tools(self.tools)
+        register_sheets_tools(self.tools)
+        register_calendar_tools(self.tools)
+        register_drive_tools(self.tools)
 
     def list_tools(self):
         """Every tool from every connection."""

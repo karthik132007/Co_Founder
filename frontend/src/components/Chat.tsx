@@ -25,9 +25,11 @@ import {
   Maximize2,
   X,
   Brain,
+  Coins,
 } from "lucide-react";
 import { fetchSessionMessages, sendChatMessage } from "@/lib/api";
 import type { Clarification } from "@/lib/api";
+import { useHeaderSlot } from "@/components/AppLayout";
 import type { SessionUser } from "@/lib/session";
 import { useObservability } from "@/lib/observability";
 import type { ToolRun } from "@/lib/observability";
@@ -72,10 +74,18 @@ type Message = {
   role: "user" | "assistant";
   content: string;
   timestamp: number;
+  /** Credits this reply cost (assistant only; undefined until loaded/charged). */
+  creditsUsed?: number;
   clarification?: Clarification;
   imageDataUrl?: string;
   traceRuns?: ToolRun[];
 };
+
+/** Trimmed, locale-formatted credit amount (backend stores 4 decimals). */
+function formatCredits(n: number): string {
+  const rounded = Math.round(n * 10000) / 10000;
+  return rounded.toLocaleString("en-IN", { maximumFractionDigits: 4 });
+}
 
 type Effort = "flash" | "mid" | "max";
 
@@ -1003,9 +1013,15 @@ export default function Chat({
   const [sessionId, setSessionId] = useState<string | null>(initialSessionId);
   const [chatTitle, setChatTitle] = useState<string | null>(initialTitle);
   const [loadingMessages, setLoadingMessages] = useState(false);
-  const [effort, setEffort] = useState<Effort>("flash");
+  const [effort, setEffort] = useState<Effort>("mid");
+  /** Total credits used by the current session (header pill beside the bell). */
+  const [sessionCredits, setSessionCredits] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const creditRefreshTimer = useRef<number | null>(null);
+  const sessionIdRef = useRef<string | null>(initialSessionId);
+  sessionIdRef.current = sessionId;
+  const setHeaderSlot = useHeaderSlot();
 
   // WebSocket observability — one persistent connection per session
   const {
@@ -1016,6 +1032,53 @@ export default function Chat({
     streamingText,
   } = useObservability(sessionId);
 
+  /**
+   * Pull per-message + session-total credits from the backend and merge them
+   * into the local list. Matching is positional per role (both lists are
+   * append-only in creation order), so in-flight local messages simply keep
+   * `creditsUsed` undefined until the charge lands. Stale sessions are
+   * ignored via the session-id guard.
+   */
+  const mergeSessionCredits = useCallback(
+    async (sid: string) => {
+      try {
+        const data = await fetchSessionMessages(user.id, sid);
+        if (sessionIdRef.current !== sid) return;
+        if (typeof data.session_credits_used === "number") {
+          setSessionCredits(data.session_credits_used);
+        }
+        const dbByRole: Record<string, { credits: number }[]> = {
+          user: [],
+          assistant: [],
+        };
+        for (const m of data.messages) {
+          if (m.role === "user" || m.role === "assistant") {
+            dbByRole[m.role].push({
+              credits:
+                typeof m.credits_used === "number" ? m.credits_used : 0,
+            });
+          }
+        }
+        const seen: Record<string, number> = { user: 0, assistant: 0 };
+        setMessages((prev) =>
+          prev.map((msg) => {
+            const idx = seen[msg.role] ?? 0;
+            seen[msg.role] = idx + 1;
+            const db = dbByRole[msg.role]?.[idx];
+            if (!db || msg.role !== "assistant") return msg;
+            if (msg.creditsUsed !== undefined && msg.creditsUsed === db.credits) {
+              return msg;
+            }
+            return { ...msg, creditsUsed: db.credits };
+          }),
+        );
+      } catch {
+        // Credits are informational — never break the chat over them.
+      }
+    },
+    [user.id],
+  );
+
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -1024,6 +1087,15 @@ export default function Chat({
   useEffect(() => {
     scrollToBottom();
   }, [messages, streamingText, runs, scrollToBottom]);
+
+  useEffect(
+    () => () => {
+      if (creditRefreshTimer.current !== null) {
+        window.clearTimeout(creditRefreshTimer.current);
+      }
+    },
+    [],
+  );
 
   // Sync props into state during render (React-recommended pattern)
   const [prevProps, setPrevProps] = useState({ initialSessionId, initialTitle });
@@ -1037,14 +1109,19 @@ export default function Chat({
     setError("");
     if (!initialSessionId) {
       setMessages([]);
+      setSessionCredits(null);
     }
   }
 
   useEffect(() => {
     if (!initialSessionId) return;
-    // Skip refetch if we're already viewing this session with local messages
-    // (e.g. right after creating it — DB lacks in-flight messages like MCQs).
-    if (initialSessionId === sessionId && messages.length > 0) return;
+    // Skip the full refetch if we're already viewing this session with local
+    // messages (e.g. right after creating it — DB lacks in-flight messages
+    // like MCQs). Still merge credits so the header pill never goes stale.
+    if (initialSessionId === sessionId && messages.length > 0) {
+      void mergeSessionCredits(initialSessionId);
+      return;
+    }
     let cancelled = false;
 
     // Defer synchronous state update out of the effect body
@@ -1064,6 +1141,11 @@ export default function Chat({
               timestamp: m.created_at
                 ? new Date(m.created_at).getTime()
                 : Date.now(),
+              creditsUsed:
+                m.role === "assistant" &&
+                typeof m.credits_used === "number"
+                  ? m.credits_used
+                  : undefined,
             };
 
             // Parse image from stored "[image: ...]" format
@@ -1106,6 +1188,9 @@ export default function Chat({
             return base;
           }),
         );
+        if (typeof data.session_credits_used === "number") {
+          setSessionCredits(data.session_credits_used);
+        }
       })
       .catch((err) => {
         if (!cancelled) {
@@ -1197,6 +1282,15 @@ export default function Chat({
           onSessionCreated(finalSid, title);
         }
         window.dispatchEvent(new Event("cofounder:credits-updated"));
+        // Charges can land synchronously (direct deduction) or seconds later
+        // (Kafka consumer) — merge now and once more after a delay.
+        void mergeSessionCredits(sid);
+        if (creditRefreshTimer.current !== null) {
+          window.clearTimeout(creditRefreshTimer.current);
+        }
+        creditRefreshTimer.current = window.setTimeout(() => {
+          if (sessionIdRef.current === sid) void mergeSessionCredits(sid);
+        }, 8000);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to get response");
         window.dispatchEvent(new Event("cofounder:credits-updated"));
@@ -1206,7 +1300,7 @@ export default function Chat({
       }
 
     },
-    [user.id, sessionId, onSessionCreated, effort, snapshotRuns, startQuery, waitForConnection],
+    [user.id, sessionId, onSessionCreated, effort, snapshotRuns, startQuery, waitForConnection, mergeSessionCredits],
   );
 
   const handleSend = useCallback(async () => {
@@ -1265,6 +1359,24 @@ export default function Chat({
       hour: "2-digit",
       minute: "2-digit",
     });
+
+  // Session-total pill beside the notification bell (AppLayout header).
+  useEffect(() => {
+    if (sessionCredits === null) {
+      setHeaderSlot(null);
+      return;
+    }
+    setHeaderSlot(
+      <span
+        className="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-[rgba(15,34,20,0.08)] bg-white px-2.5 py-1 text-[12px] font-medium text-[#2f3e32]"
+        title="Total credits used in this chat"
+      >
+        <Coins className="h-3.5 w-3.5" style={{ color: ACCENT }} />
+        {formatCredits(sessionCredits)} credits
+      </span>,
+    );
+    return () => setHeaderSlot(null);
+  }, [sessionCredits, setHeaderSlot]);
 
   const isEmpty = messages.length === 0 && !loadingMessages;
 
@@ -1418,6 +1530,17 @@ export default function Chat({
                     >
                       {formatTime(msg.timestamp)}
                     </span>
+                    {msg.role === "assistant" &&
+                      (msg.creditsUsed ?? 0) > 0 && (
+                        <span
+                          className="inline-flex items-center gap-1 text-[10px] font-medium text-[#8d9d94]"
+                          title="Credits this reply cost"
+                        >
+                          <span className="text-[#c6d0c9]">·</span>
+                          <Coins className="h-3 w-3" />
+                          {formatCredits(msg.creditsUsed ?? 0)} credits
+                        </span>
+                      )}
                     {!(msg.imageDataUrl && !msg.clarification) && (
                       <MessageCopyButton
                         content={

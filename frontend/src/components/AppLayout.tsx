@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { createContext, useCallback, useContext, useEffect, useState, useSyncExternalStore } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, Bell, LogOut, Menu,
@@ -24,6 +24,14 @@ const getServerSessionSnapshot = () => null;
 
 type Props = { children: React.ReactNode };
 
+/* ── Header slot: pages (e.g. a chat session) can render a pill beside the
+   notification bell, e.g. the current session's total credits used. ── */
+const HeaderSlotContext = createContext<(node: React.ReactNode) => void>(() => {});
+
+export function useHeaderSlot() {
+  return useContext(HeaderSlotContext);
+}
+
 export default function AppLayout({ children }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -39,6 +47,11 @@ export default function AppLayout({ children }: Props) {
   const [hydrated, setHydrated] = useState(false);
   const [showCreditCelebration, setShowCreditCelebration] = useState(false);
   const [showTourButton, setShowTourButton] = useState(true);
+  const [headerSlot, setHeaderSlot] = useState<React.ReactNode>(null);
+  const setHeaderSlotStable = useCallback(
+    (node: React.ReactNode) => setHeaderSlot(node),
+    [],
+  );
   const userId = session?.user?.id;
 
   // Only redirect once the page has hydrated. During SSR/hydration the server
@@ -123,12 +136,28 @@ export default function AppLayout({ children }: Props) {
 
   // Refresh sidebar sessions when a chat session is created
   useEffect(() => {
+    const refreshTimers = new Set<number>();
     const onSessionsUpdated = () => loadSessions();
-    window.addEventListener("cofounder:session-created", onSessionsUpdated);
+    const onSessionCreated = () => {
+      void loadSessions();
+      let attempts = 0;
+      const timer = window.setInterval(() => {
+        attempts += 1;
+        void loadSessions();
+        if (attempts >= 10) {
+          window.clearInterval(timer);
+          refreshTimers.delete(timer);
+        }
+      }, 1500);
+      refreshTimers.add(timer);
+    };
+    window.addEventListener("cofounder:session-created", onSessionCreated);
     window.addEventListener("cofounder:sessions-updated", onSessionsUpdated);
     return () => {
-      window.removeEventListener("cofounder:session-created", onSessionsUpdated);
+      window.removeEventListener("cofounder:session-created", onSessionCreated);
       window.removeEventListener("cofounder:sessions-updated", onSessionsUpdated);
+      for (const timer of refreshTimers) window.clearInterval(timer);
+      refreshTimers.clear();
     };
   }, [loadSessions]);
 
@@ -201,6 +230,7 @@ export default function AppLayout({ children }: Props) {
   };
 
   return (
+    <HeaderSlotContext.Provider value={setHeaderSlotStable}>
     <div className="min-h-screen bg-[#fdfcf8] flex text-[#0f2214]">
       {showCreditCelebration && <CreditCelebration onDone={() => setShowCreditCelebration(false)} />}
       {/* Mobile overlay */}
@@ -376,6 +406,7 @@ export default function AppLayout({ children }: Props) {
             <Menu className="w-4 h-4 text-[#2f3e32]" />
           </button>
           <div className="flex-1" />
+          {headerSlot}
           {showTourButton && (
             <div className="flex items-center gap-1 rounded-lg border border-[rgba(15,34,20,0.08)] bg-white pl-3 pr-1">
               <button
@@ -421,5 +452,6 @@ export default function AppLayout({ children }: Props) {
       <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <ProductTour storageKey={userId} />
     </div>
+    </HeaderSlotContext.Provider>
   );
 }

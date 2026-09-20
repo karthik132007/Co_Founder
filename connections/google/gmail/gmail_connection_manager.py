@@ -24,6 +24,8 @@ from typing import Any
 
 import httpx
 
+from langchain_core.tools import ToolException
+
 from connections.google.google_connection_manager import Google_Connection_Manager
 
 logger = logging.getLogger(__name__)
@@ -62,7 +64,9 @@ class Gmail_Connection_Manager(Google_Connection_Manager):
         except RuntimeError as exc:
             # Surface the actionable part to the model: the founder has to
             # reconnect, there is nothing the agent can do about it.
-            raise RuntimeError(
+            # ToolException (not RuntimeError) so LangChain returns this to
+            # the model instead of killing the whole agent run (HTTP 500).
+            raise ToolException(
                 f"Gmail is not connected for this company ({exc}). "
                 "Ask the founder to connect Gmail from the Plugins page."
             ) from exc
@@ -77,7 +81,7 @@ class Gmail_Connection_Manager(Google_Connection_Manager):
             )
 
         if response.status_code >= 400:
-            raise RuntimeError(_error_message(response))
+            raise ToolException(_error_message(response))
 
         if not response.content:
             return {}
@@ -174,6 +178,7 @@ class Gmail_Connection_Manager(Google_Connection_Manager):
 
     async def get_message(self, company_id: int, message_id: str) -> dict[str, Any]:
         """One full message: headers, decoded body (truncated), attachments."""
+        message_id = _require_gmail_id(message_id, "message_id", "gmail.search")
         data = await self._request(
             company_id, "GET", f"/messages/{message_id}", params={"format": "full"}
         )
@@ -183,6 +188,7 @@ class Gmail_Connection_Manager(Google_Connection_Manager):
         self, company_id: int, thread_id: str, max_messages: int = _MAX_THREAD_MESSAGES
     ) -> dict[str, Any]:
         """A conversation, oldest message first (bodies truncated per message)."""
+        thread_id = _require_gmail_id(thread_id, "thread_id", "gmail.search")
         data = await self._request(
             company_id, "GET", f"/threads/{thread_id}", params={"format": "full"}
         )
@@ -276,6 +282,7 @@ class Gmail_Connection_Manager(Google_Connection_Manager):
 
     async def _message_summary(self, company_id: int, message_id: str) -> dict[str, Any]:
         """Headers + snippet for one message (`format=metadata`, no body)."""
+        message_id = _require_gmail_id(message_id, "message_id", "gmail.search")
         data = await self._request(
             company_id, "GET", f"/messages/{message_id}", params={"format": "metadata"}
         )
@@ -283,6 +290,7 @@ class Gmail_Connection_Manager(Google_Connection_Manager):
 
     async def _message_headers(self, company_id: int, message_id: str) -> dict[str, Any]:
         """Raw header dict + thread id, for building replies."""
+        message_id = _require_gmail_id(message_id, "message_id", "gmail.search")
         data = await self._request(
             company_id, "GET", f"/messages/{message_id}", params={"format": "metadata"}
         )
@@ -292,6 +300,32 @@ class Gmail_Connection_Manager(Google_Connection_Manager):
 
 
 # ── parsing helpers ─────────────────────────────────────────────────────────
+
+
+def _require_gmail_id(value: Any, field: str, search_tool: str) -> str:
+    """Validate a Gmail message/thread id before any API call.
+
+    The model sometimes invents ids ("msg_123") or passes a snippet,
+    subject, or thread id where a message id belongs. Gmail answers those
+    with `400 Invalid id value`, which used to propagate as an exception
+    and crash the whole agent run (HTTP 500). Fail fast with a
+    ToolException the model can recover from instead.
+    """
+    cleaned = str(value or "").strip()
+    # Real Gmail ids are long opaque hex/base64url tokens (typically 16+
+    # chars, no spaces). Anything else is a hallucination or a wrong field.
+    if (
+        not cleaned
+        or len(cleaned) < 8
+        or any(ch.isspace() for ch in cleaned)
+        or cleaned.lower() in {"null", "none", "undefined", "message_id", "thread_id", "id"}
+    ):
+        raise ToolException(
+            f"Invalid {field} {value!r}: this does not look like a Gmail id. "
+            f"Call {search_tool} first and pass the exact 'id' (or 'thread_id') "
+            f"from its results verbatim. Never invent ids."
+        )
+    return cleaned
 
 
 def _error_message(response: httpx.Response) -> str:
@@ -313,9 +347,18 @@ def _error_message(response: httpx.Response) -> str:
             f"scope, or the quota is exhausted): {detail}"
         )
     if response.status_code == 404:
-        return f"Gmail could not find that message or thread: {detail}"
+        return (
+            f"Gmail could not find that message or thread: {detail}. "
+            f"Call gmail.search first and use the exact 'id' from its results."
+        )
     if response.status_code == 429:
         return f"Gmail rate limit reached — try again shortly: {detail}"
+    if response.status_code == 400 and "invalid id" in str(detail).lower():
+        return (
+            f"Gmail rejected the id (400 Invalid id value): {detail}. "
+            f"The id was hallucinated or copied from the wrong field — "
+            f"call gmail.search first and pass the exact 'id' verbatim."
+        )
     return f"Gmail API error {response.status_code}: {detail}"
 
 

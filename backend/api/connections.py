@@ -7,9 +7,9 @@ connect/disconnect lifecycle for the ones that are implemented:
     (`GET /auth/instagram/login` → Instagram → `GET /auth/instagram/callback`),
     storing the token in `instagram_connections`; this router is the
     read/disconnect surface.
-  * **Google (Gmail today)** — handshake lives here at
-    `GET /connections/google/gmail/connect` → Google →
-    `GET /connections/google/gmail/callback`, storing the grant in
+  * **Google (Gmail, Sheets)** — handshake lives here at
+    `GET /connections/google/connect?connector=gmail|google_sheets` → Google →
+    `GET /connections/google/callback`, storing the grant in
     `google_connections` (one grant per company, shared by every Google
     connector; see `connections/google/google_connection_manager.py`).
 
@@ -72,14 +72,14 @@ _INTEGRATIONS: list[dict[str, Any]] = [
     {
         "id": "google_sheets",
         "name": "Google Sheets",
-        "description": "Sync data and reports from your spreadsheets",
-        "available": False,
+        "description": "Read, write and append rows in your spreadsheets",
+        "available": True,
     },
     {
         "id": "google_drive",
         "name": "Google Drive",
         "description": "Search, read, and upload files instantly",
-        "available": False,
+        "available": True,
     },
     {
         "id": "gmail",
@@ -90,8 +90,8 @@ _INTEGRATIONS: list[dict[str, Any]] = [
     {
         "id": "google_calendar",
         "name": "Google Calendar",
-        "description": "Manage your schedule and coordinate meetings",
-        "available": False,
+        "description": "Read your schedule, find free slots & book meetings",
+        "available": True,
     },
     {
         "id": "google_ads",
@@ -112,6 +112,19 @@ _INTEGRATIONS: list[dict[str, Any]] = [
         "available": False,
     },
 ]
+
+# Connector id → display name, for the OAuth callback's user-facing copy.
+_INTEGRATION_NAMES: dict[str, str] = {
+    integration["id"]: integration["name"] for integration in _INTEGRATIONS
+}
+
+# Google connectors that have a real handshake + token-backed tools behind
+# them. `connections/google/google_connection_manager.py` reserves scopes for
+# more (Drive, Calendar), but starting a handshake for those would grant access
+# no tool can use yet, so the connect route rejects them.
+_CONNECTABLE_CONNECTORS: frozenset[str] = frozenset(
+    {"gmail", "google_sheets", "google_calendar", "google_drive"}
+)
 
 
 def _resolve_user(request: Request, user_id: int | None) -> int:
@@ -183,6 +196,9 @@ def _google_redirect_uri(request: Request) -> str:
     explicit `GOOGLE_OAUTH_REDIRECT_URI` env wins (in production the API lives
     behind the `/api` proxy path); otherwise it is reconstructed from the
     incoming request, honouring `X-Forwarded-*` headers set by reverse proxies.
+
+    Every Google connector shares this one callback (the connector travels in
+    the OAuth state), so a deployment registers a single redirect URI.
     """
     configured = os.getenv("GOOGLE_OAUTH_REDIRECT_URI")
     if configured and configured.strip():
@@ -195,7 +211,7 @@ def _google_redirect_uri(request: Request) -> str:
         or "localhost:8000"
     )
     prefix = request.headers.get("x-forwarded-prefix", "")
-    return f"{scheme}://{host}{prefix}/connections/google/gmail/callback"
+    return f"{scheme}://{host}{prefix}/connections/google/callback"
 
 
 def _google_status(company_id: int) -> dict[str, Any]:
@@ -217,6 +233,34 @@ def _google_status(company_id: int) -> dict[str, Any]:
         "expires_at": row.get("expires_at"),
         "created_at": row.get("created_at"),
     }
+
+
+def _google_error_detail(response: httpx.Response) -> str:
+    """Google's own reason from a failed OAuth token exchange.
+
+    The token endpoint answers a bad exchange with a small JSON body like
+    ``{"error": "invalid_grant", "error_description": "Bad Request"}``. Those
+    fields are safe to show (they never echo the client secret) and they are the
+    difference between a one-line fix and a blind hunt — `invalid_scope` and
+    `redirect_uri_mismatch` need completely different actions.
+    """
+    try:
+        body = response.json()
+    except Exception:
+        body = None
+
+    if isinstance(body, dict):
+        detail = body.get("error_description") or body.get("error")
+        if isinstance(detail, dict):
+            detail = detail.get("message")
+        if detail:
+            code = body.get("error")
+            if code and code != detail:
+                return f"{detail} ({code})"
+            return str(detail)
+
+    text = (response.text or "").strip()
+    return text[:300] or f"HTTP {response.status_code}"
 
 
 def _consume_google_state(state: str | None) -> dict[str, Any] | None:
@@ -331,11 +375,13 @@ def disconnect_instagram(
 # One Google OAuth grant per company covers every Google connector, so:
 #   * `GET /connections/google`          → grant status (scopes + connectors)
 #   * `DELETE /connections/google`       → revoke the grant entirely
-#   * `GET /connections/google/gmail/connect`  → start the handshake (302)
-#   * `GET /connections/google/gmail/callback` → finish it, back to /plugins
+#   * `GET /connections/google/connect?connector=gmail|google_sheets` → start (302)
+#   * `GET /connections/google/callback` → finish it, back to /plugins
 #
-# Disconnecting Gmail removes the shared grant, which is why the disconnect
-# lives on `/connections/google` rather than `/connections/google/gmail`.
+# Disconnecting a Google connector revokes the shared grant (all of them at
+# once), which is why the disconnect lives on `/connections/google` rather than
+# per connector. `/connections/google/gmail/connect` + `/google/gmail/callback`
+# remain as aliases so an already-registered redirect URI keeps working.
 
 
 @router.get("/google")
@@ -373,36 +419,45 @@ def disconnect_google(
     return {"status": "disconnected", "company_id": company_id}
 
 
-@router.get("/google/gmail/connect")
-def google_gmail_connect(
+def _start_google_connect(
     request: Request,
-    user_id: int | None = Query(None, description="User ID (fallback when no session cookie)"),
-    redirect_to: str | None = Query(None, description="Frontend URL to return to after the callback"),
-):
-    """Start the Gmail OAuth handshake (302 → Google consent screen).
+    connector: str,
+    user_id: int | None,
+    redirect_to: str | None,
+) -> RedirectResponse:
+    """Start the Google OAuth handshake for one connector (302 → consent screen).
 
     `user_id` is resolved to the caller's company server-side, so the browser
-    can never bind a mailbox to a company it does not own. The company id and
-    return URL travel in a short-lived, single-use Redis state instead of the
-    query string.
+    can never bind a mailbox or spreadsheet to a company it does not own. The
+    company id, connector and return URL travel in a short-lived, single-use
+    Redis state instead of the query string.
 
-    After the callback the browser lands back on the Plugins page with
-    `?gmail=connected` or `?gmail=error&detail=…`.
+    Because Google keeps the scopes already granted (incremental authorization),
+    connecting Sheets after Gmail widens the same grant instead of replacing it.
     """
+    if connector not in _CONNECTABLE_CONNECTORS:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"'{connector}' is not a connectable Google connector. "
+                f"Supported: {', '.join(sorted(_CONNECTABLE_CONNECTORS))}."
+            ),
+        )
+
     company_id = _require_company(_resolve_user(request, user_id))
 
     manager = Google_Connection_Manager()
     if not manager.configured:
         missing = ", ".join(manager.missing_config)
         logger.error(
-            "Gmail connector is not configured — missing env var(s): %s "
-            "(see docs/technical.md → Gmail connection flow)",
-            missing,
+            "%s connector is not configured — missing env var(s): %s "
+            "(see docs/technical.md → Google connection flow)",
+            connector, missing,
         )
         raise HTTPException(
             status_code=500,
             detail=(
-                f"Gmail integration is not configured (missing: {missing}). "
+                f"The {connector} integration is not configured (missing: {missing}). "
                 "Add them to the repo-root .env and restart the backend."
             ),
         )
@@ -418,7 +473,7 @@ def google_gmail_connect(
             json.dumps(
                 {
                     "company_id": str(company_id),
-                    "connector": "gmail",
+                    "connector": connector,
                     "redirect_uri": redirect_uri,
                     "redirect_to": _safe_redirect_to(redirect_to),
                 }
@@ -431,14 +486,179 @@ def google_gmail_connect(
         ) from exc
 
     logger.info(
-        "Starting Gmail OAuth — company_id=%s, redirect_uri=%s", company_id, redirect_uri
+        "Starting %s OAuth — company_id=%s, redirect_uri=%s",
+        connector, company_id, redirect_uri,
     )
     return RedirectResponse(
         manager.build_authorize_url(
             redirect_uri=redirect_uri,
             state=state,
-            scopes=CONNECTOR_SCOPES["gmail"],
+            scopes=CONNECTOR_SCOPES[connector],
         )
+    )
+
+
+@router.get("/google/connect")
+def google_connect(
+    request: Request,
+    connector: str = Query(..., description="Google connector id: gmail or google_sheets"),
+    user_id: int | None = Query(None, description="User ID (fallback when no session cookie)"),
+    redirect_to: str | None = Query(None, description="Frontend URL to return to after the callback"),
+):
+    """Start a Google OAuth handshake (302 → Google consent screen).
+
+    After the callback the browser lands back on the Plugins page with
+    `?<connector>=connected` or `?<connector>=error&detail=…`.
+    """
+    return _start_google_connect(request, connector, user_id, redirect_to)
+
+
+@router.get("/google/gmail/connect")
+def google_gmail_connect(
+    request: Request,
+    user_id: int | None = Query(None, description="User ID (fallback when no session cookie)"),
+    redirect_to: str | None = Query(None, description="Frontend URL to return to after the callback"),
+):
+    """Gmail alias for `/connections/google/connect?connector=gmail`."""
+    return _start_google_connect(request, "gmail", user_id, redirect_to)
+
+
+async def _google_oauth_callback(
+    request: Request,
+    code: str | None,
+    state: str | None,
+    error: str | None,
+    error_description: str | None,
+    default_connector: str,
+) -> RedirectResponse:
+    """Finish a Google OAuth handshake for whichever connector started it.
+
+    Google redirects here after the user approves or denies the request. On
+    denial it sends `error`/`error_description` and no `code`, which must not
+    422. Either way the browser ends up back on the Plugins page with
+    `?<connector>=connected` or `?<connector>=error&detail=…` so the UI can show
+    the outcome instead of rendering raw JSON.
+
+    The connector travels in the OAuth state (every Google connector shares one
+    callback), so the token just gets stored against the company — the grant is
+    shared, and the granted scopes are what enable each connector's tools.
+    """
+    state_data = _consume_google_state(state)
+    redirect_to = (state_data or {}).get("redirect_to")
+    company_id = (state_data or {}).get("company_id")
+    connector = (state_data or {}).get("connector") or default_connector
+    label = _INTEGRATION_NAMES.get(connector, "Google")
+
+    def _plugin_redirect(**params: str) -> RedirectResponse:
+        base = _safe_redirect_to(redirect_to)
+        return RedirectResponse(
+            url=f"{base.rstrip('/')}?{urllib.parse.urlencode(params)}"
+        )
+
+    if error:
+        logger.warning(
+            "%s OAuth denied — error=%s, description=%s",
+            connector, error, error_description,
+        )
+        return _plugin_redirect(
+            **{
+                connector: "error",
+                "detail": error_description or error or f"{label} authorization failed",
+            }
+        )
+
+    if not code:
+        return _plugin_redirect(
+            **{connector: "error", "detail": "Authorization code is required"}
+        )
+
+    if not state or company_id is None:
+        # Expired/replayed state: the connector is unknown, so report it as a
+        # generic Google failure the UI can still surface.
+        return _plugin_redirect(
+            google="error", detail="Invalid or expired OAuth state — please try again"
+        )
+
+    manager = Google_Connection_Manager()
+    redirect_uri = (state_data or {}).get("redirect_uri") or _google_redirect_uri(request)
+
+    # Each step fails with its own message. A single catch-all here is what turns
+    # a one-line misconfiguration (a missing scope, say) into a blind "auth
+    # failed" report — the founder sees nothing and the log shows one line.
+    try:
+        token = await manager.exchange_code(code, redirect_uri)
+    except httpx.HTTPStatusError as exc:
+        reason = _google_error_detail(exc.response)
+        logger.warning(
+            "%s OAuth: Google refused the token exchange (%s): %s",
+            connector, exc.response.status_code, reason,
+        )
+        return _plugin_redirect(
+            **{connector: "error", "detail": f"Google refused the token exchange: {reason}"}
+        )
+    except httpx.HTTPError as exc:
+        logger.warning("%s OAuth: token exchange failed: %s", connector, exc)
+        return _plugin_redirect(
+            **{connector: "error", "detail": f"Could not reach Google: {exc}"}
+        )
+    except Exception:
+        logger.exception("%s OAuth: token exchange failed", connector)
+        return _plugin_redirect(
+            **{connector: "error", "detail": f"{label} authorization failed"}
+        )
+
+    access_token = token.get("access_token")
+    if not access_token:
+        # Log the *keys*, never the payload: a partial token response can carry a
+        # refresh_token / id_token, and a log line is not a secret store.
+        logger.warning(
+            "%s OAuth: token response has no access_token (keys: %s)",
+            connector, sorted(token.keys()),
+        )
+        return _plugin_redirect(
+            **{connector: "error", "detail": "Google returned no access token"}
+        )
+
+    # Best-effort: the profile only labels the connection (bound account +
+    # google_user_id). A failed call here must NOT throw away tokens we already
+    # hold — that is exactly how a missing identity scope hid a working grant.
+    userinfo: dict[str, Any] = {}
+    try:
+        userinfo = await manager.fetch_userinfo(access_token)
+    except Exception as exc:
+        logger.warning(
+            "%s OAuth: could not read the Google profile (%s) — keeping the grant, "
+            "the Plugins tile will show no email",
+            connector, exc,
+        )
+    bound_email = userinfo.get("email")
+
+    try:
+        manager.store_grant(int(company_id), token, userinfo)
+    except Exception:
+        logger.exception("%s OAuth: failed to store the grant", connector)
+        return _plugin_redirect(
+            **{connector: "error", "detail": f"Could not save the {label} connection — try again"}
+        )
+
+    logger.info(
+        "%s connected — company_id=%s, email=%s, scopes=%s",
+        connector, company_id, bound_email, token.get("scope"),
+    )
+    return _plugin_redirect(**{connector: "connected"})
+
+
+@router.get("/google/callback")
+async def google_callback(
+    request: Request,
+    code: str | None = None,
+    state: str | None = None,
+    error: str | None = None,
+    error_description: str | None = None,
+):
+    """Shared callback for every Google connector (connector comes from state)."""
+    return await _google_oauth_callback(
+        request, code, state, error, error_description, "google"
     )
 
 
@@ -450,62 +670,7 @@ async def google_gmail_callback(
     error: str | None = None,
     error_description: str | None = None,
 ):
-    """Gmail OAuth callback.
-
-    Google redirects here after the user approves or denies the request. On
-    denial it sends `error`/`error_description` and no `code`, which must not
-    422. Either way the browser ends up back on the Plugins page with
-    `?gmail=connected` or `?gmail=error&detail=…` so the UI can show the
-    outcome instead of rendering raw JSON.
-    """
-    state_data = _consume_google_state(state)
-    redirect_to = (state_data or {}).get("redirect_to")
-    company_id = (state_data or {}).get("company_id")
-
-    def _plugin_redirect(**params: str) -> RedirectResponse:
-        base = _safe_redirect_to(redirect_to)
-        return RedirectResponse(
-            url=f"{base.rstrip('/')}?{urllib.parse.urlencode(params)}"
-        )
-
-    if error:
-        logger.warning(
-            "Gmail OAuth denied — error=%s, description=%s", error, error_description
-        )
-        return _plugin_redirect(
-            gmail="error",
-            detail=error_description or error or "Gmail authorization failed",
-        )
-
-    if not code:
-        return _plugin_redirect(gmail="error", detail="Authorization code is required")
-
-    if not state or company_id is None:
-        return _plugin_redirect(
-            gmail="error", detail="Invalid or expired OAuth state"
-        )
-
-    manager = Google_Connection_Manager()
-    redirect_uri = (state_data or {}).get("redirect_uri") or _google_redirect_uri(request)
-    bound_email: str | None = None
-    try:
-        token = await manager.exchange_code(code, redirect_uri)
-        access_token = token.get("access_token")
-        if not access_token:
-            raise ValueError("Google token response is missing access_token")
-
-        userinfo = await manager.fetch_userinfo(access_token)
-        bound_email = userinfo.get("email")
-        manager.store_grant(int(company_id), token, userinfo)
-    except (ValueError, TypeError) as exc:
-        logger.warning("Gmail OAuth returned invalid data: %s", exc)
-        return _plugin_redirect(gmail="error", detail="Gmail authorization failed")
-    except httpx.HTTPError as exc:
-        logger.warning("Gmail OAuth token exchange failed: %s", exc)
-        return _plugin_redirect(gmail="error", detail="Gmail authorization failed")
-    except Exception:
-        logger.exception("Gmail OAuth token exchange failed")
-        return _plugin_redirect(gmail="error", detail="Gmail authorization failed")
-
-    logger.info("Gmail connected — company_id=%s, email=%s", company_id, bound_email)
-    return _plugin_redirect(gmail="connected")
+    """Gmail alias for `/connections/google/callback`."""
+    return await _google_oauth_callback(
+        request, code, state, error, error_description, "gmail"
+    )

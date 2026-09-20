@@ -4,7 +4,7 @@
 
 # Co-Founder
 
-### AI Co-Founder Platform · v0.9.21
+### AI Co-Founder Platform · v0.9.22
 
 <p>
   A full-stack multi-agent platform that acts as an early founding team.
@@ -32,12 +32,14 @@
 
 AI Co-Founder simulates a startup team around a CEO agent. A founder describes the business through chat; the CEO decides whether to answer directly, ask a clarification question, retrieve company knowledge, or delegate to a specialist.
 
-This release includes the Dockerized stack, async Kafka persistence, effort-based routing (Flash / Mid / Max), real-time streaming with buffered WebSocket observability, Google + email auth, live Razorpay billing, Instagram plugin integration, and a generic connected-apps tool manager that lets agents read from and act in third-party tools.
+This release includes the Dockerized stack, effort-based routing (Flash / Mid / Max), real-time streaming with buffered WebSocket observability, Google + email auth, live Razorpay billing, encrypted connector credentials, and a connected-apps tool manager that lets agents read from and act in third-party tools.
 
 Key highlights:
 - **CEO orchestration** — one LangChain agent routes across 8 tools to specialist sub-agents, with MCQ clarifications and LLM-as-judge refinement.
 - **Company knowledge** — RAG over uploaded docs (semantic + keyword fusion) plus separate chat-memory retrieval.
-- **Connected apps** — a small MCP-style tool registry (`connections/tool_manager.py`) exposes each integration to agents as LangChain tools, with the company injected server-side. Agents can publish a generated graphic to Instagram after the founder approves it.
+- **Connected apps** — a small MCP-style tool registry (`connections/tool_manager.py`) exposes each integration to agents as LangChain tools, with the company injected server-side. Agents can read and draft in Gmail, read/write Google Sheets, search/read/download/upload Google Drive files, read the calendar, find free slots and book meetings on request, and publish a generated graphic to Instagram after the founder approves it.
+- **Responsive chat accounting** — chat titles get an immediate provisional value while the polished title is generated in the background; credit deductions run synchronously before the response when possible, and per-message/session usage appears in the chat UI.
+- **Connector security** — Google and Instagram credentials are encrypted at rest with `TOKEN_ENCRYPTION_KEY`; plaintext legacy rows remain readable and are resealed on their next write.
 - **Live observability** — token-by-token streaming and agent trace timeline in chat, with buffered replay so traces never go missing.
 - **Real billing** — Razorpay Checkout, HMAC verification, idempotent credit top-ups (1 credit = ₹1), invoice history.
 - **Guided onboarding** — a six-step spotlight product tour runs once for new accounts and is replayable from the profile menu.
@@ -75,7 +77,7 @@ Key highlights:
 
 ## Status
 
-Functional end-to-end production test (v0.9.21) — chat loop, multi-agent system, RAG, billing, auth, plugins, connected-app publishing, Drive branding, OAuth integrations, and connector production fixes are operational. Known gaps (slow image gen, Supabase free-tier latency) are tracked in [`docs/technical.md`](docs/technical.md#status).
+Functional end-to-end production test (v0.9.22) — chat loop, multi-agent system, RAG, billing, auth, plugins, Google connected apps, encrypted credentials, connected-app publishing, Drive branding, and OAuth integrations are operational. Known gaps (slow image gen, Supabase free-tier latency, and Google verification for broad Drive scopes) are tracked in [`docs/technical.md`](docs/technical.md#status).
 
 ## License
 

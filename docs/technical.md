@@ -1,4 +1,4 @@
-# Co_Founder — Technical Deep Dive (v0.9.21)
+# Co_Founder — Technical Deep Dive (v0.9.22)
 
 > Companion to the main [`README.md`](../README.md). This file holds all implementation details: agent system, RAG, backend, billing, frontend, observability, benchmarks, and performance work.
 
@@ -31,7 +31,7 @@ The important bits:
 - **Observability:** buffered WebSocket trace replay fixed the production race where agent traces could disappear; CEO responses now stream token-by-token through `agent.stream()`.
 - **Benchmarks:** latest RAG benchmark: 95.00% pass rate, 0.950 Average Recall@5, 0.883 Average MRR. CEO e2e eval: 27 runs / 81 judge verdicts; `normal` prompt + `flash` mode currently leads at 8.62 overall.
 
-## Session Summary (v0.9.21)
+## Session Summary (v0.9.22)
 
 This chat focused on turning the connector layer from a partially configured prototype into a production-ready integration pattern. The work completed included:
 
@@ -41,7 +41,10 @@ This chat focused on turning the connector layer from a partially configured pro
 - **Plugin UI update**: refreshed the connector catalog with Google Drive, Calendar, Gmail, and Google Ads brand assets and replaced the previous Slack placeholder tile.
 - **Frontend build and deployment correctness**: fixed Docker build-time env injection so `NEXT_PUBLIC_*` variables are available in the compiled Next app, including payment keys and connector-related public config.
 - **Instagram parity fix**: applied the same exact-redirect handling pattern to the Meta flow so the saved callback URL matched the original request and no longer failed in production.
-- **Documentation/version alignment**: updated the project docs and release notes to reflect the connector work and the current system version as part of this release pass.
+- **Google connected apps**: added agent-backed Google Sheets, Calendar and Drive connectors on the shared OAuth grant, with guarded writes and scope-derived connection status.
+- **Credential encryption**: Google and Instagram tokens/identity ids are encrypted at rest with `TOKEN_ENCRYPTION_KEY`; legacy plaintext rows remain readable and are resealed on write.
+- **Chat accounting and responsiveness**: new sessions get immediate provisional titles while the title worker produces a polished title; credit charging is synchronous-first with Kafka fallback, and per-message/session usage is exposed in the chat UI.
+- **Documentation/version alignment**: this release is documented as system version 0.9.22; the agent registry remains independently versioned.
 
 ## Interviewer's Map
 
@@ -50,7 +53,7 @@ If you are reviewing this project, these are the engineering decisions worth loo
 - **Agent orchestration:** `agents/CEO/CEO.py` and `agents/CEO/ceo_agent_tools.py` show how one CEO agent routes to specialist agents while preserving tool-based reasoning.
 - **Retrieval quality:** `RAG_Engine/` combines semantic search, keyword search, fusion, reranking, document chunks, and separate chat-memory retrieval.
 - **Streaming observability:** `backend/api/connection_manager.py`, `backend/api/observability_events.py`, `frontend/src/lib/observability.ts`, and `frontend/src/components/AgentTracePanel.tsx` solve the production race between `POST /chat` and WebSocket connection startup.
-- **Plugin connections:** `backend/api/connections.py`, `backend/api/auth.py`, `../connections/meta/instagram/instagram_connection_manager.py`, `../connections/google/google_connection_manager.py`, and `frontend/src/app/(app)/plugins/page.tsx` implement the Instagram + Gmail connection lifecycle and connector catalog.
+- **Plugin connections:** `backend/api/connections.py`, `backend/api/auth.py`, `../connections/meta/instagram/instagram_connection_manager.py`, `../connections/google/google_connection_manager.py`, `../connections/google/gmail/`, `../connections/google/sheets/`, `../connections/google/calendar/`, `../connections/google/drive/`, and `frontend/src/app/(app)/plugins/page.tsx` implement the Instagram + Google connector lifecycle and catalog.
 - **Async product behavior:** `backend/kafka_jobs/` moves chat message persistence, memory extraction, and title generation out of the request path.
 - **Real billing path:** `backend/api/payments.py`, `backend/db/credits.py`, `backend/db/payment_history.py`, and `frontend/src/app/(app)/billing/page.tsx` cover checkout, verification, idempotency, balance updates, and invoice history.
 - **Evaluation culture:** `evals/`, [Evals & Benchmarks](#evals--benchmarks), and [`eval_report.md`](eval_report.md) capture both the RAG numbers and CEO e2e judge results, including limitations and confounders.
@@ -96,6 +99,10 @@ Every chat request accepts an `effort` parameter (⚡ Flash / ⚖️ Mid / 🎯 
 | Writer reflections | 0 | 1 | 2 |
 | Writing/Creative model | DeepSeek | DeepSeek | GPT_OSS 120b |
 | Classification model | MIMO 20b | MIMO 20b | MIMO 20b |
+| Resource budget — external agents | 2 | 3 | 8 |
+| Resource budget — web searches | 2 | 3 | 8 |
+| Resource budget — RAG calls | 2 | 3 | 8 |
+| Resource budget — MCQs | 2 | 3 | 4 |
 | Chat memory generation | ✅ async via Kafka | ✅ async via Kafka | ✅ async via Kafka |
 | Title generation | ✅ async via Kafka | ✅ async via Kafka | ✅ async via Kafka |
 | Expected latency | ~30-60s | ~2-4min | ~5-7min |
@@ -362,16 +369,17 @@ Co_Founder/
 | GET | `/auth/instagram/callback` | Exchange the Instagram authorization code, persist the long-lived token, and redirect back to the Plugins page |
 | GET | `/connections/google?user_id=` | Google grant status — bound account, scopes, and which connectors the scopes cover |
 | DELETE | `/connections/google?user_id=` | Revoke the shared Google grant (disconnects every Google connector) |
-| GET | `/connections/google/gmail/connect?user_id=&redirect_to=` | Start the Gmail OAuth handshake; stores the company + return URL in an expiring single-use Redis state and redirects to Google |
-| GET | `/connections/google/gmail/callback` | Exchange the Google authorization code, persist the grant (access + refresh token, granted scopes), and redirect back to the Plugins page with `?gmail=connected|error` |
+| GET | `/connections/google/connect?connector=gmail\|google_sheets\|google_calendar\|google_drive&user_id=&redirect_to=` | Start a Google OAuth handshake; stores the company + connector + return URL in an expiring single-use Redis state and redirects to Google (`400` for a connector that has no handshake yet) |
+| GET | `/connections/google/callback` | Exchange the Google authorization code, persist the grant (access + refresh token, granted scopes), and redirect back to the Plugins page with `?<connector>=connected\|error` |
+| GET | `/connections/google/gmail/connect`, `/connections/google/gmail/callback` | Aliases of the two routes above (Gmail), kept so an already-registered redirect URI keeps working |
 
 ### Async Kafka Pipeline
 
-Background work (chat memory extraction, session titles, message persistence) is decoupled from the request path via **fire-and-forget Kafka jobs** — the request handler produces the message (non-blocking, ~0ms) and returns immediately without waiting for consumers; failures never block or fail the chat response:
+Background work (chat memory extraction, polished session titles, and side-queued message persistence) is decoupled from the request path via **fire-and-forget Kafka jobs**. New sessions persist and return an immediate provisional title derived from the first user message; the title worker later replaces it with an LLM-generated plain-text title. The sidebar refreshes immediately and briefly retries so the polished title appears without a full-page reload. Credit charging is different: the request charges synchronously first so the next frontend balance read is current, then queues Kafka only when the direct charge fails:
 
 ```
 POST /chat
-  → chat_with_user() queues to Kafka (fire-and-forget, ~0ms)
+  → chat_with_user() persists a provisional title and runs the CEO request
       • chat_memory              → chat_memory_job.py           → store_chat_memory()
       • session_title_creation   → session_title_creation_job.py → store_chat_title()
       • add_message_to_session   → add_message_to_session_job.py → add_message_to_session()
@@ -385,6 +393,8 @@ POST /chat
 - **Broker**: `docker-compose.yaml` runs Confluent Kafka 7.8.9 in KRaft mode (single node, controller combined), port 9092
 - MCQ replies are persisted to the DB directly (so they are visible in history immediately) and side-queued to Kafka for downstream jobs
 - Chat memory extraction and title generation now run for **all effort levels** (previously skipped in flash mode) — asynchronously, so they never block the response
+- `backend/api/chat.py::_quick_chat_title()` gives a new chat a usable title immediately; `frontend/src/components/AppLayout.tsx` refreshes the sidebar at creation and every 1.5 seconds for up to 15 seconds while the polished title may still be processing.
+- Credit charges carry `message_id`, `session_id`, and optional `assistant_message_id`. `backend/db/credits_charge.py` deducts the company balance idempotently, updates `chat_sessions.credits_used`, and attributes the same amount to `chat_messages.credits_used`; the chat header and assistant messages display those totals. The per-message migration is `schemas/migrations/add_chat_message_credits_used.sql`.
 
 ### Authentication Flow
 - On success, user metadata (id, email) is returned — `company_id` is not included
@@ -402,7 +412,7 @@ POST /chat
 - Required env vars:
   - Frontend (`NEXT_PUBLIC_*`, inlined at build time, read from the **repo-root `.env`** via `frontend/scripts/run-next.js` — no separate `frontend/.env.local` needed): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, optional `NEXT_PUBLIC_AUTH_REDIRECT_URL`, plus `NEXT_PUBLIC_RAZORPAY_KEY_ID` for checkout
   - ⚠️ The Docker image never runs `run-next.js` (the container starts `node server.js`, Next standalone) and `NEXT_PUBLIC_*` values are frozen into the client bundle at build time, so **every one of them must also be declared in `frontend/Dockerfile` (`ARG` + `ENV`) and passed from `docker-compose.yaml` → `frontend.build.args`**, sourced from the root `.env`. A variable that is only in `.env` works under `npm run dev` and silently renders as `undefined` in the container. Changing one requires `docker compose build frontend && docker compose up -d frontend`.
-  - Backend (root `.env`, already used by the REST layer): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `SESSION_SECRET`, `SESSION_COOKIE_SECURE`, `SESSION_MAX_AGE_DAYS`
+  - Backend (root `.env`, already used by the REST layer): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `SESSION_SECRET`, `SESSION_COOKIE_SECURE`, `SESSION_MAX_AGE_DAYS`, `TOKEN_ENCRYPTION_KEY` (connector credentials — see Credential encryption at rest)
   - Configure the OAuth redirect URL in Supabase → Authentication → URL Configuration (e.g. `http://localhost:3000/auth/callback`)
 - Database: `public.users` gains `supabase_user_id uuid` (nullable, unique) — see `schemas/migrations/add_supabase_user_id.sql`
 
@@ -462,9 +472,9 @@ The Plugins page (`frontend/src/app/(app)/plugins/page.tsx`) provides a searchab
 |---|---|---|
 | Instagram | Available | OAuth connection, long-lived token storage, account binding, status, disconnect |
 | Gmail | Available | Google OAuth connection (offline access), refresh-token storage, scope-derived status, disconnect, agent tools (`gmail.search`, `gmail.get_message`, `gmail.get_thread`, `gmail.list_labels`, `gmail.create_draft` — draft-only, no send) |
-| Google Sheets | Coming soon | Catalog entry only |
-| Google Drive | Coming soon | Catalog entry only |
-| Google Calendar | Coming soon | Catalog entry only |
+| Google Sheets | Available | Shared Google OAuth grant, scope-derived status, disconnect, agent tools (`google_sheets.get_spreadsheet`, `google_sheets.read_range`, `google_sheets.read_multiple_ranges`, `google_sheets.write_range`, `google_sheets.append_rows`, `google_sheets.clear_range`, `google_sheets.create_spreadsheet`, `google_sheets.add_sheet`) |
+| Google Drive | Available | Shared Google OAuth grant, scope-derived status, disconnect, agent tools (`google_drive.search_files`, `get_file`, `read_file`, `download_file`, `upload_file`, `create_folder`) |
+| Google Calendar | Available | Shared Google OAuth grant, scope-derived status, disconnect, agent tools (`google_calendar.list_calendars`, `list_events`, `get_event`, `find_free_slots`, `create_event`, `quick_add_event`, `update_event`, `delete_event`) |
 | Notion | Coming soon | Catalog entry only |
 | Google Ads | Coming soon | Catalog entry only |
 | Shopify | Coming soon | Catalog entry only |
@@ -481,17 +491,17 @@ The Plugins page (`frontend/src/app/(app)/plugins/page.tsx`) provides a searchab
 
 Access tokens are never included in frontend API responses. Agent-side Instagram operations use `../connections/meta/instagram/instagram_connection_manager.py` to retrieve the token server-side.
 
-### Gmail (Google) connection flow
+### Google (Gmail, Sheets, Calendar & Drive) connection flow
 
-Every Google connector shares **one** OAuth client and therefore **one grant per company**: Gmail is available today, and Sheets / Drive / Calendar are switched on by adding their scope to `CONNECTOR_SCOPES` in `../connections/google/google_connection_manager.py`. The handshake lives in the connections router (not `/auth`, which is for sign-in):
+Every Google connector shares **one** OAuth client and therefore **one grant per company**: connecting a second connector widens the grant instead of replacing it (`include_granted_scopes=true` sends back the scopes already granted). Gmail, Google Sheets, Google Calendar and Google Drive are available today. Drive uses the full `https://www.googleapis.com/auth/drive` scope so agents can search existing files, not only files created by this app. The handshake lives in the connections router (not `/auth`, which is for sign-in), and **one shared callback serves every connector** — the connector id travels in the OAuth state:
 
-1. The user opens **Plugins** and selects **Connect** on Gmail.
-2. The frontend opens `GET /connections/google/gmail/connect?user_id=…&redirect_to=…`. The backend resolves the caller (session cookie preferred, `user_id` fallback — a mismatch is a `403`) to their company, so a browser can never bind a mailbox to a company it does not own.
+1. The user opens **Plugins** and selects **Connect** on Gmail, Google Sheets, Google Calendar or Google Drive.
+2. The frontend opens `GET /connections/google/connect?connector=gmail|google_sheets|google_calendar|google_drive&user_id=…&redirect_to=…`. The backend resolves the caller (session cookie preferred, `user_id` fallback — a mismatch is a `403`) to their company, so a browser can never bind a Google account to a company it does not own. (`/connections/google/gmail/connect` remains an alias for older links.)
 3. The company id, connector, resolved `redirect_uri` and validated return URL are stored in Redis for ten minutes; `redirect_to` is rejected unless it is absolute `http(s)` (no open redirect).
 4. The backend redirects to Google's consent screen with `access_type=offline`, `prompt=consent` and `include_granted_scopes=true` — that combination is what guarantees a **refresh token** and keeps scopes from previously connected Google connectors.
-5. Google redirects to `GET /connections/google/gmail/callback` with the authorization code.
+5. Google redirects to the registered callback (`GET /connections/google/callback`, also reachable as `/connections/google/gmail/callback`) with the authorization code.
 6. The backend consumes the single-use state (deleted on read, so a replay cannot re-bind a token), exchanges the code for tokens, fetches the Google identity (`sub` + `email`), and upserts the grant into `google_connections`. When Google omits a refresh token on re-connect, the stored one is **preserved** rather than overwritten with `NULL`.
-7. The backend redirects to the original Plugins URL with `?gmail=connected` or `?gmail=error&detail=…`. Denials (`error=access_denied`, no `code`) return the same redirect instead of a 422.
+7. The backend redirects to the original Plugins URL with `?<connector>=connected` or `?<connector>=error&detail=…` (`gmail`, `google_sheets`, `google_calendar`, `google_drive`). Denials (`error=access_denied`, no `code`) return the same redirect instead of a 422, and an expired/replayed state reports the generic `?google=error` because the connector is no longer known.
 8. The frontend reloads the catalog. Because connectors share the grant, **Disconnect** calls `DELETE /connections/google` and revokes every Google connector at once.
 
 Required backend env vars (root `.env`), plus the redirect URI registered on the Google Cloud OAuth client:
@@ -500,40 +510,73 @@ Required backend env vars (root `.env`), plus the redirect URI registered on the
 GOOGLE_OAUTH_CLIENT_ID=<google oauth client id>
 GOOGLE_OAUTH_CLIENT_SECRET=<google oauth client secret>
 GOOGLE_OAUTH_REDIRECT_URI=https://get-cofounder.tech/api/connections/google/gmail/callback
+# ^ one URI covers every Google connector — the connector travels in the OAuth state
+# Required for every connector (Google + Instagram), not just these: it encrypts
+# the stored tokens. Generate with `python -m backend.field_crypto`.
+TOKEN_ENCRYPTION_KEY=<32 random bytes, base64url>
 ```
 
 `GOOGLE_OAUTH_REDIRECT_URI` is effectively **required in production**: nginx strips `/api` before proxying to the backend, so the fallback path (reconstructing the URI from `X-Forwarded-*` headers) would emit `https://get-cofounder.tech/connections/google/gmail/callback` — missing the prefix and rejected by Google. Keep the `127.0.0.1` value in a dev machine's `.env` and the deployed value in the server's `.env` (the same token-grant plumbing then works in both); the server also wants `FRONTEND_URL=https://get-cofounder.tech` so the post-callback redirect falls back to the real site when `redirect_to` is absent. Whichever value is active must be registered on the OAuth client, because a localhost URI is useless in the browser-facing consent flow of a deployed app.
 
-The redirect URI must match the Google configuration exactly, including scheme, host, path and `/api` prefix where applicable — Google rejects the token exchange otherwise. Register **every** URI you actually use locally (they are not interchangeable):
+The redirect URI must match the Google configuration exactly, including scheme, host, path and `/api` prefix where applicable — Google rejects the token exchange otherwise. Register **every** URI you actually use locally (they are not interchangeable), but note that **you only need one**: every Google connector shares the same callback, and the connector id travels in the OAuth state. Existing deployments that registered the `/gmail/callback` path need no change — it is still served (Sheets included). A fresh setup can register the plain shared path instead:
 
 ```
 http://127.0.0.1:8000/connections/google/gmail/callback
 http://localhost:8000/connections/google/gmail/callback
-https://get-cofounder.tech/api/connections/google/gmail/callback   # production
+https://get-cofounder.tech/api/connections/google/gmail/callback   # production (current value)
+http://localhost:8000/connections/google/callback                 # shared path (new setups)
 ```
 
 Local setup, in the Google Cloud console (a Supabase Google client works too — add these scopes and redirect URIs to it and reuse the same id/secret):
 
-1. **Enable the Gmail API** for the project (APIs & Services → Library → Gmail API → Enable). Without it the token exchange fails with `access_not_configured`.
-2. On the **OAuth consent screen** add the scopes `openid`, `email`, `https://www.googleapis.com/auth/gmail.readonly`, `https://www.googleapis.com/auth/gmail.compose`. While the app is in **Testing**, add your own account under **Test users** — otherwise Google returns `access_denied` before the callback runs.
+1. **Enable the APIs** for the project (APIs & Services → Library → Enable): **Gmail API**, **Google Sheets API** and **Google Calendar API**. Without them the token exchange fails with `access_not_configured`, and Sheets/Calendar calls fail with a 403 even after a successful consent.
+2. On the **OAuth consent screen** add the scopes `openid`, `email`, `https://www.googleapis.com/auth/gmail.readonly`, `https://www.googleapis.com/auth/gmail.compose`, `https://www.googleapis.com/auth/spreadsheets` and `https://www.googleapis.com/auth/calendar.events`. `openid` + `email` belong to **every** Google connector's request (they are what `fetch_userinfo` needs to label the connection — see `CONNECTOR_SCOPES`), not just to sign-in. While the app is in **Testing**, add your own account under **Test users** — otherwise Google returns `access_denied` before the callback runs.
 3. Create an **OAuth client ID → Web application** and paste the redirect URIs above. Two traps produce `Error 400: redirect_uri_mismatch` even when `.env` is correct:
    - The URI belongs in **Authorized redirect URIs**, not *Authorized JavaScript origins*, and the client **Application type** must be *Web application* (desktop/iOS/Android clients refuse custom loopback paths).
    - The **project picker silently resets** — confirm the **Client ID** on the page matches `GOOGLE_OAUTH_CLIENT_ID` in `.env` character-for-character. Editing a same-named client in another project changes nothing.
-   The value is compared byte-exactly, so `localhost` ≠ `127.0.0.1`, a trailing `/` breaks it, and console changes can take a couple of minutes to propagate. The resolved URI is logged on every connect attempt (`Starting Gmail OAuth — … redirect_uri=…`), which is the string to compare against.
-4. Put the credentials in the repo-root `.env` and **restart the backend** — `load_dotenv()` runs at import time, so `--reload` (which only watches `.py` files) will not pick up `.env` changes. The startup log states `Gmail connector configured` or lists the missing variable names.
+   The value is compared byte-exactly, so `localhost` ≠ `127.0.0.1`, a trailing `/` breaks it, and console changes can take a couple of minutes to propagate. The resolved URI is logged on every connect attempt (`Starting <connector> OAuth — … redirect_uri=…`), which is the string to compare against.
+4. Put the credentials in the repo-root `.env` and **restart the backend** — `load_dotenv()` runs at import time, so `--reload` (which only watches `.py` files) will not pick up `.env` changes. The startup log states `Google connectors configured (Gmail, Sheets)` or lists the missing variable names.
 5. Apply `schemas/migrations/create_google_connections.sql` in the Supabase SQL editor.
 
-If any of this is missing, `GET /connections/google/gmail/connect` fails fast with `500 Gmail integration is not configured (missing: …)` rather than sending the browser to a Google error page.
+A company that connected Gmail **before** Sheets existed keeps working: connect Sheets from the Plugins page and Google's incremental authorization widens the same grant (no re-consent for the scopes already granted). The Sheets tools detect the narrower grant and answer with "connect Google Sheets from the Plugins page" instead of a raw 403.
+
+If any of this is missing, `GET /connections/google/connect` fails fast with `500 The <connector> integration is not configured (missing: …)` rather than sending the browser to a Google error page.
 
 **Testing-mode caveats** (an unverified app):
 
 - Accounts missing from **Audience → Test users** are blocked *at Google* with `Error 403: access_denied` ("has not completed the Google verification process"). Test users are capped at 100.
-- **Refresh tokens issued in Testing expire after 7 days**, so a connected mailbox stops working a week later (the agent gets "Gmail is not connected … connect it from the Plugins page") and the founder must reconnect. `gmail.readonly` / `gmail.compose` are *restricted* scopes, so publishing for real founders needs Google's verification (and, for restricted scopes, a security assessment) — plan for it before enabling the connector beyond test users.
+- **Refresh tokens issued in Testing expire after 7 days**, so a connected mailbox or spreadsheet stops working a week later (the agent gets "Google Sheets is not connected … connect it from the Plugins page") and the founder must reconnect. `gmail.readonly` / `gmail.compose` are *restricted* scopes and `spreadsheets` / `calendar.events` are *sensitive* ones, so publishing for real founders needs Google's verification (and, for restricted scopes, a security assessment) — plan for it before enabling the connectors beyond test users.
 - Consent-screen edits (test users, scopes) take a minute or two to apply, and a browser tab parked on Google's error page keeps replaying the stale failure — always restart the flow from `/plugins` instead of reloading.
 
-**Debugging a failure without a browser.** The request never reaching `/connections/google/gmail/callback` is the key signal, and it separates the two failure classes: `redirect_uri_mismatch` is thrown by Google *before* login, `access_denied` *after* it. Google validates `redirect_uri` pre-login, so the authorize URL can be probed with `curl` (no credentials needed): an accepted request 302s to `/v3/signin/identifier`, a rejected one to `/signin/oauth/error?authError=…` — base64-decode that parameter for Google's exact reason. The resolved URI is logged on every attempt (`Starting Gmail OAuth — … redirect_uri=…`), which is the string to compare against the console.
+**Debugging a failure without a browser.** The request never reaching `/connections/google/callback` is the key signal, and it separates the two failure classes: `redirect_uri_mismatch` is thrown by Google *before* login, `access_denied` *after* it. Google validates `redirect_uri` pre-login, so the authorize URL can be probed with `curl` (no credentials needed): an accepted request 302s to `/v3/signin/identifier`, a rejected one to `/signin/oauth/error?authError=…` — base64-decode that parameter for Google's exact reason. The resolved URI is logged on every attempt (`Starting <connector> OAuth — … redirect_uri=…`), which is the string to compare against the console.
 
-Tokens are backend-only: `/connections` responses expose the bound `google_email`, the granted `scopes` and timestamps, never `access_token` or `refresh_token`. Agent-side tools call `Google_Connection_Manager.get_access_token(company_id)`, which returns a live token and transparently refreshes it (60s before expiry). Status is scope-derived — `connector_is_connected(scopes, connector_id)` decides whether a connector shows as **Connected**, so a grant without the Gmail scope leaves Gmail untouched. Table: `schemas/google_connections.sql` (one row per company, `unique(company_id)`).
+**Reading a failed callback.** The callback runs four steps — exchange the code, read the profile, store the grant, redirect — and each one logs its own line, so the log names the step instead of reporting a generic failure. Two symptoms seen in practice:
+
+- `could not read the Google profile (401 Unauthorized …/oauth2/v3/userinfo) — keeping the grant`: the connector's scope list was missing `openid`/`email`. The grant is still stored (the tokens were valid), the Plugins tile just shows no email. Fix the scope list in `CONNECTOR_SCOPES` and reconnect.
+- `Google refused the token exchange (400): … (invalid_scope)` / `(redirect_uri_mismatch)` / `(invalid_client)`: Google's own text (and code) is passed through to the banner, and the token exchange never happened — a scope missing from the consent screen, a redirect URI that does not match byte-exactly, or a wrong client secret.
+
+Tokens are backend-only: `/connections` responses expose the bound `google_email`, the granted `scopes` and timestamps, never `access_token` or `refresh_token`. Agent-side tools call `Google_Connection_Manager.get_access_token(company_id)`, which returns a live token and transparently refreshes it (60s before expiry). Status is scope-derived — `connector_is_connected(scopes, connector_id)` decides whether a connector shows as **Connected**, so a grant without the Sheets scope leaves Sheets untouched (and vice versa). Table: `schemas/google_connections.sql` (one row per company, `unique(company_id)`).
+
+### Credential encryption at rest (`backend/field_crypto.py`)
+
+A stored OAuth grant is the most dangerous row in the database: a Google refresh token reads a founder's mail and spreadsheets, an Instagram token publishes to their account. `backend/db/google_connections.py` and `backend/db/connections.py` therefore seal the credential columns before the write and open them on read, so Postgres only ever holds ciphertext while every caller (agent tools, status APIs, the OAuth callback) keeps working with plaintext.
+
+| Column | Algorithm | Why |
+|---|---|---|
+| `access_token`, `refresh_token` | AES-256-GCM, random 12-byte nonce per write → `enc:v1:<b64(nonce‖ct)>` | Tokens are secrets: equal values must not look equal at rest |
+| `google_user_id`, `instagram_user_id` | AES-256-SIV, deterministic → `encid:v1:<b64(ct)>` | `instagram_connections` has a **unique index** on `instagram_user_id` ("one Instagram account, one company"). Randomized ciphertext would give two different values for the same account and silently neuter that constraint; deterministic encryption keeps equality — and therefore the constraint — meaningful |
+
+- Each algorithm authenticates its **purpose** via associated data, so an identifier ciphertext cannot be replayed into a token column (and vice versa). Tampering fails closed with `FieldDecryptionError`.
+- `email`, `scopes` and `expires_at` stay readable on purpose: they label the connection in the Plugins grid and grant no access of their own.
+- Key: `TOKEN_ENCRYPTION_KEY` (32 random bytes, base64) → `python -m backend.field_crypto` prints a fresh one. One env var is expanded with HKDF-SHA256 into the two independent subkeys above, so there is a single thing to store and rotate.
+  - **Set** → writes are encrypted; the boot log prints a non-reversible 12-hex `key_fingerprint()` (`Connector credentials encrypted at rest (key …)`) — the first thing to check when a stored credential cannot be read.
+  - **Unset** → the app still runs (dev friendliness) but `field_crypto` logs a loud warning at import and stores plaintext. Production must set it.
+  - **Malformed** (bad base64 / wrong length) → raises at import: that is a configuration error, not an optional feature being off.
+- **Legacy rows keep working.** Decryption is prefix-driven, so plaintext rows written before this existed are returned untouched and are re-sealed the next time that connection is written (an OAuth reconnect, or the token refresh path — both go through `put_*`). No backfill and no forced reconnect.
+- **Rotation runbook**: set the new `TOKEN_ENCRYPTION_KEY` and reconnect each connector. Rows sealed under the old key raise an actionable `FieldDecryptionError` ("wrong or rotated key … Reconnect that connector from the Plugins page") which propagates through `get_access_token` to the agent, so the model can tell the founder what to do instead of retrying blindly.
+- Encryption is only half of it: the anon key is public in the browser bundle, so make sure **RLS is enabled** on `google_connections` / `instagram_connections` (no policies needed — the backend uses the service-role key, which bypasses RLS). Without it those rows are readable through PostgREST with the public key.
+
+Verification (no network, no database): `backend/db/*` is exercised against a stub Supabase client asserting ciphertext at rest, plaintext through the API, refresh-token preservation, legacy-row passthrough, deterministic Instagram ids and the rotated-key error path.
 
 ### Agent tool manager (MCP-style)
 
@@ -544,6 +587,12 @@ Connection tools are declared once and shared by every agent through a small, MC
 | `connections/tool_manager.py` | `Tool` + `ToolManager`: `add()`, `list_tools()`, `call_tool()`, `as_langchain_tools()` |
 | `../connections/meta/instagram/instagram_tools.py` | `register_instagram_tools()` — the Instagram tool specs |
 | `../connections/google/gmail/gmail_tools.py` | `register_gmail_tools()` — the Gmail tool specs |
+| `../connections/google/sheets/sheets_tools.py` | `register_sheets_tools()` — the Google Sheets tool specs |
+| `../connections/google/sheets/sheets_connection_manager.py` | `Sheets_Connection_Manager` + `sheets_manager` singleton — Sheets REST calls, A1-range normalisation, value truncation |
+| `../connections/google/calendar/calendar_tools.py` | `register_calendar_tools()` — the Google Calendar tool specs |
+| `../connections/google/calendar/calendar_connection_manager.py` | `Calendar_Connection_Manager` + `calendar_manager` singleton — Calendar REST calls, timezone validation, free-slot computation |
+| `../connections/google/drive/drive_tools.py` | `register_drive_tools()` — the Google Drive tool specs |
+| `../connections/google/drive/drive_connection_manager.py` | `Drive_Connection_Manager` + `drive_manager` singleton — Drive search, metadata, bounded text/export reads, downloads, uploads, and folder creation |
 | `../connections/google/gmail/gmail_connection_manager.py` | `Gmail_Connection_Manager` + `gmail_manager` singleton — Gmail REST calls, MIME parsing, draft building |
 | `connections/global_connection_manager.py` | `Global_Connection_Manager` + module singleton `connections` |
 
@@ -585,6 +634,64 @@ Six tools, all bound to the company's shared Google grant (`Google_Connection_Ma
 - **Context-window guard**: bodies are truncated (`_MAX_BODY_CHARS` 4000, 2000 per message inside a thread) and attachments are returned as metadata only — a 200 KB HTML newsletter would otherwise be ~100k tokens. `search_messages` never returns bodies; it is capped at 25 hits (`_MAX_SEARCH_RESULTS`).
 - **Errors are actionable**: HTTP failures are translated to a message the model can relay ("reconnect Gmail from the Plugins page" on 401, missing-scope/quota hint on 403). A company without a Google connection gets that same guidance instead of a stack trace.
 - **Tool schemas**: Gmail params are declared explicitly in `register_gmail_tools()` because `ToolManager` treats *any* param without a `"default"` as required (array/object params cannot be inferred from type hints). Optional params therefore carry `"default": []` / `"default": ""`.
+
+#### Google Sheets tools (`google_sheets.*`)
+
+Eight tools, all bound to the company's shared Google grant (`Google_Connection_Manager.get_access_token`, auto-refreshed) — a plain REST client over `https://sheets.googleapis.com/v4/spreadsheets`, no Google SDK. The connector holds only the `spreadsheets` scope:
+
+| Tool | Sheets method | Notes |
+|---|---|---|
+| `google_sheets.get_spreadsheet` | `spreadsheets.get` | Title, link and every tab (name, sheet id, grid size, hidden) — the first call after a founder shares a link |
+| `google_sheets.read_range` | `spreadsheets.values.get` | A1 range, bare tab name or nothing at all; empty range resolves from the link's `gid`, else the first visible tab |
+| `google_sheets.read_multiple_ranges` | `spreadsheets.values.batchGet` | Up to 10 ranges in one round trip (repeated `ranges=` params) |
+| `google_sheets.write_range` | `spreadsheets.values.update` | Overwrites the range; `USER_ENTERED` by default so `=SUM(...)` works like typing it |
+| `google_sheets.append_rows` | `spreadsheets.values.append` | The safe write: adds after the table's last row, `INSERT_ROWS` so a bottom-of-sheet table keeps working |
+| `google_sheets.clear_range` | `spreadsheets.values.clear` | Destructive; the prompt rules require an explicit, range-named request |
+| `google_sheets.create_spreadsheet` | `spreadsheets.create` | New file in the founder's Drive, optional named tabs |
+| `google_sheets.add_sheet` | `spreadsheets.batchUpdate` | Only `addSheet` is used — no formatting, no deletes |
+
+- **Founders paste links, not ids.** `_spreadsheet_id()` accepts a full `docs.google.com/spreadsheets/d/<id>/…` URL or a bare id, and `_extract_gid()` reads the `#gid=…` fragment so "read the tab I have open" works without asking for a tab name. Sheet names that need quoting (`Q3 Leads`) are quoted for A1 notation automatically.
+- **No Drive, no file listing.** Listing or searching a founder's spreadsheets needs the Drive API; the connector deliberately asks for the narrower `spreadsheets` scope, so every tool takes the link/URL instead. This is also why `_access_token()` checks `connector_is_connected(scopes, "google_sheets")` and returns an actionable "connect Google Sheets from the Plugins page" message instead of letting Google answer 403.
+- **Context-window guard**: a read is truncated to `_MAX_ROWS_RETURNED` (500) rows and `_MAX_CELLS_RETURNED` (6000) cells, with `truncated: true` and a note telling the model to read a narrower range. Writes are capped at `_MAX_CELLS_WRITTEN` (5000) cells, and `values` is normalised (rows, a single row, a column, or a `{header: value}` dict) so a well-meaning but malformed payload does not become a 400 from Google.
+- **Writes are never guessed.** `write_range` / `append_rows` / `clear_range` refuse an empty `range`, and write results carry `status: written_not_verified` / `appended_not_verified` plus a note to `read_range` back — the model must never claim a cell was written without checking.
+- **Prompt guardrails** live in both CEO prompts (Gmail/Sheets/Calendar paragraphs) and §3 of `../docs/Agents_rules.md`: reads are safe, every write needs an explicit request plus `ask_mcq_for_user` confirmation, and `clear_range` is called out as destructive.
+
+#### Google Calendar tools (`google_calendar.*`)
+
+Eight tools, same shared Google grant (`Google_Connection_Manager.get_access_token`, auto-refreshed) — a plain REST client over `https://www.googleapis.com/calendar/v3`, no Google SDK. The connector asks for `.../auth/calendar.events` only:
+
+| Tool | Calendar method | Notes |
+|---|---|---|
+| `google_calendar.list_calendars` | `calendarList.list` | Every calendar + its timezone. Needs the wider `calendar.readonly` / `calendar` scope, so with a narrow grant it reports the missing scope and the agent keeps using `primary` |
+| `google_calendar.list_events` | `events.list` | `singleEvents=true` (recurrence expanded) + `orderBy=startTime`; window, free-text `q`, `maxResults` ≤ 100; cancelled events filtered out |
+| `google_calendar.get_event` | `events.get` | Full description, attendee replies, conference link, recurrence |
+| `google_calendar.find_free_slots` | `events.list` (computed) | Open windows inside 09:00–18:00, gaps derived from the day's events — see below |
+| `google_calendar.create_event` | `events.insert` | `end` defaults to `start + duration_minutes`; all-day via `date`; attendees; `sendUpdates=all\\|none` |
+| `google_calendar.quick_add_event` | `events.quickAdd` | Natural language ("Lunch with Acme tomorrow 1pm") — Google parses it, so the parsed result is echoed back |
+| `google_calendar.update_event` | `events.patch` | Partial by design: only the fields passed change; refuses an empty body |
+| `google_calendar.delete_event` | `events.delete` | Destructive; prompt-confirmed only |
+
+- **Timezone discipline is the core safety property.** A date (`2026-09-21`) or a timestamp with no UTC offset is **rejected** unless a `time_zone` is supplied — assuming UTC (or the server's zone) is how an agent books a meeting at the wrong hour. Every list/get response returns the calendar's own `time_zone`, so the model reads it once and reuses it; `ZoneInfo` validates the name so a typo is a clear error, not a silent shift.
+- **Free/busy without the `freeBusy` endpoint.** `freeBusy.query` needs `calendar.readonly`, while `events.list` works with `calendar.events`, so free slots are computed: `transparent` ("free") events and cancellations are ignored, remaining intervals are merged, and gaps ≥ the requested duration inside working hours are returned. An all-day event blocks the whole day (the honest reading of leave or a holiday), and the result says it only sees this one calendar.
+- **Scope-derived status.** `GOOGLE_CONNECTOR_SCOPES["google_calendar"]` requires `calendar.events`, so a Gmail-only grant leaves Calendar unconnected; `Calendar_Connection_Manager._access_token()` checks that *before* the request and answers "connect Google Calendar from the Plugins page" instead of letting Google 403.
+- **URL quoting matters here**: calendar ids can contain `@` and `#` (`team@group.calendar.google.com`) and event ids can contain `/`, `+` and spaces, so both are percent-encoded (`safe=""`) — an unencoded `#` would be parsed as a URL fragment and silently target the wrong resource.
+- **Context-window guard**: descriptions truncated (800 chars), attendees listed to 20 with their response status, ≤ 100 events per call.
+- **Prompt guardrails** live in both CEO prompts and §3 of `../docs/Agents_rules.md`: reads are safe; `create_event` / `quick_add_event` / `update_event` need confirmation of title, date, times and timezone; `delete_event` only for the event the founder named; guests are emailed only when `notify_attendees` is set.
+
+#### Google Drive tools (`google_drive.*`)
+
+Six tools use the shared Google grant and the Drive REST API (`https://www.googleapis.com/drive/v3`):
+
+| Tool | Drive method | Notes |
+|---|---|---|
+| `google_drive.search_files` | `files.list` | Name/full-text, MIME type, folder and trashed filters; max 100 results |
+| `google_drive.get_file` | `files.get` | Bounded metadata including browser link, parents, size and timestamps |
+| `google_drive.read_file` | `files.get` / `files.export` | Text files and Google Docs/Sheets/Slides become bounded text (20,000 chars) |
+| `google_drive.download_file` | `files.get` / `files.export` | Binary/base64 retrieval capped at 10 MB |
+| `google_drive.upload_file` | multipart `files.create` | Base64 upload capped at 10 MB; explicit confirmation required |
+| `google_drive.create_folder` | `files.create` | Creates a folder under an optional parent; explicit confirmation required |
+
+This is the Google Drive plugin, distinct from the app's internal company-file `/drive` page. The connector uses the full `https://www.googleapis.com/auth/drive` scope so search can find existing files. It intentionally exposes no delete, share, or overwrite tool. Enable the Google Drive API in GCP and add the scope to the OAuth consent screen; production verification/security review may be required for this broad scope.
 
 ### Publishing a generated graphic
 

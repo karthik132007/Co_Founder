@@ -615,6 +615,67 @@ def add_credits_to_session(session_id: str, amount: float) -> None:
     )
 
 
+def add_credits_to_message(message_id: int, amount: float) -> None:
+    """Increment a chat message's ``credits_used`` by *amount*.
+
+    Called by the ``manage_credits`` consumer after a successful deduction so
+    each assistant reply carries its own cost. Tolerant of databases where the
+    ``add_chat_message_credits_used`` migration has not been applied yet —
+    the session total is still recorded, the per-message field just stays 0.
+    """
+    if not message_id or amount <= 0:
+        return
+
+    try:
+        response = (
+            _client.table("chat_messages")
+            .select("id, session_id, credits_used")
+            .eq("id", message_id)
+            .execute()
+        )
+    except Exception:
+        logger.exception(
+            "add_credits_to_message: failed to read message_id=%s", message_id
+        )
+        return
+    rows = response.data or []
+    if not rows:
+        logger.warning("add_credits_to_message: message_id=%s not found", message_id)
+        return
+
+    row = rows[0]
+    try:
+        current = Decimal(str(row.get("credits_used") or 0))
+    except Exception:
+        # Column missing (migration not applied) — nothing to update.
+        logger.warning(
+            "add_credits_to_message: credits_used column unavailable "
+            "(apply schemas/migrations/add_chat_message_credits_used.sql)"
+        )
+        return
+    new_total = (current + Decimal(str(amount))).quantize(
+        Decimal("0.0001"), rounding=ROUND_HALF_UP
+    )
+
+    try:
+        _client.table("chat_messages").update(
+            {"credits_used": str(new_total)}
+        ).eq("id", message_id).execute()
+    except Exception:
+        logger.exception(
+            "add_credits_to_message: failed to update message_id=%s", message_id
+        )
+        return
+
+    if row.get("session_id"):
+        invalidate_session_msgs(row.get("session_id"))
+    logger.info(
+        "Message credits updated — message_id=%s, credits_used=%s",
+        message_id,
+        new_total,
+    )
+
+
 def add_message_to_session(session_id: str, role: str, message: str) -> _ChatMessageResult:
     """Add a new message entry to the chat_messages table."""
     if not session_id:

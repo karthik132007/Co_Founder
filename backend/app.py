@@ -31,17 +31,24 @@ def _log_connector_config() -> None:
     Without this, a missing OAuth credential is only discovered when a founder
     clicks Connect and gets a 500. Names only — never values.
     """
+    from backend.field_crypto import encryption_enabled, key_fingerprint
     from connections.google.google_connection_manager import Google_Connection_Manager
 
     missing = Google_Connection_Manager().missing_config
     if missing:
         logger.warning(
-            "Gmail connector disabled — missing env var(s): %s "
-            "(see docs/technical.md → Gmail connection flow)",
+            "Google connectors (Gmail, Sheets) disabled — missing env var(s): %s "
+            "(see docs/technical.md → Google connection flow)",
             ", ".join(missing),
         )
     else:
-        logger.info("Gmail connector configured")
+        logger.info("Google connectors configured (Gmail, Sheets)")
+
+    # The fingerprint identifies the active key without revealing it — the first
+    # thing to check when a stored credential suddenly cannot be decrypted.
+    # `field_crypto` has already warned if the key is missing entirely.
+    if encryption_enabled():
+        logger.info("Connector credentials encrypted at rest (key %s)", key_fingerprint())
 
 
 @asynccontextmanager

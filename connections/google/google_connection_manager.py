@@ -42,19 +42,39 @@ _EXPIRY_SKEW_SECONDS = 60
 
 # Scopes requested when the user connects a given connector. Least privilege:
 # only what that connector's tools need, so the consent screen stays small.
+#
+# `openid` + `email` are part of EVERY Google connector's request, not just the
+# sign-in ones: the shared handshake calls `fetch_userinfo()` to label the
+# connection (bound account + `google_user_id`), and that endpoint 401s for an
+# access token that carries no identity scope. Dropping them from a connector
+# makes the whole exchange look like an "authorization failed" dead end.
 GMAIL_SCOPES = [
     "openid",
     "email",
     "https://www.googleapis.com/auth/gmail.readonly",
     "https://www.googleapis.com/auth/gmail.compose",
 ]
+GOOGLE_SHEETS_SCOPES = [
+    "openid",
+    "email",
+    "https://www.googleapis.com/auth/spreadsheets",
+]
 CONNECTOR_SCOPES: dict[str, list[str]] = {
     "gmail": GMAIL_SCOPES,
+    "google_sheets": GOOGLE_SHEETS_SCOPES,
     # Reserved for the connectors still marked "coming soon" — switching one on
-    # is a one-line change here plus its tools.
-    "google_sheets": ["https://www.googleapis.com/auth/spreadsheets"],
-    "google_drive": ["https://www.googleapis.com/auth/drive.file"],
-    "google_calendar": ["https://www.googleapis.com/auth/calendar.events"],
+    # is a one-line change here plus its tools (and remember the identity
+    # scopes above).
+    "google_drive": [
+        "openid",
+        "email",
+        "https://www.googleapis.com/auth/drive",
+    ],
+    "google_calendar": [
+        "openid",
+        "email",
+        "https://www.googleapis.com/auth/calendar.events",
+    ],
 }
 
 # Capability scopes a stored grant must contain for a connector to count as
@@ -63,7 +83,7 @@ CONNECTOR_SCOPES: dict[str, list[str]] = {
 GOOGLE_CONNECTOR_SCOPES: dict[str, tuple[str, ...]] = {
     "gmail": ("https://www.googleapis.com/auth/gmail.readonly",),
     "google_sheets": ("https://www.googleapis.com/auth/spreadsheets",),
-    "google_drive": ("https://www.googleapis.com/auth/drive.file",),
+    "google_drive": ("https://www.googleapis.com/auth/drive",),
     "google_calendar": ("https://www.googleapis.com/auth/calendar.events",),
 }
 

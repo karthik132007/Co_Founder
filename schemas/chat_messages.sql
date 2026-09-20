@@ -3,6 +3,7 @@ create table public.chat_messages (
   session_id text not null,
   role text not null,
   message text not null,
+  credits_used numeric(18, 4) not null default 0,
   created_at timestamp with time zone not null default now(),
   constraint chat_messages_pkey primary key (id),
   constraint chat_messages_session_id_fkey foreign KEY (session_id) references chat_sessions (session_id) on delete CASCADE,

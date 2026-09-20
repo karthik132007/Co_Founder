@@ -21,7 +21,7 @@ import {
   disconnectInstagram,
   fetchConnections,
   fetchProfile,
-  gmailConnectUrl,
+  googleConnectUrl,
   instagramConnectUrl,
   type ConnectionInfo,
 } from "@/lib/api";
@@ -37,10 +37,10 @@ type ConnectorDef = {
 
 const CONNECTORS: ConnectorDef[] = [
   { id: "instagram", name: "Instagram", description: "Publish content and pull insights from Instagram", img: "/instagram.svg", tint: "#E1306C" },
-  { id: "google_sheets", name: "Google Sheets", description: "Sync data and reports from your spreadsheets", img: "/google-sheets.svg", tint: "#34A853" },
-  { id: "google_drive", name: "Google Drive", description: "Search, read, and upload files instantly", img: "/google-drive.png", tint: "#FBBC04" },
+  { id: "google_sheets", name: "Google Sheets", description: "Read, write and append rows in your spreadsheets", img: "/google-sheets.svg", tint: "#34A853" },
+  { id: "google_drive", name: "Google Drive", description: "Search, read, and upload files in your Google Drive", img: "/google-drive.png", tint: "#FBBC04" },
   { id: "gmail", name: "Gmail", description: "Draft replies, summarize threads & search your inbox", img: "/gmail.png", tint: "#EA4335" },
-  { id: "google_calendar", name: "Google Calendar", description: "Manage your schedule and coordinate meetings", img: "/google-calendar.png", tint: "#4285F4" },
+  { id: "google_calendar", name: "Google Calendar", description: "Read your schedule, find free slots & book meetings", img: "/google-calendar.png", tint: "#4285F4" },
   { id: "google_ads", name: "Google Ads", description: "Monitor campaigns and pull ad performance data", img: "/google-ads.png", tint: "#FBBC04" },
   { id: "notion", name: "Notion", description: "Connect your Notion workspace to power workflows", Icon: FileText, tint: "#1f2937" },
   { id: "shopify", name: "Shopify", description: "Orders & sales data", img: "/shopify.svg", tint: "#96BF48" },
@@ -60,7 +60,16 @@ type Notice = { type: "success" | "error"; text: string } | null;
 const OAUTH_NOTICE_PARAMS: Record<string, string> = {
   instagram: "Instagram",
   gmail: "Gmail",
+  google_sheets: "Google Sheets",
+  google_calendar: "Google Calendar",
+  google_drive: "Google Drive",
+  // Generic Google failure (e.g. an expired OAuth state, where the connector
+  // that started the handshake is no longer known).
+  google: "Google",
 };
+
+/** Connectors that share the single Google OAuth grant. */
+const GOOGLE_CONNECTORS = new Set(["gmail", "google_sheets", "google_calendar", "google_drive"]);
 
 /** Read the OAuth outcome from the URL once, during the initial client render. */
 function readOAuthNotice(params: URLSearchParams): Notice {
@@ -174,9 +183,9 @@ export default function PluginsPage() {
         window.location.assign(instagramConnectUrl(profile.company.id, redirectTo));
         return;
       }
-      if (connector.id === "gmail") {
+      if (GOOGLE_CONNECTORS.has(connector.id)) {
         // Full-page redirect → Google → backend callback → back to /plugins.
-        window.location.assign(gmailConnectUrl(userId, redirectTo));
+        window.location.assign(googleConnectUrl(userId, connector.id, redirectTo));
         return;
       }
     } catch {
@@ -189,11 +198,11 @@ export default function PluginsPage() {
   };
 
   const handleDisconnect = async (connector: ConnectorDef) => {
-    if (connector.id !== "instagram" && connector.id !== "gmail") return;
-    const prompt =
-      connector.id === "gmail"
-        ? "Disconnect Gmail? This revokes the shared Google connection for every Google connector."
-        : `Disconnect ${connector.name}?`;
+    const isGoogle = GOOGLE_CONNECTORS.has(connector.id);
+    if (connector.id !== "instagram" && !isGoogle) return;
+    const prompt = isGoogle
+      ? `Disconnect ${connector.name}? This revokes the shared Google connection for every Google connector.`
+      : `Disconnect ${connector.name}?`;
     if (!window.confirm(prompt)) return;
     setNotice(null);
     try {

@@ -95,6 +95,7 @@ def queue_credit_management(
     no_of_images: int = 0,
     session_id: str | None = None,
     message_id: str | None = None,
+    assistant_message_id: int | None = None,
 ) -> dict:
     """Queue a credit management request (manage_credits job).
 
@@ -109,7 +110,9 @@ def queue_credit_management(
 
     A ``message_id`` is included so the consumer can deduplicate redeliveries
     and never charge a company twice for the same request. ``session_id``
-    (when present) lets the consumer record per-session credit usage.
+    (when present) lets the consumer record per-session credit usage, and
+    ``assistant_message_id`` (the ``chat_messages`` row for this reply) lets
+    it record the per-message cost.
     """
     payload = {
         "message_id": message_id or str(uuid4()),
@@ -119,4 +122,6 @@ def queue_credit_management(
     }
     if session_id:
         payload["session_id"] = session_id
+    if assistant_message_id:
+        payload["assistant_message_id"] = assistant_message_id
     return _produce("manage_credits", payload)

@@ -22,4 +22,5 @@ requests
 razorpay
 confluent_kafka
 pwdlib[argon2]
+cryptography
 uvicorn[standard]

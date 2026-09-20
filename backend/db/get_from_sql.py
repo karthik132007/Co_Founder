@@ -269,6 +269,23 @@ def get_chat_sessions(company_id: int) -> List[Dict[str, Any]]:
     return sessions
 
 
+def get_chat_session(session_id: str) -> Optional[Dict[str, Any]]:
+    """Return a single chat session row, or None when it does not exist."""
+    try:
+        response = (
+            supabase_client.table("chat_sessions")
+            .select("*")
+            .eq("session_id", session_id)
+            .limit(1)
+            .execute()
+        )
+    except Exception:
+        logger.exception("Failed to fetch chat session %s", session_id[:8])
+        return None
+    rows = response.data or []
+    return rows[0] if rows else None
+
+
 # ── Cache invalidation ─────────────────────────────────────────────────────
 # Writes go through backend.db.insert_to_sql / delete_from_sql, which call
 # these so the Redis-cached session lists / message lists never go stale

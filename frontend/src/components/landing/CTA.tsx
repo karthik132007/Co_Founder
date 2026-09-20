@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Magnetic } from "./Magnetic";
@@ -132,9 +133,15 @@ export function CTA() {
           </div>
 
           <nav className="flex items-center gap-6 text-white/60">
-            <a href="#" className="link-underline" data-cursor="hover">Privacy</a>
-            <a href="#" className="link-underline" data-cursor="hover">Terms</a>
-            <a href="#" className="link-underline" data-cursor="hover">Contact</a>
+            <Link href="/privacy" className="link-underline" data-cursor="hover">Privacy</Link>
+            <Link href="/terms" className="link-underline" data-cursor="hover">Terms</Link>
+            <a
+              href="https://github.com/karthik132007/Co_Founder"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="link-underline"
+              data-cursor="hover"
+            >Contact</a>
           </nav>
 
           <div className="flex items-center gap-5 text-white/60">

@@ -71,13 +71,14 @@ def register_gmail_tools(tools: ToolManager, client=None) -> None:
     tools.add(
         f"{CONNECTION}.get_message",
         "Read one Gmail message in full: recipients, date, decoded body text and attachment names. "
-        "Needs a message id from gmail.search.",
+        "ALWAYS call gmail.search first and pass the exact 'id' from its results verbatim — "
+        "never invent, guess, truncate, or reuse an id from earlier turns or other tools.",
         func=client.get_message,
         context=["company_id"],
         params={
             "message_id": {
                 "type": "string",
-                "description": "Message id returned by gmail.search.",
+                "description": "Exact message id returned by gmail.search (copy verbatim).",
             },
         },
     )
@@ -85,13 +86,14 @@ def register_gmail_tools(tools: ToolManager, client=None) -> None:
     tools.add(
         f"{CONNECTION}.get_thread",
         "Read a whole email conversation, oldest message first (use it to summarise a back-and-forth). "
-        "Needs a thread id from gmail.search results.",
+        "ALWAYS call gmail.search first and pass the exact 'thread_id' from its results verbatim — "
+        "never invent or guess ids.",
         func=client.get_thread,
         context=["company_id"],
         params={
             "thread_id": {
                 "type": "string",
-                "description": "Thread id returned by gmail.search.",
+                "description": "Exact thread id returned by gmail.search (copy verbatim).",
             },
             "max_messages": {
                 "type": "integer",

@@ -137,7 +137,20 @@ class ToolManager:
                 _context: dict[str, Any] = context,
                 **kwargs: Any,
             ) -> str:
-                return _stringify(self.call_tool(_tool.name, kwargs, **_context))
+                # A single bad tool call (bad id, expired token, rate
+                # limit, …) must come back as text the model can recover
+                # from — never as an exception that kills the whole
+                # LangGraph run and surfaces as HTTP 500.
+                try:
+                    return _stringify(self.call_tool(_tool.name, kwargs, **_context))
+                except Exception as exc:
+                    return (
+                        f"Tool '{_tool.name}' failed: {exc}. "
+                        f"Tell the user what happened in plain language and, "
+                        f"if an id was involved, call the matching search/list "
+                        f"tool first and retry with an exact id from its results. "
+                        f"Never invent ids."
+                    )
 
             tools.append(
                 StructuredTool.from_function(

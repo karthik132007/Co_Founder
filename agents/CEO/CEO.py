@@ -225,10 +225,32 @@ def _invoke_agent(agent, messages: list[dict], session_id: str = "", invoke_conf
             token_buffer.append("\n</think>\n\n")
             in_think_block = False
         flush_tokens()
-        return agent.invoke(
-            {"messages": messages},
-            config=config,
-        )
+        try:
+            return agent.invoke(
+                {"messages": messages},
+                config=config,
+            )
+        except Exception:
+            # The same bad tool call would otherwise crash here a second
+            # time and surface as HTTP 500. Return a graceful message so
+            # talk_to_ceo() still produces a user-facing reply.
+            logger.exception(
+                "Agent invoke fallback also failed for session_id=%s", session_id
+            )
+            from langchain_core.messages import AIMessage
+
+            return {
+                "messages": [
+                    AIMessage(
+                        content=(
+                            "I ran into an issue while reading your mailbox "
+                            "(one of the message lookups failed). Please try again, "
+                            "or ask me to list your recent emails first and I'll "
+                            "take it from there."
+                        )
+                    )
+                ]
+            }
     finally:
         if in_think_block:
             token_buffer.append("\n</think>\n\n")

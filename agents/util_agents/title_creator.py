@@ -25,6 +25,10 @@ def create_title_for_query(query: str) -> str:
     For given user query genrate a simple title for that chat
     ex: How can i develop my business?
     output: Business Development Strategies
+    Just return palin text no need markdown 
+    exmaple: 
+        correct: Business Development Strategies
+        wrong: **Business Development Strategies**
     -------------------
     query: {query}
     """

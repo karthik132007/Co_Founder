@@ -13,23 +13,23 @@ def _get_resources(effort:str)-> dict:
     if effort=="flash":
             
         return {
-            "max_external_agents" : 1,
+            "max_external_agents" : 2,
             "max_web_searches" : 2,
-            "max_rag_calls" : 1,
-            "max_mcqs" : 1
+            "max_rag_calls" : 2,
+            "max_mcqs" : 2
         }
     elif effort=="mid":
         return {
-            "max_external_agents" : 2,
+            "max_external_agents" : 3,
             "max_web_searches" : 3,
             "max_rag_calls" : 3,
-            "max_mcqs" : 2
+            "max_mcqs" : 3
         }
     return {
-            "max_external_agents" : 5,
-            "max_web_searches" : 4,
-            "max_rag_calls" : 5,
-            "max_mcqs" : 3
+            "max_external_agents" : 8,
+            "max_web_searches" : 8,
+            "max_rag_calls" : 8,
+            "max_mcqs" : 4
         }
 
 

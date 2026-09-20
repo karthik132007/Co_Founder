@@ -26,9 +26,16 @@ def _get_available_credits(company_id: int) -> Decimal:
         return Decimal("0")
 
 
-def _queue_usage_charge(company_id: int, session_id: str) -> None:
+def _queue_usage_charge(
+    company_id: int, session_id: str, assistant_message_id: int | None = None
+) -> None:
     """Push this request's LLM usage to the credit-management Kafka consumer,
     or deduct directly if Kafka is offline/undelivered.
+
+    ``assistant_message_id`` is the ``chat_messages`` row for this reply, so
+    the consumer can attribute the cost to the exact message. It must be
+    passed by the API layer *after* the reply is stored — charging inside
+    ``chat()`` would run before the row exists.
 
     Best-effort: a failure here must never break the chat reply.
     """
@@ -45,6 +52,22 @@ def _queue_usage_charge(company_id: int, session_id: str) -> None:
         "no_of_images": int(usage.get("no_of_images") or 0),
         "session_id": session_id,
     }
+    if assistant_message_id:
+        payload["assistant_message_id"] = assistant_message_id
+
+    try:
+        # Charge before returning the HTTP response so the frontend's next
+        # balance request observes the deduction immediately. Kafka remains a
+        # fallback for transient DB/provider failures, not the normal path.
+        result = process_credit_charge(payload)
+        if result.get("status") in {"success", "skipped", "insufficient_credits"}:
+            return
+    except Exception:
+        logger.exception(
+            "Direct credit deduction failed; queueing Kafka retry for company_id=%s session_id=%s",
+            company_id,
+            session_id,
+        )
 
     try:
         res = queue_credit_management(
@@ -53,25 +76,17 @@ def _queue_usage_charge(company_id: int, session_id: str) -> None:
             no_of_images=payload["no_of_images"],
             session_id=session_id,
             message_id=message_id,
+            assistant_message_id=assistant_message_id,
         )
-        if res.get("status") == "success":
-            return
-        logger.info(
-            "Kafka queue returned status=%s — falling back to direct credit deduction for company_id=%s",
-            res.get("status"),
-            company_id,
-        )
-    except Exception:
-        logger.warning(
-            "Failed to queue credit management via Kafka — falling back to direct deduction",
-            exc_info=True,
-        )
-
-    try:
-        process_credit_charge(payload)
+        if res.get("status") != "success":
+            logger.warning(
+                "Kafka credit retry was not delivered for company_id=%s: status=%s",
+                company_id,
+                res.get("status"),
+            )
     except Exception:
         logger.exception(
-            "Direct credit deduction fallback failed for company_id=%s session_id=%s",
+            "Failed to queue Kafka credit retry for company_id=%s session_id=%s",
             company_id,
             session_id,
         )
@@ -79,6 +94,13 @@ def _queue_usage_charge(company_id: int, session_id: str) -> None:
 
 
 def chat(company_id: int, user_message: str, history: list[dict] | None = None, effort: str = "flash", session_id: str = ""):
+    """Run one CEO turn and return the reply.
+
+    Token charging is the caller's job: the API layer stores the assistant
+    reply first and then calls ``_queue_usage_charge`` with that row's id so
+    the cost is attributed to the exact message. Charging here (in a
+    ``finally``) would run before the reply row exists.
+    """
     if _get_available_credits(company_id) <= 0:
         return {"error": "You're out of credits. Please add credits to start a new chat."}
     try:
@@ -87,6 +109,3 @@ def chat(company_id: int, user_message: str, history: list[dict] | None = None, 
     except Exception:
         logger.exception("chat failed for company_id=%s", company_id)
         raise
-    finally:
-        # Charge for the tokens used by this request (even on error paths).
-        _queue_usage_charge(company_id, session_id)

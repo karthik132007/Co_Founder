@@ -19,6 +19,7 @@ export default function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -90,6 +91,11 @@ export default function AuthPage() {
 
     if (!isLogin && password !== confirmPassword) {
       setError("Passwords do not match.");
+      return;
+    }
+
+    if (!isLogin && !agreed) {
+      setError("Please accept the Privacy Policy and Terms to create an account.");
       return;
     }
 
@@ -250,7 +256,7 @@ export default function AuthPage() {
                 <button
                   key={label}
                   type="button"
-                  onClick={() => { setIsLogin(i === 0); setError(""); setSuccess(""); setConfirmPassword(""); }}
+                  onClick={() => { setIsLogin(i === 0); setError(""); setSuccess(""); setConfirmPassword(""); setAgreed(false); }}
                   className={`py-2 text-sm font-medium rounded-lg transition-all ${
                     active
                       ? "bg-white text-[#0f2214] shadow-sm border border-[#e8e9e3]"
@@ -363,22 +369,43 @@ export default function AuthPage() {
             </div>
 
             {!isLogin && (
-              <div>
-                <label htmlFor="confirmPassword" className="block text-[13px] font-medium text-[#2f3e32] mb-1.5">
-                  Confirm password
+              <>
+                <div>
+                  <label htmlFor="confirmPassword" className="block text-[13px] font-medium text-[#2f3e32] mb-1.5">
+                    Confirm password
+                  </label>
+                  <input
+                    id="confirmPassword"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    className="input px-3.5 py-2.5 text-sm"
+                    placeholder="••••••••"
+                    minLength={8}
+                    autoComplete="new-password"
+                  />
+                </div>
+                <label className="flex items-start gap-2.5 text-[13px] text-[#5f6f63] leading-relaxed cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={agreed}
+                    onChange={(e) => setAgreed(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 accent-[#143620]"
+                  />
+                  <span>
+                    I agree to the{" "}
+                    <Link href="/privacy" target="_blank" className="underline hover:text-[#0f2214]">
+                      Privacy Policy
+                    </Link>{" "}
+                    and{" "}
+                    <Link href="/terms" target="_blank" className="underline hover:text-[#0f2214]">
+                      Terms and Conditions
+                    </Link>
+                    .
+                  </span>
                 </label>
-                <input
-                  id="confirmPassword"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  className="input px-3.5 py-2.5 text-sm"
-                  placeholder="••••••••"
-                  minLength={8}
-                  autoComplete="new-password"
-                />
-              </div>
+              </>
             )}
 
             <button
