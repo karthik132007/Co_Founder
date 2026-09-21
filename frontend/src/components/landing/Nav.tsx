@@ -5,11 +5,11 @@ import Image from "next/image";
 import Link from "next/link";
 
 const LINKS = [
-  { label: "Platform", href: "#top" },
-  { label: "Agents", href: "#agents" },
-  { label: "Use Cases", href: "#how" },
-  { label: "Pricing", href: "#pricing" },
-  { label: "Resources", href: "#cta" },
+  { label: "Platform", href: "/#top" },
+  { label: "Integrations", href: "/integrations" },
+  { label: "Use Cases", href: "/#how" },
+  { label: "Pricing", href: "/#pricing" },
+  { label: "Resources", href: "/#cta" },
 ];
 
 export function Nav() {
@@ -38,7 +38,7 @@ export function Nav() {
           }}
         >
           {/* left: wordmark */}
-          <a href="#top" className="flex items-center gap-2.5 pl-1 shrink-0" data-cursor="hover">
+          <Link href="/" className="flex items-center gap-2.5 pl-1 shrink-0" data-cursor="hover">
             <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0f2214] text-white">
               <Image
                 src="/icon.png"
@@ -51,19 +51,19 @@ export function Nav() {
             <span className="text-[15px] font-[700] tracking-[-0.02em] text-[#0f2214]">
               Co-Founder
             </span>
-          </a>
+          </Link>
 
           {/* center: links - desktop */}
           <nav className="hidden lg:flex items-center gap-1 rounded-full bg-[#f3f1ea] p-1 border border-black/[0.04]">
             {LINKS.map((l) => (
-              <a
+              <Link
                 key={l.href}
                 href={l.href}
                 className="rounded-full px-4 py-1.5 text-[13.5px] font-[550] tracking-[-0.01em] text-[#2e3d33] hover:text-[#0f2214] hover:bg-white transition-colors"
                 data-cursor="hover"
               >
                 {l.label}
-              </a>
+              </Link>
             ))}
           </nav>
 
@@ -117,7 +117,7 @@ export function Nav() {
         >
           <div className="rounded-2xl bg-white border border-black/[0.07] shadow-xl p-2">
             {LINKS.map((l) => (
-              <a
+              <Link
                 key={l.href}
                 href={l.href}
                 onClick={() => setMobileOpen(false)}
@@ -125,7 +125,7 @@ export function Nav() {
               >
                 {l.label}
                 <span className="text-black/20">→</span>
-              </a>
+              </Link>
             ))}
             <div className="mt-1 flex items-center gap-2 border-t border-black/5 pt-2 px-1">
               <Link href="/auth" className="flex-1 rounded-full bg-[#f3f1ea] py-3 text-center text-sm font-[600] text-[#0f2214]">

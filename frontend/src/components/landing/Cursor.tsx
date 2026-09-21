@@ -29,6 +29,14 @@ export function Cursor() {
 
     const onOver = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
+      const isInput = target.closest("input, textarea, select, [contenteditable='true']");
+      if (isInput) {
+        if (dot.current) dot.current.style.opacity = "0";
+        if (ring.current) ring.current.style.opacity = "0";
+        return;
+      }
+      if (dot.current) dot.current.style.opacity = "1";
+
       const interactive = target.closest("a, button, [data-cursor='hover']");
       const invert = target.closest("[data-cursor-invert]");
       if (ring.current) {

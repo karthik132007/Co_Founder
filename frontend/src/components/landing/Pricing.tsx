@@ -23,6 +23,7 @@ type Plan = {
   price: string;
   cadence: string;
   tagline: string;
+  badge?: string;
   features: string[];
   highlighted?: boolean;
   cta: string;
@@ -30,35 +31,39 @@ type Plan = {
 
 const PLANS: Plan[] = [
   {
-    name: "Free",
-    price: "$0",
-    cadence: "forever",
-    tagline: "For founders exploring the system.",
+    name: "Free Tier",
+    price: "Free",
+    cadence: "• $50 credits included",
+    badge: "$50 Free Credit",
+    tagline: "All benefits unlocked immediately upon signup.",
     features: [
-      "3 CEO conversations / day",
-      "Researcher + Writer agents",
-      "Shared chat memory",
-      "Community support",
+      "$50 complimentary credits upon account creation",
+      "Same full benefits as paid — zero feature gates",
+      "All 7 specialized AI agents unlocked",
+      "All active integrations (Instagram, Google, etc.)",
+      "Sandboxed analysis (e2b) + RAG knowledge base",
+      "Shared company memory & reflection loops",
+      "No credit card required to start",
     ],
-    cta: "Start free",
+    cta: "Start free with $50 credit",
   },
   {
     name: "Pay-as-you-go",
     price: "Usage-based",
-    cadence: "pay for what you use",
-    tagline: "The full founding team. Billed per model & token — like OpenRouter.",
+    cadence: "recharge when $50 completed",
+    badge: "Recharge As You Grow",
+    tagline: "Recharge seamlessly when your $50 credits are used up.",
     features: [
-      "All 7 agents unlocked",
-      "Pay per model & token, not per conversation",
+      "Recharge only after completing your $50 credits",
+      "Pay only for actual models & tokens consumed",
       "Effort-based model selection (flash / mid / max)",
-      "RAG knowledge base + uploads",
-      "e2b sandboxed analysis",
-      "Judge reflection loop (max effort)",
+      "All integrations & workflows remain active",
       "Credits never expire",
-      "Priority support",
+      "Instant top-up via Razorpay & cards",
+      "Priority compute & dedicated founder support",
     ],
     highlighted: true,
-    cta: "Add credits",
+    cta: "Start building",
   },
 ];
 
@@ -88,15 +93,13 @@ export function Pricing() {
 
       <div className="relative mx-auto max-w-7xl px-6">
         <div className="mb-20 max-w-3xl">
-          <div className="landing-eyebrow mb-6">06 — Access</div>
+          <div className="landing-eyebrow mb-6">06 — Pricing & Access</div>
           <RevealHeading
-            text="Two ways in."
+            text="All benefits unlocked. Zero barrier."
             className="landing-display text-[clamp(2.2rem,6vw,5rem)]"
           />
-          <p className="mt-8 max-w-xl text-[var(--color-text-muted)] text-lg leading-relaxed">
-            Start free with 3 conversations a day. When you need the full
-            team, pay only for the models and tokens each agent actually uses
-            — the same transparent pricing as OpenRouter and OpenAI.
+          <p className="mt-8 max-w-2xl text-[var(--color-text-muted)] text-lg leading-relaxed">
+            Free has the exact same benefits and capabilities as paid. Every new account receives <strong className="text-[var(--color-text)]">$50 complimentary credits</strong> upon account creation to run all agents, tools, and integrations. When your $50 is completed, simply recharge with transparent, usage-based pricing.
           </p>
         </div>
 
@@ -127,9 +130,15 @@ export function Pricing() {
                       className="absolute top-6 right-6 rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-white"
                       style={{ background: "var(--color-accent)" }}
                     >
-                      Most popular
+                      {p.badge || "Most popular"}
                     </span>
                   </>
+                )}
+
+                {!p.highlighted && p.badge && (
+                  <span className="absolute top-6 right-6 rounded-full px-3 py-1 text-[10.5px] font-semibold uppercase tracking-wider text-[#1e4a30] bg-[#1e4a30]/10 border border-[#1e4a30]/20">
+                    {p.badge}
+                  </span>
                 )}
 
                 <div className="relative">
@@ -191,8 +200,7 @@ export function Pricing() {
           transition={{ duration: 0.6, delay: 0.3 }}
           className="mt-12 text-center text-sm text-[var(--color-text-dim)]"
         >
-          Both tiers include the CEO orchestrator, shared memory, and MCQ
-          clarifications. No credit card required to start.
+          All accounts get full access to the CEO orchestrator, all specialized agents, integrations, and shared memory. Start building immediately with $50 free credits — no credit card required.
         </motion.p>
       </div>
     </section>

@@ -12,6 +12,8 @@ export function Hero() {
   const root = useRef<HTMLElement>(null);
   const bgRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const bottomBarRef = useRef<HTMLDivElement>(null);
+
   const reduced = useSyncExternalStore(
     (onStoreChange) => {
       const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -22,49 +24,73 @@ export function Hero() {
     () => false
   );
 
+  // Entrance reveal animation
   useEffect(() => {
     if (!root.current) return;
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({ defaults: { ease: "expo.out" } });
-      tl.from(".hero-bg", { scale: 1.06, duration: 1.5, ease: "expo.out" }, 0)
-        .from(".hero-eyebrow", { y: 10, opacity: 0, duration: 0.6 }, 0.12)
-        .from(".hero-line-a", { yPercent: 102, opacity: 0, duration: 0.8 }, 0.18)
-        .from(".hero-line-b", { yPercent: 102, opacity: 0, duration: 0.8 }, 0.24)
-        .from(".hero-line-c", { yPercent: 102, opacity: 0, duration: 0.75 }, 0.3)
-        .from(".hero-sub", { y: 10, opacity: 0, duration: 0.6 }, 0.46)
-        .from(".hero-ctas", { y: 10, opacity: 0, duration: 0.55 }, 0.54);
+
+      tl.from(bgRef.current, {
+        opacity: 0.85,
+        duration: 1.6,
+        ease: "power2.out",
+      }, 0)
+        .from(".hero-line-a", { yPercent: 110, opacity: 0, duration: 0.85, ease: "power3.out" }, 0.18)
+        .from(".hero-line-b", { yPercent: 110, opacity: 0, duration: 0.85, ease: "power3.out" }, 0.28)
+        .from(".hero-sub", { y: 14, opacity: 0, duration: 0.7 }, 0.4)
+        .from(".hero-ctas", { y: 14, opacity: 0, duration: 0.65 }, 0.5)
+        .from(bottomBarRef.current, { opacity: 0, y: 12, duration: 0.7 }, 0.62);
     }, root);
     return () => ctx.revert();
   }, [reduced]);
 
+  // Subtle parallax & scroll zoom
   useEffect(() => {
-    if (!root.current || !bgRef.current) return;
-    if (reduced) return;
+    if (!root.current || reduced) return;
+
     const ctx = gsap.context(() => {
-      gsap.to(bgRef.current, {
-        y: 24,
-        scale: 1.04,
-        ease: "none",
-        scrollTrigger: {
-          trigger: root.current,
-          start: "top top",
-          end: "bottom top",
-          scrub: 1.1,
-        },
-      });
-      if (contentRef.current) {
-        gsap.to(contentRef.current, {
-          y: -16,
+      if (bgRef.current) {
+        gsap.to(bgRef.current, {
+          y: 20,
           ease: "none",
           scrollTrigger: {
             trigger: root.current,
             start: "top top",
-            end: "45% top",
+            end: "bottom top",
+            scrub: 1.1,
+          },
+        });
+      }
+
+      if (contentRef.current) {
+        gsap.to(contentRef.current, {
+          y: -35,
+          opacity: 0,
+          ease: "power1.in",
+          scrollTrigger: {
+            trigger: root.current,
+            start: "top top",
+            end: "50% top",
             scrub: 0.9,
           },
         });
       }
+
+      if (bottomBarRef.current) {
+        gsap.to(bottomBarRef.current, {
+          opacity: 0,
+          y: -15,
+          ease: "none",
+          scrollTrigger: {
+            trigger: root.current,
+            start: "top top",
+            end: "30% top",
+            scrub: 0.8,
+          },
+        });
+      }
     }, root);
+
     return () => ctx.revert();
   }, [reduced]);
 
@@ -72,90 +98,94 @@ export function Hero() {
     <section
       ref={root}
       id="top"
-      className="relative w-full min-h-[100svh] bg-[#fdfcf8] overflow-hidden flex flex-col"
+      className="relative w-full min-h-[100svh] bg-[#fdfcf8] overflow-hidden flex flex-col justify-between"
       style={{ isolation: "isolate" }}
     >
-      {/* image */}
-      <div ref={bgRef} className="absolute inset-0 will-change-transform">
+      {/* ── Background from bg.png (Clear, zero overlays) ── */}
+      <div
+        ref={bgRef}
+        className="absolute inset-0 will-change-transform pointer-events-none select-none"
+      >
         <Image
           src="/bg.png"
-          alt="Mountain valley with winding trail"
+          alt="Lush green valley with winding path"
           fill
           priority
           sizes="100vw"
-          className="hero-bg object-cover select-none"
-          style={{ objectPosition: "center 42%" }}
-        />
-        {/* wash — extended just enough so subcopy never hits green hills */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "linear-gradient(to bottom, #fdfcf8 0%, #fdfcf8 40%, rgba(253,252,248,0.94) 52%, rgba(253,252,248,0.72) 64%, rgba(253,252,248,0.34) 76%, rgba(253,252,248,0.08) 84%, transparent 90%)",
-          }}
-        />
-        {/* bottom fade to page bg */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[28px] md:h-[40px] bg-gradient-to-t from-[var(--color-bg)]/35 to-transparent" />
-        {/* very soft vignette */}
-        <div
-          className="absolute inset-0 hidden lg:block pointer-events-none"
-          style={{
-            background: "radial-gradient(85% 75% at 50% 60%, transparent 58%, rgba(253,252,248,0.14) 88%)",
-          }}
+          className="object-cover object-bottom select-none"
         />
       </div>
 
-      {/* content — lifted */}
-      <div className="relative z-10 mx-auto w-full max-w-[1440px] px-6 md:px-10 lg:px-12 flex flex-1 flex-col">
-        <div
-          ref={contentRef}
-          className="flex flex-1 flex-col justify-center items-center md:items-start text-center md:text-left pt-[88px] pb-10 md:pt-[124px] md:pb-10 lg:pt-[132px] lg:pb-14 will-change-transform"
-        >
-          <div className="w-full max-w-[660px]">
-            <p className="hero-eyebrow font-mono text-[10px] md:text-[11px] tracking-[0.26em] text-[#6b7a71] font-medium">
-              THE AI OPERATING SYSTEM FOR FOUNDERS
-            </p>
-
-            <h1 className="mt-5 hero-serif text-[#0f2214] text-[clamp(2.8rem,6.8vw,5.55rem)] leading-[0.88] tracking-[-0.045em] [text-wrap:balance]">
-              <span className="block overflow-hidden">
-                <span className="hero-line-a block font-[400]">Agentify</span>
+      {/* ── Centered Hero Content ── */}
+      <div
+        ref={contentRef}
+        className="relative z-10 w-full max-w-[1440px] mx-auto px-6 sm:px-10 md:px-14 lg:px-20 pt-[115px] sm:pt-[130px] md:pt-[144px] flex-1 flex flex-col items-center justify-start will-change-transform text-center"
+      >
+        <div className="w-full max-w-[1120px] flex flex-col items-center">
+          {/* Large refined serif headline - wide and prominent */}
+          <h1 className="hero-serif text-[#0e2115] text-[clamp(3.5rem,7.8vw,6.2rem)] leading-[0.95] tracking-[-0.035em] [text-wrap:balance]">
+            <span className="block overflow-hidden py-0.5">
+              <span className="hero-line-a block font-[400]">One idea.</span>
+            </span>
+            <span className="block overflow-hidden py-0.5 mt-0.5">
+              <span className="hero-line-b block font-[400]">
+                An entire <span className="italic text-[#4a6350]">AI team.</span>
               </span>
-              <span className="block overflow-hidden">
-                <span className="hero-line-b block font-[400]">Your Business.</span>
-              </span>
-              <span className="block overflow-hidden mt-1">
-                <span className="hero-line-c block font-[400] italic tracking-[-0.03em] text-[#1f4d30]">
-                  Touch Grass.
-                </span>
-              </span>
-            </h1>
+            </span>
+          </h1>
 
-            <p className="hero-sub mt-6 max-w-[520px] mx-auto md:mx-0 text-[15px] md:text-[17px] leading-[1.58] text-[#3d4a43] text-balance">
-              Your AI team handles the research, planning, creation and execution.
-              <br className="hidden md:block" /> You get your time back.
-            </p>
+          {/* Centered supporting copy */}
+          <p className="hero-sub mt-5 sm:mt-6 max-w-[720px] sm:max-w-[760px] text-[16.5px] sm:text-[18px] md:text-[19px] leading-[1.58] text-[#2c3d32] font-[450] text-balance">
+            Plan, research, build and grow — with AI agents that work with you, not just for you.
+          </p>
 
-            <div className="hero-ctas mt-8 flex w-full flex-col sm:flex-row gap-3 sm:gap-3.5 justify-center md:justify-start">
-              <Link
-                href="/auth"
-                className="group inline-flex w-full sm:w-auto items-center justify-center gap-1.5 rounded-full bg-[#0f2214] px-7 py-[14px] text-[14.5px] font-[600] tracking-[-0.01em] text-white shadow-[0_6px_22px_rgba(15,34,20,0.16)] hover:bg-[#1a3424] transition-colors"
-              >
-                Start Building <span className="transition-transform group-hover:translate-x-0.5">→</span>
-              </Link>
-              <Link
-                href="#how"
-                className="inline-flex w-full sm:w-auto items-center justify-center rounded-full bg-white px-7 py-[14px] text-[14.5px] font-[500] tracking-[-0.01em] text-[#0f2214] border border-black/10 shadow-[0_2px_12px_rgba(15,34,20,0.06)] hover:bg-[#f6f5ef] hover:border-black/14 transition-colors"
-              >
-                Explore Agents
-              </Link>
-            </div>
+          {/* Centered CTA buttons */}
+          <div className="hero-ctas mt-8 sm:mt-9 flex flex-row gap-3 sm:gap-3.5 items-center justify-center">
+            <Link
+              href="/auth"
+              className="group relative inline-flex items-center justify-center gap-2 rounded-full bg-[#162f20] hover:bg-[#1d3d2a] px-7 sm:px-8 py-[13.5px] text-[14.5px] font-[600] tracking-[-0.01em] text-white shadow-[0_6px_20px_rgba(22,47,32,0.22)] hover:shadow-[0_10px_28px_rgba(22,47,32,0.3)] transition-all duration-300 active:scale-[0.98]"
+            >
+              <span>Get Started</span>
+              <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+            </Link>
+            <button
+              type="button"
+              className="inline-flex items-center justify-center gap-2.5 rounded-full bg-[#f3efe8]/80 hover:bg-[#f3efe8] backdrop-blur-md px-6 sm:px-7 py-[13.5px] text-[14.5px] font-[500] tracking-[-0.01em] text-[#162f20] border border-black/8 shadow-[0_2px_10px_rgba(0,0,0,0.04)] hover:border-black/15 transition-all duration-300 select-none"
+            >
+              <span className="w-5 h-5 rounded-full bg-[#162f20] flex items-center justify-center text-white shrink-0">
+                <svg className="w-2.5 h-2.5 fill-current translate-x-[0.5px]" viewBox="0 0 24 24">
+                  <polygon points="7 4 19 12 7 20 7 4" />
+                </svg>
+              </span>
+              <span>Try Demo</span>
+            </button>
           </div>
         </div>
-
-        <div className="h-[12px] md:h-[20px] shrink-0" />
       </div>
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-px bg-gradient-to-r from-transparent via-black/[0.06] to-transparent" />
+      {/* ── Bottom Bar: Scroll Indicator (Left) & IDEAS — EXECUTION (Right) ── */}
+      <div
+        ref={bottomBarRef}
+        className="relative z-10 w-full max-w-[1440px] mx-auto px-6 sm:px-10 md:px-14 lg:px-20 pb-7 sm:pb-9 pt-4 flex items-end justify-between select-none"
+      >
+        {/* Left Scroll Indicator */}
+        <div className="flex flex-col items-start gap-1.5 select-none">
+          <div className="w-px h-6 bg-white/50 ml-0.5" />
+          <span className="text-[12px] tracking-wide text-white/85 font-normal">
+            Scroll to explore
+          </span>
+        </div>
+
+        {/* Right Stepper Marker */}
+        <div className="flex items-center gap-2.5 text-[11px] font-mono tracking-[0.22em] text-white/85 uppercase select-none">
+          <span>IDEAS</span>
+          <span className="w-5 h-px bg-white/60" />
+          <span>EXECUTION</span>
+        </div>
+      </div>
+
+      {/* Subtle border into the next section */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-px bg-[var(--color-border)]" />
     </section>
   );
 }

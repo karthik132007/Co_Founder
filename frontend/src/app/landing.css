@@ -13,6 +13,7 @@
   --font-display: var(--font-display-serif), Georgia, serif;
   --font-body: var(--font-inter), system-ui, sans-serif;
   --font-mono: var(--font-mono), ui-monospace, monospace;
+  --font-handwriting: var(--font-caveat), cursive;
 }
 
 /* ── Light (default) ── */
@@ -61,6 +62,10 @@
   --hero-cream-2: #0d1f15;
 }
 
+[data-landing][data-theme="dark"] .hero-dark-overlay {
+  opacity: 1;
+}
+
 [data-landing] {
   background: var(--color-bg);
   color: var(--color-text);
@@ -78,6 +83,11 @@
 @media (hover: hover) and (pointer: fine) {
   [data-landing] * {
     cursor: none;
+  }
+  [data-landing] input,
+  [data-landing] textarea,
+  [data-landing] select {
+    cursor: text !important;
   }
 }
 
