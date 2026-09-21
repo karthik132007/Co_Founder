@@ -153,6 +153,9 @@ function wsUrl(sessionId: string): string {
       host = "127.0.0.1:8000";
       path = "/chat/ws";
     } else {
+      // Production (Vercel frontend, EC2 backend): same-origin /api path needs
+      // a Vercel /api/* rewrite to the backend, otherwise set
+      // NEXT_PUBLIC_API_URL to the backend's public URL (used as `base` above).
       wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
       host = window.location.host;
       path = "/api/chat/ws";

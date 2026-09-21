@@ -8,14 +8,17 @@ function getApiBaseUrl(): string {
       return `${window.location.protocol}//127.0.0.1:8000`;
     }
 
-    // Remote / production host (e.g. get-cofounder.tech or VM IP):
-    // If NEXT_PUBLIC_API_URL was explicitly set to a non-localhost URL, use it
+    // Remote / production host (Vercel: get-cofounder.tech):
+    // If NEXT_PUBLIC_API_URL was explicitly set (EC2 backend URL or same-origin
+    // /api rewrite target), use it. Set it in the Vercel project environment.
     const envUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
     if (envUrl && !envUrl.includes("localhost") && !envUrl.includes("127.0.0.1")) {
       return envUrl.replace(/\/+$/, "");
     }
 
-    // Default for production: route via the Nginx reverse-proxy /api path on current origin
+    // Default for production: route via the same-origin /api path. On Vercel
+    // this requires an /api/* rewrite to the EC2 backend; otherwise set
+    // NEXT_PUBLIC_API_URL to the backend's public URL.
     return `${window.location.origin}/api`;
   }
 

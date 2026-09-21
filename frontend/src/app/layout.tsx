@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import { Inter, Instrument_Serif, JetBrains_Mono, Caveat } from "next/font/google";
 import "./globals.css";
 import "./landing.css";
@@ -54,7 +55,7 @@ export default function RootLayout({
       className={`${inter.variable} ${instrumentSerif.variable} ${jetbrainsMono.variable} ${caveat.variable}`}
       data-scroll-behavior="smooth"
     >
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">{children}<Analytics /></body>
     </html>
   );
 }

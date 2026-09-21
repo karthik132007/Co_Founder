@@ -12,7 +12,11 @@
 #                      independently restarted).
 #   consumer-memory    Kafka consumer → chat_memory.
 #   consumer-titles    Kafka consumer → session_title_creation.
-#   frontend           Next.js app on :3000.
+#   consumer-credits   Kafka consumer → manage_credits.
+#
+# NOTE: the frontend is NOT part of this stack. It is deployed separately on
+# Vercel (https://get-cofounder.tech, https://www.get-cofounder.tech) and
+# talks to the EC2 backend over HTTPS. This compose file is backend-only.
 #
 # Secrets & API keys come from the root `.env` file (env_file) — never baked
 # into images.
@@ -90,7 +94,8 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       REDIS_URL: redis://redis:6379/0
       # Comma-separated browser origins allowed by CORS. Override for deploy,
-      # e.g. CORS_ORIGINS=https://app.example.com in your shell/.env.
+      # e.g. CORS_ORIGINS=https://get-cofounder.tech,https://www.get-cofounder.tech
+      # in your shell/.env. Localhost entries stay for local development.
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000,https://get-cofounder.tech,https://www.get-cofounder.tech}
     ports:
       - "127.0.0.1:8000:8000"
@@ -177,33 +182,6 @@ services:
       redis:
         condition: service_healthy
     restart: unless-stopped
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        # Browser-facing API base URL — must be the PUBLIC backend URL for
-        # production builds (e.g. https://api.example.com). The WebSocket is
-        # derived from this same URL.
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
-        # Google OAuth (Supabase) — public values inlined at build time.
-        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-}
-        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}
-        # Optional. If set, use the FULL callback URL, e.g.
-        # https://get-cofounder.tech/auth/callback (NOT the bare domain).
-        # The app appends /auth/callback to a bare base as a safety net.
-        NEXT_PUBLIC_AUTH_REDIRECT_URL: ${NEXT_PUBLIC_AUTH_REDIRECT_URL:-}
-        # Public Razorpay key id — read from the root .env. Inlined into the
-        # client bundle at build time, so changing it needs a rebuild:
-        #   docker compose build frontend && docker compose up -d frontend
-        NEXT_PUBLIC_RAZORPAY_KEY_ID: ${NEXT_PUBLIC_RAZORPAY_KEY_ID:-}
-    container_name: frontend
-    ports:
-      - "127.0.0.1:3000:3000"
-    depends_on:
-      backend:
-        condition: service_healthy
 
 volumes:
   kafka-data:

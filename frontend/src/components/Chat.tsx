@@ -1676,9 +1676,9 @@ export default function Chat({
               disabled={sending}
               className="appearance-none bg-[#fdfcf8] border border-[#e8e9e3] rounded-xl pl-3 pr-8 py-2 text-xs font-semibold text-[#2f3e32] cursor-pointer outline-none focus:border-[#143620] hover:border-[#143620]/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <option value="flash">⚡ Flash</option>
-              <option value="mid">⚖️ Mid</option>
-              <option value="max">🎯 Max</option>
+              <option value="flash">Flash</option>
+              <option value="mid">Mid</option>
+              <option value="max">Max</option>
             </select>
             <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-[#8d9d94] pointer-events-none" />
           </div>

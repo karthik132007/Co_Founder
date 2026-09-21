@@ -69,7 +69,9 @@ app.include_router(connections_router)
 app.include_router(logo_router)
 
 # Allowed browser origins — comma-separated list, env-configurable for deploy.
-# Example: CORS_ORIGINS=https://app.example.com,https://www.example.com
+# Production (Vercel frontend on EC2 backend's .env):
+# CORS_ORIGINS=https://get-cofounder.tech,https://www.get-cofounder.tech
+# Localhost entries stay for local development.
 _CORS_ORIGINS = [
     origin.strip()
     for origin in os.getenv(
