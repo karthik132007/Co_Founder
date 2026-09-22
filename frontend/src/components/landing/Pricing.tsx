@@ -33,11 +33,11 @@ const PLANS: Plan[] = [
   {
     name: "Free Tier",
     price: "Free",
-    cadence: "• $50 credits included",
-    badge: "$50 Free Credit",
+    cadence: "• 50 free credits included",
+    badge: "50 Free Credits",
     tagline: "All benefits unlocked immediately upon signup.",
     features: [
-      "$50 complimentary credits upon account creation",
+      "50 free credits on account creation",
       "Same full benefits as paid — zero feature gates",
       "All 7 specialized AI agents unlocked",
       "All active integrations (Instagram, Google, etc.)",
@@ -45,16 +45,16 @@ const PLANS: Plan[] = [
       "Shared company memory & reflection loops",
       "No credit card required to start",
     ],
-    cta: "Start free with $50 credit",
+    cta: "Start free with 50 credits",
   },
   {
     name: "Pay-as-you-go",
     price: "Usage-based",
-    cadence: "recharge when $50 completed",
+    cadence: "recharge when 50 credits are used",
     badge: "Recharge As You Grow",
-    tagline: "Recharge seamlessly when your $50 credits are used up.",
+    tagline: "Recharge seamlessly when your free credits run out.",
     features: [
-      "Recharge only after completing your $50 credits",
+      "Recharge only after using your 50 free credits",
       "Pay only for actual models & tokens consumed",
       "Effort-based model selection (flash / mid / max)",
       "All integrations & workflows remain active",
@@ -99,7 +99,7 @@ export function Pricing() {
             className="landing-display text-[clamp(2.2rem,6vw,5rem)]"
           />
           <p className="mt-8 max-w-2xl text-[var(--color-text-muted)] text-lg leading-relaxed">
-            Free has the exact same benefits and capabilities as paid. Every new account receives <strong className="text-[var(--color-text)]">$50 complimentary credits</strong> upon account creation to run all agents, tools, and integrations. When your $50 is completed, simply recharge with transparent, usage-based pricing.
+            Free has the exact same benefits and capabilities as paid. Every new account receives <strong className="text-[var(--color-text)]">50 free credits</strong> upon account creation to run all agents, tools, and integrations. When your 50 credits are used up, simply recharge with transparent, usage-based pricing.
           </p>
         </div>
 
@@ -200,7 +200,7 @@ export function Pricing() {
           transition={{ duration: 0.6, delay: 0.3 }}
           className="mt-12 text-center text-sm text-[var(--color-text-dim)]"
         >
-          All accounts get full access to the CEO orchestrator, all specialized agents, integrations, and shared memory. Start building immediately with $50 free credits — no credit card required.
+          All accounts get full access to the CEO orchestrator, all specialized agents, integrations, and shared memory. Start building immediately with 50 free credits — no credit card required.
         </motion.p>
       </div>
     </section>

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { Coins, ShieldCheck } from "lucide-react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
@@ -38,7 +39,9 @@ export function Hero() {
         .from(".hero-line-a", { yPercent: 110, opacity: 0, duration: 0.85, ease: "power3.out" }, 0.18)
         .from(".hero-line-b", { yPercent: 110, opacity: 0, duration: 0.85, ease: "power3.out" }, 0.28)
         .from(".hero-sub", { y: 14, opacity: 0, duration: 0.7 }, 0.4)
+        .from(".hero-offer", { y: 12, opacity: 0, scale: 0.96, duration: 0.6 }, 0.46)
         .from(".hero-ctas", { y: 14, opacity: 0, duration: 0.65 }, 0.5)
+        .from(".hero-reassure", { y: 10, opacity: 0, duration: 0.55 }, 0.58)
         .from(bottomBarRef.current, { opacity: 0, y: 12, duration: 0.7 }, 0.62);
     }, root);
     return () => ctx.revert();
@@ -139,27 +142,50 @@ export function Hero() {
             Plan, research, build and grow — with AI agents that work with you, not just for you.
           </p>
 
+          {/* Free-credit hook — the strongest reason to sign up today */}
+          <div className="hero-offer mt-7 inline-flex items-center gap-2.5 rounded-full border border-[#162f20]/15 bg-white/85 py-2 pl-2.5 pr-4 shadow-[0_6px_24px_rgba(22,47,32,0.10)] backdrop-blur-md">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#162f20] text-white">
+              <Coins className="h-4 w-4" />
+            </span>
+            <span className="text-[13.5px] font-[600] tracking-[-0.01em] text-[#162f20]">
+              Sign up free and get <span className="text-[#1d6b3a]">50 credits</span> on the house
+            </span>
+            <span className="hidden h-4 w-px bg-[#162f20]/15 sm:block" />
+            <span className="hidden text-[12px] font-[500] text-[#4a6350] sm:block">no card needed</span>
+          </div>
+
           {/* Centered CTA buttons */}
-          <div className="hero-ctas mt-8 sm:mt-9 flex flex-row gap-3 sm:gap-3.5 items-center justify-center">
+          <div className="hero-ctas mt-6 sm:mt-7 flex flex-col sm:flex-row gap-3 sm:gap-3.5 items-center justify-center">
             <Link
               href="/auth"
-              className="group relative inline-flex items-center justify-center gap-2 rounded-full bg-[#162f20] hover:bg-[#1d3d2a] px-7 sm:px-8 py-[13.5px] text-[14.5px] font-[600] tracking-[-0.01em] text-white shadow-[0_6px_20px_rgba(22,47,32,0.22)] hover:shadow-[0_10px_28px_rgba(22,47,32,0.3)] transition-all duration-300 active:scale-[0.98]"
+              className="group relative inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-[#162f20] hover:bg-[#1d3d2a] px-8 sm:px-9 py-[15px] text-[15px] font-[600] tracking-[-0.01em] text-white shadow-[0_8px_26px_rgba(22,47,32,0.26)] hover:shadow-[0_14px_34px_rgba(22,47,32,0.34)] transition-all duration-300 active:scale-[0.98]"
             >
-              <span>Get Started</span>
+              <span>Get 50 free credits</span>
               <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
             </Link>
-            <button
-              type="button"
-              className="inline-flex items-center justify-center gap-2.5 rounded-full bg-[#f3efe8]/80 hover:bg-[#f3efe8] backdrop-blur-md px-6 sm:px-7 py-[13.5px] text-[14.5px] font-[500] tracking-[-0.01em] text-[#162f20] border border-black/8 shadow-[0_2px_10px_rgba(0,0,0,0.04)] hover:border-black/15 transition-all duration-300 select-none"
+            <Link
+              href="/demo"
+              className="group relative inline-flex w-full sm:w-auto items-center justify-center gap-3 rounded-full border-2 border-[#162f20]/20 bg-white/95 px-7 sm:px-8 py-[13px] text-[15px] font-[600] tracking-[-0.01em] text-[#162f20] shadow-[0_8px_26px_rgba(22,47,32,0.14)] backdrop-blur-md transition-all duration-300 select-none hover:-translate-y-0.5 hover:border-[#162f20]/40 hover:bg-white hover:shadow-[0_14px_34px_rgba(22,47,32,0.2)] active:scale-[0.98]"
             >
-              <span className="w-5 h-5 rounded-full bg-[#162f20] flex items-center justify-center text-white shrink-0">
-                <svg className="w-2.5 h-2.5 fill-current translate-x-[0.5px]" viewBox="0 0 24 24">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#162f20] text-white shadow-[0_2px_8px_rgba(22,47,32,0.35)] transition-transform duration-300 group-hover:scale-110">
+                <svg className="w-3 h-3 fill-current translate-x-[0.5px]" viewBox="0 0 24 24">
                   <polygon points="7 4 19 12 7 20 7 4" />
                 </svg>
               </span>
-              <span>Try Demo</span>
-            </button>
+              <span>Watch the demo</span>
+            </Link>
           </div>
+
+          {/* Reassurance — removes the last bit of friction (needs its own plate:
+              the background photo blows out to white right behind this line) */}
+          <p className="hero-reassure mt-5 inline-flex flex-wrap items-center justify-center gap-x-3.5 gap-y-1.5 rounded-full border border-white/60 bg-white/75 px-4 py-2 text-[12.5px] font-[550] text-[#243b2b] shadow-[0_4px_18px_rgba(22,47,32,0.10)] backdrop-blur-md sm:text-[13px]">
+            <span className="inline-flex items-center gap-1.5">
+              <ShieldCheck className="h-4 w-4 shrink-0 text-[#1d6b3a]" />
+              Every agent, tool and integration unlocked on day one
+            </span>
+            <span className="hidden h-3.5 w-px bg-[#162f20]/20 sm:block" />
+            <span>Recharge only when the 50 credits run out</span>
+          </p>
         </div>
       </div>
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, ArrowRight, Brain, Code, BarChart3, Wallet, Search } from "lucide-react";
+import { Loader2, ArrowRight, Brain, Code, BarChart3, Wallet, Search, Coins } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -244,8 +244,20 @@ export default function AuthPage() {
               {isLogin ? "Welcome back" : "Create your account"}
             </h1>
             <p className="mt-1.5 text-sm text-[#5f6f63]">
-              {isLogin ? "Log in to continue building." : "Sign up to start building."}
+              {isLogin
+                ? "Log in to continue building."
+                : "Free to start — your first 50 credits are on us."}
             </p>
+            {!isLogin && (
+              <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-[#162f20]/12 bg-[#f4f7f2] px-3.5 py-3">
+                <Coins className="mt-0.5 h-4 w-4 shrink-0 text-[#143620]" />
+                <p className="text-[12.5px] leading-relaxed text-[#3f4f43]">
+                  <span className="font-semibold text-[#143620]">50 free credits</span> land in your
+                  workspace the moment you finish setup — no card, no trial timer. Enough to run your
+                  first research, design or analysis tasks.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Mode toggle */}
@@ -417,7 +429,7 @@ export default function AuthPage() {
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <>
-                  {isLogin ? "Log in" : "Create account"}
+                  {isLogin ? "Log in" : "Create free account"}
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}

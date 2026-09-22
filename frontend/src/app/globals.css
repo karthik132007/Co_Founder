@@ -234,6 +234,26 @@ body {
   animation: float 6s ease-in-out infinite;
 }
 
+/* ========== Demo guide bot ========== */
+
+/* Sprout pops in on its own at the start of every /demo page. Driven by CSS so
+   it starts immediately on mount instead of waiting for the JS animation loop. */
+@keyframes sprout-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.86);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.sprout-pop {
+  transform-origin: bottom left;
+  animation: sprout-pop 0.34s cubic-bezier(0.34, 1.56, 0.64, 1) 0.12s both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

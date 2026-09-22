@@ -211,7 +211,7 @@ const markdownComponents: Components = {
   ),
 };
 
-function MarkdownMessage({ content }: { content: string }) {
+export function MarkdownMessage({ content }: { content: string }) {
   return (
     <div className="overflow-x-auto text-sm leading-relaxed break-words text-[#2f3e32]">
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
@@ -231,7 +231,7 @@ interface ParsedReasoning {
   isThinking: boolean;
 }
 
-function parseReasoningAndContent(raw: string): ParsedReasoning {
+export function parseReasoningAndContent(raw: string): ParsedReasoning {
   if (!raw) return { reasoning: null, answer: "", isThinking: false };
 
   // 1. Extract every complete reasoning block. Models label these differently
@@ -297,7 +297,7 @@ function parseReasoningAndContent(raw: string): ParsedReasoning {
   return { reasoning: null, answer: raw, isThinking: false };
 }
 
-function ReasoningDropdown({
+export function ReasoningDropdown({
   reasoning,
   isStreaming = false,
   isThinking = false,
@@ -456,7 +456,7 @@ function stripEmbeddedGraphic(content: string, graphicUrl: string): string {
     .trim();
 }
 
-function GeneratedGraphicCard({
+export function GeneratedGraphicCard({
   imageDataUrl,
   content,
   timestamp,
@@ -718,7 +718,7 @@ function GeneratedGraphicCard({
    Assistant Message (renders reasoning dropdown if present, then markdown)
    ───────────────────────────────────────────── */
 
-function AssistantMessage({ content }: { content: string }) {
+export function AssistantMessage({ content }: { content: string }) {
   const { reasoning, answer } = parseReasoningAndContent(content);
 
   return (
@@ -733,7 +733,7 @@ function AssistantMessage({ content }: { content: string }) {
    Message footer copy button — always visible at bottom after time
    ───────────────────────────────────────────── */
 
-function MessageCopyButton({
+export function MessageCopyButton({
   content,
   variant = "assistant",
 }: {
@@ -880,7 +880,7 @@ function CodeBlock({
    MCQ Clarification Card
    ───────────────────────────────────────────── */
 
-function McqCard({
+export function McqCard({
   clarification,
   imageDataUrl,
   onAnswer,

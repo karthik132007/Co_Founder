@@ -219,10 +219,10 @@ export default function IntegrationsPage() {
               Every integration is natively connected to your entire agent workforce. Read real data, automate workflows, and execute cross-platform tasks from one central CEO agent.
             </p>
 
-            {/* $50 Credit callout badge */}
+            {/* Free-credit callout badge */}
             <div className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#132c1c]/[0.05] border border-[#132c1c]/10 px-4 py-2 text-[13.5px] font-medium text-[#132c1c]">
               <Sparkles className="w-4 h-4 text-[#1b4329]" />
-              <span>All integrations included with every account — start with <strong>$50 free credits</strong></span>
+              <span>All integrations included with every account — start with <strong>50 free credits</strong></span>
             </div>
           </div>
 
@@ -347,7 +347,7 @@ export default function IntegrationsPage() {
             })}
           </div>
 
-          {/* ── Banner: $50 Starter Credit CTA ── */}
+          {/* ── Banner: free-credit starter CTA ── */}
           <div className="mt-16 rounded-3xl bg-[#0f2214] text-[#fdfcf8] p-8 sm:p-12 relative overflow-hidden shadow-2xl flex flex-col md:flex-row items-center justify-between gap-8">
             <div
               className="absolute -top-24 -right-24 w-96 h-96 rounded-full opacity-20 pointer-events-none"
@@ -362,10 +362,10 @@ export default function IntegrationsPage() {
               <h2 className="hero-serif text-[clamp(1.8rem,4vw,2.8rem)] leading-tight text-white mb-3">
                 All integrations are ready.
                 <br />
-                Start with $50 free credits.
+                Start with 50 free credits.
               </h2>
               <p className="text-[#c1d0c7] text-[15px] sm:text-[16px] leading-relaxed">
-                Create an account and receive $50 complimentary credits immediately. Every agent, tool, and integration is fully unlocked — recharge only when your credits are completed.
+                Create an account and receive 50 complimentary credits immediately. Every agent, tool, and integration is fully unlocked — recharge only when your credits are used up.
               </p>
             </div>
 
@@ -374,7 +374,7 @@ export default function IntegrationsPage() {
                 href="/auth"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-white text-[#0f2214] px-8 py-4 text-[14.5px] font-bold hover:bg-[#f2efe9] transition-all shadow-lg text-center"
               >
-                <span>Get Started with $50 Credit</span>
+                <span>Get Started with 50 free credits</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>

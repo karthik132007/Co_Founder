@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import Link from "next/link";
 
 const COLORS = ["#f6c85f", "#ef8354", "#7cc99a", "#5b8def", "#e07a9a"];
 
@@ -34,11 +35,20 @@ export default function CreditCelebration({ onDone }: { onDone: () => void }) {
             initial={{ opacity: 0, y: -20, scale: 0.88 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ type: "spring", stiffness: 240, damping: 18, delay: 0.15 }}
-            className="absolute left-1/2 top-20 -translate-x-1/2 rounded-2xl border border-[#f6c85f]/50 bg-[#fffdf4] px-6 py-4 text-center shadow-[0_14px_50px_rgba(20,54,32,0.18)]"
+            className="pointer-events-auto absolute left-1/2 top-20 -translate-x-1/2 rounded-2xl border border-[#f6c85f]/50 bg-[#fffdf4] px-6 py-4 text-center shadow-[0_14px_50px_rgba(20,54,32,0.18)]"
           >
             <div className="text-2xl" aria-hidden="true">🎉</div>
             <p className="mt-1 whitespace-nowrap text-lg font-semibold text-[#143620]">Yay, you got 50 free credits!</p>
-            <p className="mt-1 text-sm text-[#5f6f63]">Your company is ready to build.</p>
+            <p className="mt-1 text-sm text-[#5f6f63]">
+              Your company is ready — put them to work on your first task.
+            </p>
+            <Link
+              href="/chat"
+              className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#143620] px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-[#1a4a2b]"
+            >
+              Start your first task
+              <span aria-hidden="true">→</span>
+            </Link>
           </motion.div>
 
           {Array.from({ length: 28 }, (_, index) => (

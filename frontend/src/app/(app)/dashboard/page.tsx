@@ -170,6 +170,38 @@ export default function DashboardPage() {
             </div>
           </motion.div>
 
+          {/* ── First-run push: put the free credits to work ── */}
+          {totalChats === 0 && (credits ?? 0) > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.04 }}
+              className="flex flex-col gap-4 rounded-2xl border border-[rgba(20,54,32,0.16)] bg-[#f4f7f2] p-5 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div className="flex items-start gap-3.5">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[rgba(20,54,32,0.12)] bg-white">
+                  <Coins className="h-5 w-5 text-[#143620]" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[14px] font-semibold text-[#0f2214]">
+                    You&apos;ve got {credits?.toLocaleString("en-IN")} free credits — use them
+                  </p>
+                  <p className="mt-0.5 text-[13px] leading-relaxed text-[#5f6f63]">
+                    Ask for a competitor teardown, an on-brand Instagram post, or an analysis of your
+                    sales file. A typical conversation costs 2–9 credits.
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/chat"
+                className="btn-primary shrink-0 px-4 py-2.5 text-[13px]"
+              >
+                Start your first task
+                <ArrowUpRight className="h-3.5 w-3.5" />
+              </Link>
+            </motion.div>
+          )}
+
           {/* ── Stats — 4 useful metrics ── */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[
