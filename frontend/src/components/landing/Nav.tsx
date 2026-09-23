@@ -25,12 +25,12 @@ export function Nav() {
   return (
     <header
       className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 ${
-        scrolled ? "py-2.5" : "py-4"
+        scrolled ? "py-2 sm:py-2.5" : "py-3 sm:py-4"
       }`}
     >
-      <div className="mx-auto w-full max-w-[1440px] px-6 md:px-10 lg:px-12">
+      <div className="mx-auto w-full max-w-[1440px] px-4 sm:px-6 md:px-10 lg:px-12">
         <div
-          className="flex items-center justify-between gap-4 rounded-full bg-white px-2.5 py-2 md:px-4 md:py-2.5 border border-black/[0.06] transition-all duration-500"
+          className="flex items-center justify-between gap-3 rounded-full bg-white px-2 py-1.5 sm:gap-4 sm:px-2.5 sm:py-2 md:px-4 md:py-2.5 border border-black/[0.06] transition-all duration-500"
           style={{
             boxShadow: scrolled
               ? "0 8px 32px rgba(15,34,20,0.10), 0 1px 3px rgba(15,34,20,0.06)"
@@ -80,7 +80,7 @@ export function Nav() {
 
             <Link
               href="/auth"
-              className="inline-flex items-center gap-1.5 rounded-full bg-[#0f2214] px-5 py-2.5 text-[13.5px] font-[600] tracking-[-0.01em] text-white hover:bg-[#1a3624] transition-colors shadow-[0_2px_10px_rgba(15,34,20,0.14)]"
+              className="inline-flex items-center gap-1.5 rounded-full bg-[#0f2214] px-4 py-2.5 text-[13px] font-[600] tracking-[-0.01em] text-white hover:bg-[#1a3624] transition-colors shadow-[0_2px_10px_rgba(15,34,20,0.14)] sm:px-5 sm:text-[13.5px]"
               data-cursor="hover"
             >
               Get Started
@@ -112,7 +112,7 @@ export function Nav() {
         {/* mobile menu */}
         <div
           className={`lg:hidden overflow-hidden transition-all duration-300 ${
-            mobileOpen ? "max-h-[320px] mt-3 opacity-100" : "max-h-0 opacity-0"
+            mobileOpen ? "max-h-[460px] mt-2 opacity-100 sm:mt-3" : "max-h-0 opacity-0"
           }`}
         >
           <div className="rounded-2xl bg-white border border-black/[0.07] shadow-xl p-2">

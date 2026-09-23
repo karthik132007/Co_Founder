@@ -162,30 +162,30 @@ export function Plugins() {
     <section
       ref={root}
       id="plugins"
-      className="relative py-24 md:py-32 overflow-hidden"
+      className="relative py-16 sm:py-24 md:py-32 overflow-hidden"
       style={{ isolation: "isolate" }}
     >
       <div className="pointer-events-none absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-black/[0.04] to-transparent" />
       <div className="pointer-events-none absolute top-0 inset-x-0 h-[32px] md:h-[48px] bg-gradient-to-b from-[var(--color-bg)]/40 to-transparent opacity-30" />
       <SectionBackground variant="cool" />
 
-      <div className="relative mx-auto max-w-7xl px-6">
-        <div className="grid gap-16 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-10 xl:gap-16 items-center">
+      <div className="relative mx-auto max-w-7xl px-5 sm:px-6">
+        <div className="grid grid-cols-1 gap-10 sm:gap-16 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-10 xl:gap-16 items-center">
           {/* ── Left: narrative ── */}
-          <div>
-            <div className="hub-reveal landing-eyebrow mb-6">05 — Integrations</div>
+          <div className="min-w-0">
+            <div className="hub-reveal landing-eyebrow mb-5 sm:mb-6">05 — Integrations</div>
             <h2 className="hub-reveal landing-display text-[clamp(2.2rem,5vw,4.4rem)]">
               One agent.
               <br />
               <span style={{ color: "var(--color-accent)" }}>Every platform.</span>
             </h2>
-            <p className="hub-reveal mt-7 max-w-md text-[var(--color-text-muted)] text-lg leading-relaxed">
+            <p className="hub-reveal mt-5 sm:mt-7 max-w-md text-[17px] sm:text-lg leading-relaxed text-[var(--color-text-muted)]">
               The CEO Agent connects with the tools you already use — so you
               can run, automate, and grow your business from a single command
               center.
             </p>
 
-            <div className="hub-points mt-12 space-y-8">
+            <div className="hub-points mt-9 space-y-6 sm:mt-12 sm:space-y-8">
               {POINTS.map((pt) => (
                 <div key={pt.title} className="hub-point flex items-start gap-4">
                   <div
@@ -371,17 +371,17 @@ export function Plugins() {
           {/* ── Right: compact stack (mobile / tablet) ── */}
           <div className="lg:hidden">
             <div
-              className="mx-auto flex max-w-xs flex-col items-center rounded-3xl glass-strong px-8 py-8 text-center"
+              className="mx-auto flex max-w-xs flex-col items-center rounded-3xl glass-strong px-6 py-6 text-center sm:px-8 sm:py-8"
               style={{ boxShadow: "0 0 50px var(--color-accent-glow)" }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/icon.png" alt="" className="h-11 w-11 rounded-xl object-contain" />
-              <div className="landing-display mt-3 text-2xl">CEO Agent</div>
+              <img src="/icon.png" alt="" className="h-10 w-10 rounded-xl object-contain sm:h-11 sm:w-11" />
+              <div className="landing-display mt-2.5 text-xl sm:mt-3 sm:text-2xl">CEO Agent</div>
               <div className="mt-1 font-mono text-[9px] uppercase tracking-[0.22em] text-[var(--color-text-dim)]">
                 Your AI Co-Founder
               </div>
             </div>
-            <div className="mx-auto mt-6 grid max-w-md grid-cols-2 gap-3">
+            <div className="mx-auto mt-5 grid max-w-md grid-cols-2 gap-2.5 sm:mt-6 sm:gap-3">
               {PLATFORMS.map((p) => (
                 <div key={p.name} className="flex items-center gap-2.5 rounded-2xl glass p-3" style={{ isolation: "isolate" }}>
                   {p.img ? (

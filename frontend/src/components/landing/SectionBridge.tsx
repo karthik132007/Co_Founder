@@ -87,13 +87,13 @@ function CometBridge({ label }: { label: string }) {
   return (
     <div
       ref={root}
-      className="relative h-[104px] md:h-[124px] overflow-hidden flex flex-col items-center justify-center gap-4"
+      className="relative h-[76px] sm:h-[104px] md:h-[124px] overflow-hidden flex flex-col items-center justify-center gap-4"
       aria-hidden
     >
       <TwinkleStars count={4} />
 
       {/* faint static hairline — stays still, only the comet moves */}
-      <div className="relative w-full max-w-3xl px-10 md:px-14">
+      <div className="relative w-full max-w-3xl px-8 sm:px-10 md:px-14">
         <div className="relative h-px w-full" style={{ background: "var(--color-border)" }}>
           <div className="bridge-comet-head absolute top-1/2 -translate-y-1/2" style={{ left: "-4%" }}>
             <div className="relative flex items-center">
@@ -151,7 +151,7 @@ function AuroraBridge({ label }: { label: string }) {
   return (
     <div
       ref={root}
-      className="relative h-[112px] md:h-[132px] overflow-hidden flex items-center justify-center"
+      className="relative h-[80px] sm:h-[112px] md:h-[132px] overflow-hidden flex items-center justify-center"
       aria-hidden
     >
       {/* small soft orbs — tiny and very faint, far off-center */}
@@ -175,7 +175,7 @@ function AuroraBridge({ label }: { label: string }) {
       <TwinkleStars count={5} />
 
       {/* hairline + sweeping glint, label masked over the line */}
-      <div className="relative w-full max-w-4xl px-10 md:px-16">
+      <div className="relative w-full max-w-4xl px-8 sm:px-10 md:px-16">
         <div className="relative h-px w-full" style={{ background: "var(--color-border)" }}>
           <span
             className="bridge-glint absolute top-1/2 -translate-y-1/2 h-px w-40 md:w-56"
@@ -222,7 +222,7 @@ function OrbitBridge({ label }: { label: string }) {
   return (
     <div
       ref={root}
-      className="relative h-[128px] md:h-[148px] overflow-hidden flex flex-col items-center justify-center gap-4"
+      className="relative h-[92px] sm:h-[128px] md:h-[148px] overflow-hidden flex flex-col items-center justify-center gap-4"
       aria-hidden
     >
       {/* faint crossing hairline */}

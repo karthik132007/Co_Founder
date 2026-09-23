@@ -76,29 +76,29 @@ export function Features() {
   }, []);
 
   return (
-    <section ref={root} id="features" className="relative py-24 md:py-32 overflow-hidden" style={{ isolation: "isolate" }}>
+    <section ref={root} id="features" className="relative py-16 sm:py-24 md:py-32 overflow-hidden" style={{ isolation: "isolate" }}>
       <div className="pointer-events-none absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-black/[0.04] to-transparent" />
       <div className="pointer-events-none absolute top-0 inset-x-0 h-[36px] md:h-[48px] bg-gradient-to-b from-[var(--color-bg)] to-transparent opacity-30" />
       <SectionBackground variant="warm" />
-      <div className="relative mx-auto max-w-7xl px-6">
-        <div className="mb-20 max-w-3xl">
-          <div className="landing-eyebrow mb-6">03 — Capabilities</div>
+      <div className="relative mx-auto max-w-7xl px-5 sm:px-6">
+        <div className="mb-12 sm:mb-16 md:mb-20 max-w-3xl">
+          <div className="landing-eyebrow mb-5 sm:mb-6">03 — Capabilities</div>
           <RevealHeading
             text="What you can do."
             className="landing-display text-[clamp(2.2rem,6vw,5rem)]"
           />
-          <p className="mt-8 max-w-xl text-[var(--color-text-muted)] text-lg leading-relaxed">
+          <p className="mt-6 sm:mt-8 max-w-xl text-[17px] sm:text-lg leading-relaxed text-[var(--color-text-muted)]">
             No tech skills needed. From a single chat, your AI team handles
             strategy, research, writing, marketing, analysis, and design — and
             hands back work you can actually use.
           </p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((f) => (
             <Tilt key={f.n} max={6} className="feat-card">
               <article
-                className="group relative h-full overflow-hidden rounded-2xl glass p-8 transition-colors duration-500 hover:border-[var(--color-border-strong)]"
+                className="group relative h-full overflow-hidden rounded-2xl glass p-5 transition-colors duration-500 hover:border-[var(--color-border-strong)] sm:p-8"
                 data-cursor="hover"
               >
                 {/* hover glow */}
@@ -109,23 +109,23 @@ export function Features() {
                   <div className="flex items-start justify-between">
                     {/* icon visual */}
                     <div
-                      className="flex h-14 w-14 items-center justify-center rounded-2xl border transition-transform duration-500 group-hover:-rotate-6 group-hover:scale-110"
+                      className="flex h-11 w-11 items-center justify-center rounded-2xl border transition-transform duration-500 group-hover:-rotate-6 group-hover:scale-110 sm:h-14 sm:w-14"
                       style={{
                         background: `linear-gradient(135deg, ${f.color}2e, ${f.color}0f)`,
                         borderColor: `${f.color}45`,
                         boxShadow: `0 10px 34px ${f.color}30`,
                       }}
                     >
-                      <f.icon className="h-7 w-7" style={{ color: f.color }} strokeWidth={1.75} />
+                      <f.icon className="h-6 w-6 sm:h-7 sm:w-7" style={{ color: f.color }} strokeWidth={1.75} />
                     </div>
                     <span className="font-mono text-xs text-[var(--color-text-dim)]">
                       {f.n}
                     </span>
                   </div>
-                  <h3 className="mt-8 text-2xl font-medium tracking-tight">
+                  <h3 className="mt-4 text-xl font-medium tracking-tight sm:mt-8 sm:text-2xl">
                     {f.title}
                   </h3>
-                  <p className="mt-3 text-sm text-[var(--color-text-muted)] leading-relaxed">
+                  <p className="mt-2 text-sm text-[var(--color-text-muted)] leading-relaxed sm:mt-3">
                     {f.tag}
                   </p>
                 </div>

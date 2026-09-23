@@ -3,7 +3,7 @@
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Coins, ShieldCheck } from "lucide-react";
+import { Coins } from "lucide-react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
@@ -41,7 +41,6 @@ export function Hero() {
         .from(".hero-sub", { y: 14, opacity: 0, duration: 0.7 }, 0.4)
         .from(".hero-offer", { y: 12, opacity: 0, scale: 0.96, duration: 0.6 }, 0.46)
         .from(".hero-ctas", { y: 14, opacity: 0, duration: 0.65 }, 0.5)
-        .from(".hero-reassure", { y: 10, opacity: 0, duration: 0.55 }, 0.58)
         .from(bottomBarRef.current, { opacity: 0, y: 12, duration: 0.7 }, 0.62);
     }, root);
     return () => ctx.revert();
@@ -122,7 +121,7 @@ export function Hero() {
       {/* ── Centered Hero Content ── */}
       <div
         ref={contentRef}
-        className="relative z-10 w-full max-w-[1440px] mx-auto px-6 sm:px-10 md:px-14 lg:px-20 pt-[115px] sm:pt-[130px] md:pt-[144px] flex-1 flex flex-col items-center justify-start will-change-transform text-center"
+        className="relative z-10 w-full max-w-[1440px] mx-auto px-5 sm:px-10 md:px-14 lg:px-20 pt-[104px] sm:pt-[130px] md:pt-[144px] pb-1 flex-1 flex flex-col items-center justify-start will-change-transform text-center"
       >
         <div className="w-full max-w-[1120px] flex flex-col items-center">
           {/* Large refined serif headline - wide and prominent */}
@@ -143,69 +142,60 @@ export function Hero() {
           </p>
 
           {/* Free-credit hook — the strongest reason to sign up today */}
-          <div className="hero-offer mt-7 inline-flex items-center gap-2.5 rounded-full border border-[#162f20]/15 bg-white/85 py-2 pl-2.5 pr-4 shadow-[0_6px_24px_rgba(22,47,32,0.10)] backdrop-blur-md">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#162f20] text-white">
+          <div className="hero-offer mt-6 flex w-full max-w-[22rem] items-center justify-center gap-2.5 rounded-2xl border border-[#162f20]/15 bg-white/85 py-2 pl-3 pr-3.5 text-left shadow-[0_6px_24px_rgba(22,47,32,0.10)] backdrop-blur-md sm:mt-7 sm:w-auto sm:max-w-none sm:rounded-full sm:pl-2.5 sm:pr-4">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#162f20] text-white">
               <Coins className="h-4 w-4" />
             </span>
-            <span className="text-[13.5px] font-[600] tracking-[-0.01em] text-[#162f20]">
-              Sign up free and get <span className="text-[#1d6b3a]">50 credits</span> on the house
+            <span className="text-[13px] font-[600] leading-snug tracking-[-0.01em] text-[#162f20] sm:text-[13.5px]">
+              Sign up free and get <span className="whitespace-nowrap text-[#1d6b3a]">50 credits</span> on the house
             </span>
             <span className="hidden h-4 w-px bg-[#162f20]/15 sm:block" />
             <span className="hidden text-[12px] font-[500] text-[#4a6350] sm:block">no card needed</span>
           </div>
 
-          {/* Centered CTA buttons */}
-          <div className="hero-ctas mt-6 sm:mt-7 flex flex-col sm:flex-row gap-3 sm:gap-3.5 items-center justify-center">
+          {/* Centered CTA buttons — always side by side, on phones too */}
+          <div className="hero-ctas mt-5 flex w-full flex-row items-center justify-center gap-2 sm:mt-7 sm:w-auto sm:gap-3.5">
             <Link
               href="/auth"
-              className="group relative inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-[#162f20] hover:bg-[#1d3d2a] px-8 sm:px-9 py-[15px] text-[15px] font-[600] tracking-[-0.01em] text-white shadow-[0_8px_26px_rgba(22,47,32,0.26)] hover:shadow-[0_14px_34px_rgba(22,47,32,0.34)] transition-all duration-300 active:scale-[0.98]"
+              className="group relative inline-flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-full bg-[#162f20] px-3 py-[13px] text-[12.5px] font-[600] tracking-[-0.01em] text-white shadow-[0_8px_26px_rgba(22,47,32,0.26)] transition-all duration-300 hover:bg-[#1d3d2a] hover:shadow-[0_14px_34px_rgba(22,47,32,0.34)] active:scale-[0.98] min-[380px]:px-4 min-[380px]:text-[13px] sm:flex-none sm:gap-2 sm:px-9 sm:py-[15px] sm:text-[15px]"
             >
               <span>Get 50 free credits</span>
-              <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+              <span className="hidden transition-transform duration-300 group-hover:translate-x-1 min-[380px]:inline">→</span>
             </Link>
             <Link
               href="/demo"
-              className="group relative inline-flex w-full sm:w-auto items-center justify-center gap-3 rounded-full border-2 border-[#162f20]/20 bg-white/95 px-7 sm:px-8 py-[13px] text-[15px] font-[600] tracking-[-0.01em] text-[#162f20] shadow-[0_8px_26px_rgba(22,47,32,0.14)] backdrop-blur-md transition-all duration-300 select-none hover:-translate-y-0.5 hover:border-[#162f20]/40 hover:bg-white hover:shadow-[0_14px_34px_rgba(22,47,32,0.2)] active:scale-[0.98]"
+              className="group relative inline-flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-full border-2 border-[#162f20]/20 bg-white/95 px-3 py-[11px] text-[12.5px] font-[600] tracking-[-0.01em] text-[#162f20] shadow-[0_8px_26px_rgba(22,47,32,0.14)] backdrop-blur-md transition-all duration-300 select-none hover:-translate-y-0.5 hover:border-[#162f20]/40 hover:bg-white hover:shadow-[0_14px_34px_rgba(22,47,32,0.2)] active:scale-[0.98] min-[380px]:px-4 min-[380px]:text-[13px] sm:flex-none sm:gap-3 sm:px-8 sm:py-[13px] sm:text-[15px]"
             >
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#162f20] text-white shadow-[0_2px_8px_rgba(22,47,32,0.35)] transition-transform duration-300 group-hover:scale-110">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#162f20] text-white shadow-[0_2px_8px_rgba(22,47,32,0.35)] transition-transform duration-300 group-hover:scale-110 min-[380px]:h-7 min-[380px]:w-7">
                 <svg className="w-3 h-3 fill-current translate-x-[0.5px]" viewBox="0 0 24 24">
                   <polygon points="7 4 19 12 7 20 7 4" />
                 </svg>
               </span>
-              <span>Watch the demo</span>
+              <span>Try demo</span>
             </Link>
           </div>
-
-          {/* Reassurance — removes the last bit of friction (needs its own plate:
-              the background photo blows out to white right behind this line) */}
-          <p className="hero-reassure mt-5 inline-flex flex-wrap items-center justify-center gap-x-3.5 gap-y-1.5 rounded-full border border-white/60 bg-white/75 px-4 py-2 text-[12.5px] font-[550] text-[#243b2b] shadow-[0_4px_18px_rgba(22,47,32,0.10)] backdrop-blur-md sm:text-[13px]">
-            <span className="inline-flex items-center gap-1.5">
-              <ShieldCheck className="h-4 w-4 shrink-0 text-[#1d6b3a]" />
-              Every agent, tool and integration unlocked on day one
-            </span>
-            <span className="hidden h-3.5 w-px bg-[#162f20]/20 sm:block" />
-            <span>Recharge only when the 50 credits run out</span>
-          </p>
         </div>
       </div>
 
-      {/* ── Bottom Bar: Scroll Indicator (Left) & IDEAS — EXECUTION (Right) ── */}
+      {/* ── Bottom Bar: Scroll Indicator (Left) & IDEAS — EXECUTION (Right) ──
+          On phones this sits over the bright valley floor, so the indicators
+          switch to dark ink and only become white from sm up. */}
       <div
         ref={bottomBarRef}
-        className="relative z-10 w-full max-w-[1440px] mx-auto px-6 sm:px-10 md:px-14 lg:px-20 pb-7 sm:pb-9 pt-4 flex items-end justify-between select-none"
+        className="relative z-10 mt-auto w-full max-w-[1440px] mx-auto px-5 sm:px-10 md:px-14 lg:px-20 pb-4 sm:pb-9 pt-3 sm:pt-4 flex items-end justify-between select-none"
       >
         {/* Left Scroll Indicator */}
         <div className="flex flex-col items-start gap-1.5 select-none">
-          <div className="w-px h-6 bg-white/50 ml-0.5" />
-          <span className="text-[12px] tracking-wide text-white/85 font-normal">
+          <div className="ml-0.5 h-5 w-px bg-[#0e2115]/30 sm:h-6 sm:bg-white/50" />
+          <span className="text-[11px] tracking-wide text-[#0e2115]/70 sm:text-[12px] sm:text-white/85">
             Scroll to explore
           </span>
         </div>
 
         {/* Right Stepper Marker */}
-        <div className="flex items-center gap-2.5 text-[11px] font-mono tracking-[0.22em] text-white/85 uppercase select-none">
+        <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.22em] text-[#0e2115]/70 select-none sm:gap-2.5 sm:text-[11px] sm:text-white/85">
           <span>IDEAS</span>
-          <span className="w-5 h-px bg-white/60" />
+          <span className="h-px w-4 bg-[#0e2115]/30 sm:w-5 sm:bg-white/60" />
           <span>EXECUTION</span>
         </div>
       </div>

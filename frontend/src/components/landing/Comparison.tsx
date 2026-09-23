@@ -81,19 +81,19 @@ export function Comparison() {
   }, []);
 
   return (
-    <section ref={root} id="compare" className="relative py-24 md:py-32 overflow-hidden" style={{ isolation: "isolate" }}>
+    <section ref={root} id="compare" className="relative py-16 sm:py-24 md:py-32 overflow-hidden" style={{ isolation: "isolate" }}>
       <div className="pointer-events-none absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-black/[0.04] to-transparent" />
       <div className="pointer-events-none absolute top-0 inset-x-0 h-[36px] md:h-[48px] bg-gradient-to-b from-[var(--color-bg)] to-transparent opacity-30" />
       <SectionBackground variant="warm" />
 
-      <div className="relative mx-auto max-w-6xl px-6">
-        <div className="mb-20 max-w-3xl">
-          <div className="landing-eyebrow mb-6">02 — The shift</div>
+      <div className="relative mx-auto max-w-6xl px-5 sm:px-6">
+        <div className="mb-12 sm:mb-16 md:mb-20 max-w-3xl">
+          <div className="landing-eyebrow mb-5 sm:mb-6">02 — The shift</div>
           <RevealHeading
             text="Replace a founding team."
             className="landing-display text-[clamp(2.2rem,6vw,5rem)]"
           />
-          <p className="mt-8 max-w-xl text-[var(--color-text-muted)] text-lg leading-relaxed">
+          <p className="mt-6 sm:mt-8 max-w-xl text-[17px] sm:text-lg leading-relaxed text-[var(--color-text-muted)]">
             Not another hire. An entire team — strategy, research, writing,
             analysis, design, and growth — running the moment you describe your
             idea.
@@ -101,20 +101,20 @@ export function Comparison() {
         </div>
 
         {/* Column headers */}
-        <div className="grid grid-cols-2 gap-6 md:gap-12 mb-10">
-          <div className="text-center md:text-left">
-            <div className="font-mono text-xs uppercase tracking-[0.2em] text-[var(--color-text-dim)]">
+        <div className="mb-6 grid grid-cols-2 gap-4 sm:mb-10 sm:gap-6 md:gap-12">
+          <div className="text-left">
+            <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-dim)] sm:text-xs">
               Traditional
             </div>
-            <div className="mt-2 text-2xl md:text-3xl font-medium text-[var(--color-text-dim)] line-through decoration-[var(--color-text-dim)]/40">
+            <div className="mt-1.5 text-lg font-medium text-[var(--color-text-dim)] line-through decoration-[var(--color-text-dim)]/40 sm:mt-2 sm:text-2xl md:text-3xl">
               A human team
             </div>
           </div>
-          <div className="text-center md:text-right">
-            <div className="font-mono text-xs uppercase tracking-[0.2em]" style={{ color: "var(--color-accent)" }}>
+          <div className="text-right">
+            <div className="font-mono text-[10px] uppercase tracking-[0.2em] sm:text-xs" style={{ color: "var(--color-accent)" }}>
               Co-Founder AI
             </div>
-            <div className="mt-2 text-2xl md:text-3xl font-medium">
+            <div className="mt-1.5 text-lg font-medium sm:mt-2 sm:text-2xl md:text-3xl">
               An AI team
             </div>
           </div>
@@ -122,36 +122,42 @@ export function Comparison() {
 
         {/* Rows */}
         <div className="relative">
-          {/* center divider */}
+          {/* center divider — desktop only; meaningless once rows stack */}
           <div
-            className="cmp-divider absolute left-1/2 top-0 h-full w-px -translate-x-1/2"
+            className="cmp-divider absolute left-1/2 top-0 hidden h-full w-px -translate-x-1/2 md:block"
             style={{ background: "linear-gradient(to bottom, transparent, var(--color-border-strong), transparent)" }}
           />
 
           {ROWS.map((r) => (
             <div
               key={r.label}
-              className="cmp-row grid grid-cols-2 gap-6 md:gap-12 py-6 border-b border-[var(--color-border)]"
+              className="cmp-row border-b border-[var(--color-border)] py-5 md:grid md:grid-cols-2 md:gap-12 md:py-6"
             >
-              {/* traditional */}
-              <div className="flex items-center gap-3 md:gap-4 justify-end text-right">
-                <span className="text-[13px] md:text-base text-[var(--color-text-dim)] line-through decoration-[var(--color-text-dim)]/30 decoration-1">
-                  {r.traditional}
-                </span>
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[var(--color-border-strong)] text-[var(--color-text-dim)]">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              {/* row label — mobile only, replaces the two-column header */}
+              <div className="mb-2.5 font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-dim)] md:hidden">
+                {r.label}
+              </div>
+
+              {/* traditional — stacked on mobile, reversed to the outer edge on md+ */}
+              <div className="flex items-start gap-2.5 md:flex-row-reverse md:items-center md:justify-end md:gap-4 md:text-right">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[var(--color-border-strong)] text-[var(--color-text-dim)] md:mt-0 md:h-6 md:w-6">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                     <path d="M18 6L6 18M6 6l12 12" />
                   </svg>
                 </span>
+                <span className="text-[14px] leading-snug text-[var(--color-text-dim)] line-through decoration-[var(--color-text-dim)]/30 decoration-1 md:text-base">
+                  {r.traditional}
+                </span>
               </div>
+
               {/* ai */}
-              <div className="flex items-center gap-3 md:gap-4">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full" style={{ background: "var(--color-accent)" }}>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <div className="mt-2 flex items-start gap-2.5 md:mt-0 md:items-center md:gap-4">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full md:mt-0 md:h-6 md:w-6" style={{ background: "var(--color-accent)" }}>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M20 6L9 17l-5-5" />
                   </svg>
                 </span>
-                <span className="text-[13px] md:text-base font-medium">{r.ai}</span>
+                <span className="text-[14px] font-medium leading-snug md:text-base">{r.ai}</span>
               </div>
             </div>
           ))}
@@ -163,7 +169,7 @@ export function Comparison() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="mt-16 flex flex-col md:flex-row items-center justify-center gap-6 md:gap-12 text-center"
+          className="mt-12 flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12 text-center sm:mt-16"
         >
           <div>
             <div className="landing-display text-4xl md:text-5xl" style={{ color: "var(--color-accent)" }}>

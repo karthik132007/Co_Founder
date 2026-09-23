@@ -59,7 +59,7 @@ export function CTA() {
   }, []);
 
   return (
-    <section ref={root} id="cta" className="relative overflow-hidden pt-24 md:pt-32 pb-0" style={{ isolation: "isolate" }}>
+    <section ref={root} id="cta" className="relative overflow-hidden pt-16 sm:pt-24 md:pt-32 pb-0" style={{ isolation: "isolate" }}>
       <div className="pointer-events-none absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-black/[0.04] to-transparent" />
       <div className="pointer-events-none absolute top-0 inset-x-0 h-[36px] md:h-[48px] bg-gradient-to-b from-[var(--color-bg)] to-transparent opacity-30" />
       {/* distortion gradient */}
@@ -88,7 +88,7 @@ export function CTA() {
         />
       ))}
 
-      <div className="relative mx-auto max-w-5xl px-6 text-center">
+      <div className="relative mx-auto max-w-5xl px-5 text-center sm:px-6">
         <h2 className="landing-display text-[clamp(2.6rem,10vw,9rem)]">
           <span className="block overflow-hidden">
             <span className="cta-line block">Start the</span>
@@ -98,11 +98,11 @@ export function CTA() {
           </span>
         </h2>
 
-        <p className="cta-sub mt-10 max-w-xl mx-auto text-lg text-[var(--color-text-muted)] leading-relaxed">
+        <p className="cta-sub mt-7 sm:mt-10 max-w-xl mx-auto text-[17px] sm:text-lg text-[var(--color-text-muted)] leading-relaxed">
           Your co-founder doesn&apos;t need equity, sleep, or a ping-pong table.
         </p>
 
-        <div className="cta-btn mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
+        <div className="cta-btn mt-8 sm:mt-12 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
           <Magnetic strength={0.5}>
             <a href="/auth" className="btn-magnetic is-solid" data-cursor="hover">
               <span className="btn-bg" />
@@ -120,8 +120,8 @@ export function CTA() {
         </div>
       </div>
 
-      <footer className="relative mt-24 bg-[#05060a] text-white/70" data-cursor-invert>
-        <div className="mx-auto max-w-7xl px-6 py-8 flex flex-col items-center justify-between gap-6 text-sm md:flex-row md:gap-6">
+      <footer className="relative mt-16 sm:mt-24 bg-[#05060a] text-white/70" data-cursor-invert>
+        <div className="mx-auto max-w-7xl px-5 sm:px-6 py-8 flex flex-col items-center justify-between gap-6 text-sm md:flex-row md:gap-6">
           <div className="flex flex-col items-center gap-1 md:items-start">
             <div className="flex items-center gap-2.5 text-white">
               <Image src="/icon.png" alt="Co-Founder AI" width={20} height={20} className="w-5 h-5 object-contain" />

@@ -5,8 +5,8 @@ import { LandingThemeProvider } from "@/components/landing/ThemeContext";
 import { Cursor } from "@/components/landing/Cursor";
 import { Nav } from "@/components/landing/Nav";
 import { Hero } from "@/components/landing/Hero";
-import { Dashboard } from "@/components/landing/Dashboard";
-import { HowItThinks } from "@/components/landing/HowItThinks";
+import { ProductSection } from "@/components/landing/ProductSection";
+import { HowItWorks } from "@/components/landing/HowItWorks";
 import { Comparison } from "@/components/landing/Comparison";
 import { Features } from "@/components/landing/Features";
 import { Plugins } from "@/components/landing/Plugins";
@@ -30,9 +30,9 @@ export default function HomePage() {
           </div>
           <Hero />
           <SectionBridge variant="comet" label="meet your team" />
-          <Dashboard />
-          <SectionBridge variant="aurora" label="under the hood" />
-          <HowItThinks />
+          <ProductSection />
+          <SectionBridge variant="aurora" label="how it works" />
+          <HowItWorks />
           <SectionBridge variant="orbit" label="the difference" />
           <Comparison />
           <SectionBridge variant="comet" label="capabilities" />
