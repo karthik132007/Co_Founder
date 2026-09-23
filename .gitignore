@@ -288,6 +288,8 @@ venv.bak/
 .mypy_cache/
 .dmypy.json
 dmypy.json
+#dont wat to push this folder, i added it gitignore by my self
+/video
 
 # Pyre type checker
 .pyre/

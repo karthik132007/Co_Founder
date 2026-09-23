@@ -74,6 +74,7 @@ Key highlights:
 | [`docs/Agents_rules.md`](docs/Agents_rules.md) | Agent cooperation rules — CEO ownership, delegation contract, system prompts |
 | [`docs/release_notes.md`](docs/release_notes.md) | Version changelog — what changed in each release |
 | [`docs/eval_report.md`](docs/eval_report.md) | CEO agent e2e evaluation — 27 runs, 81 judge verdicts, findings |
+| [`docs/video.md`](docs/video.md) | Product film — how the 60s marketing video is generated from code with Remotion |
 
 ## Status
 
