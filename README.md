@@ -28,6 +28,15 @@
 
 ---
 
+<div align="center">
+
+<a href="docs/co-founder-1080.mp4">
+  <img src="docs/co-founder-preview.webp" alt="Co-Founder 60-second product film — animated preview (click for full-quality MP4)" width="900">
+</a>
+
+<sub>▶ 60-second product film — click the preview for the full-quality MP4</sub>
+
+</div>
 
 ## Overview
 
@@ -48,7 +57,7 @@ Key highlights:
 
 ## Architecture
 
-![Saas Video](docs/co-founder-1080.mp4)
+![System Architecture](docs/co-founder-runtime.png)
 
 ## Tech Stack
 
@@ -62,6 +71,12 @@ Key highlights:
 | LLM Provider | OpenRouter (DeepSeek, GLM, GPT-OSS, Gemma) |
 | Web Search | Tavily |
 | Market Data | SerpAPI (Trends, News, Shopping) |
+| Connectors | Meta (Instagram) + Google Workspace — Gmail, Sheets, Drive, Calendar |
+| Connector Auth | OAuth 2.0 authorization code (Meta + Google), single-use Redis `state` (10-min TTL), scope-derived connection status |
+| Meta API | Instagram Graph API — `graph.instagram.com` + `api.instagram.com` token endpoint (Instagram Login; profile, recent media, publish) |
+| Google APIs | Google OAuth 2.0 + Workspace REST APIs — Gmail API v1, Sheets API v4, Drive API v3, Calendar API v3 (direct `httpx`, no Google SDK) |
+| App Integrations | MCP-style tool registry (`connections/tool_manager.py`) exposing each connector to agents as LangChain tools |
+| Credential Security | AES-256-GCM (tokens) / AES-256-SIV (identity ids) encryption at rest via `TOKEN_ENCRYPTION_KEY` |
 | Code Sandbox | e2b |
 | Database / Storage | Supabase Postgres + Storage |
 | Payments | Razorpay Standard Checkout |
