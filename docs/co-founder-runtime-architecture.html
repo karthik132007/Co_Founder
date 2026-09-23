@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="generator" content="archify 2.14.0">
-  <title>Co_Founder — Runtime Architecture Diagram</title>
+  <title>Co-Founder — Runtime Architecture Diagram</title>
   <script>
     // Resolve the theme before first paint so light-preference users don't
     // see a dark flash. The toolbar script below re-applies with UI state.
@@ -4836,12 +4836,12 @@
     <div class="header">
       <div class="header-row">
         <div class="pulse-dot"></div>
-        <h1>Co_Founder — Runtime Architecture</h1>
+        <h1>Co-Founder — Runtime Architecture</h1>
       </div>
     </div>
 
-    <script id="archify-guided-views-data" type="application/json">[{"id":"primary-path","label":"Primary runtime path","focus":["founder","webapp","fastapi","ceo","openrouter","specialists","rag"],"note":"Follow a founder message from the browser through CEO orchestration to a reply."},{"id":"async-persistence","label":"Async persistence","focus":["fastapi","kafka","supabase","redis","rag"],"note":"Kafka-backed background jobs for titles, chat memory, and message persistence."},{"id":"external-services","label":"External services","focus":["openrouter","tavily","e2b","specialists"],"note":"The SaaS providers the agents depend on, all reached with .env API keys."}]</script>
-    <script id="archify-source-evidence-data" type="application/json">{"schemaVersion":1,"verified":true,"repository":{"url":"https://github.com/karthik132007/Co_Founder","revision":"e682bbfd65e271b3e93796c949a2de58f3865dd7","shortRevision":"e682bbf"},"referenceCount":15,"nodes":{"webapp":[{"path":"frontend/src/lib/api.ts","href":"https://github.com/karthik132007/Co_Founder/blob/e682bbfd65e271b3e93796c949a2de58f3865dd7/frontend/src/lib/api.ts"},{"path":"frontend/src/components/Chat.tsx","href":"https://github.com/karthik132007/Co_Founder/blob/e682bbfd65e271b3e93796c949a2de58f3865dd7/frontend/src/components/Chat.tsx"}],"fastapi":[{"path":"backend/app.py","href":"https://github.com/karthik132007/Co_Founder/blob/e682bbfd65e271b3e93796c949a2de58f3865dd7/backend/app.py"},{"path":"backend/api/chat.py","href":"https://github.com/karthik132007/Co_Founder/blob/e682bbfd65e271b3e93796c949a2de58f3865dd7/backend/api/chat.py"}],"ceo":[{"path":"agents/CEO/CEO.py","href":"https://github.com/karthik132007/Co_Founder/blob/e682bbfd65e271b3e93796c949a2de58f3865dd7/agents/CEO/CEO.py"}],"specialists":[{"path":"agents/CEO/ceo_agent_tools.py","href":"https://github.com/karthik132007/Co_Founder/blob/e682bbfd65e271b3e93796c949a2de58f3865dd7/agents/CEO/ceo_agent_tools.py"}],"rag":[{"path":"RAG_Engine/rag.py","href":"https://github.com/karthik132007/Co_Founder/blob/e682bbfd65e271b3e93796c949a2de58f3865dd7/RAG_Engine/rag.py"},{"path":"RAG_Engine/chat_memory.py","href":"https://github.com/karthik132007/Co_Founder/blob/e682bbfd65e271b3e93796c949a2de58f3865dd7/RAG_Engine/chat_memory.py"}],"redis":[{"path":"backend/db/redis_client.py","href":"https://github.com/karthik132007/Co_Founder/blob/e682bbfd65e271b3e93796c949a2de58f3865dd7/backend/db/redis_client.py"}],"supabase":[{"path":"backend/utils.py","href":"https://github.com/karthik132007/Co_Founder/blob/e682bbfd65e271b3e93796c949a2de58f3865dd7/backend/utils.py"},{"path":"backend/db/database.py","href":"https://github.com/karthik132007/Co_Founder/blob/e682bbfd65e271b3e93796c949a2de58f3865dd7/backend/db/database.py"}],"kafka":[{"path":"backend/kafka_jobs/producers/producer.py","href":"https://github.com/karthik132007/Co_Founder/blob/e682bbfd65e271b3e93796c949a2de58f3865dd7/backend/kafka_jobs/producers/producer.py"}],"openrouter":[{"path":"agents/helpers/choose_llm.py","href":"https://github.com/karthik132007/Co_Founder/blob/e682bbfd65e271b3e93796c949a2de58f3865dd7/agents/helpers/choose_llm.py"}],"tavily":[{"path":"agents/researcher/researcher.py","href":"https://github.com/karthik132007/Co_Founder/blob/e682bbfd65e271b3e93796c949a2de58f3865dd7/agents/researcher/researcher.py"}],"e2b":[{"path":"e2b_sandbox/codig_env.py","href":"https://github.com/karthik132007/Co_Founder/blob/e682bbfd65e271b3e93796c949a2de58f3865dd7/e2b_sandbox/codig_env.py"}]}}</script>
+    <script id="archify-guided-views-data" type="application/json">[{"id":"primary-path","label":"Primary runtime path","focus":["founder","webapp","fastapi","ceo","specialists","openrouter"],"note":"One founder message from the browser through CEO orchestration to a streamed reply."},{"id":"connected-apps","label":"Connected apps","focus":["ceo","tools","google_meta","specialists"],"note":"The CEO and CMO receive connector tools and act inside Gmail, Sheets, Drive, Calendar and Instagram."},{"id":"async-and-data","label":"Async jobs and data stores","focus":["fastapi","kafka","redis","supabase","ceo"],"note":"Kafka decouples titles, chat memory, message persistence and credit retries from the request."},{"id":"external-providers","label":"External providers","focus":["openrouter","providers","google_meta","specialists"],"note":"Every SaaS dependency is reached with a key from the root .env."}]</script>
+    <script id="archify-source-evidence-data" type="application/json">{"schemaVersion":1,"verified":true,"repository":{"url":"https://github.com/karthik132007/Co_Founder","revision":"212475de634efd86247e805be724068a7d8cd07f","shortRevision":"212475d"},"referenceCount":23,"nodes":{"webapp":[{"path":"frontend/src/components/Chat.tsx","href":"https://github.com/karthik132007/Co_Founder/blob/212475de634efd86247e805be724068a7d8cd07f/frontend/src/components/Chat.tsx"},{"path":"frontend/src/lib/api.ts","href":"https://github.com/karthik132007/Co_Founder/blob/212475de634efd86247e805be724068a7d8cd07f/frontend/src/lib/api.ts"}],"fastapi":[{"path":"backend/app.py","href":"https://github.com/karthik132007/Co_Founder/blob/212475de634efd86247e805be724068a7d8cd07f/backend/app.py"},{"path":"backend/api/chat.py","href":"https://github.com/karthik132007/Co_Founder/blob/212475de634efd86247e805be724068a7d8cd07f/backend/api/chat.py"}],"ceo":[{"path":"agents/CEO/CEO.py","href":"https://github.com/karthik132007/Co_Founder/blob/212475de634efd86247e805be724068a7d8cd07f/agents/CEO/CEO.py"},{"path":"agents/CEO/ceo_agent_tools.py","href":"https://github.com/karthik132007/Co_Founder/blob/212475de634efd86247e805be724068a7d8cd07f/agents/CEO/ceo_agent_tools.py"}],"specialists":[{"path":"agents/CEO/ceo_agent_tools.py","href":"https://github.com/karthik132007/Co_Founder/blob/212475de634efd86247e805be724068a7d8cd07f/agents/CEO/ceo_agent_tools.py"},{"path":"agents/helpers/choose_llm.py","href":"https://github.com/karthik132007/Co_Founder/blob/212475de634efd86247e805be724068a7d8cd07f/agents/helpers/choose_llm.py"}],"tools":[{"path":"connections/tool_manager.py","href":"https://github.com/karthik132007/Co_Founder/blob/212475de634efd86247e805be724068a7d8cd07f/connections/tool_manager.py"},{"path":"connections/global_connection_manager.py","href":"https://github.com/karthik132007/Co_Founder/blob/212475de634efd86247e805be724068a7d8cd07f/connections/global_connection_manager.py"}],"redis":[{"path":"backend/db/redis_client.py","href":"https://github.com/karthik132007/Co_Founder/blob/212475de634efd86247e805be724068a7d8cd07f/backend/db/redis_client.py"},{"path":"agents/CEO/ceo_resources.py","href":"https://github.com/karthik132007/Co_Founder/blob/212475de634efd86247e805be724068a7d8cd07f/agents/CEO/ceo_resources.py"}],"kafka":[{"path":"backend/kafka_jobs/producers/producer.py","href":"https://github.com/karthik132007/Co_Founder/blob/212475de634efd86247e805be724068a7d8cd07f/backend/kafka_jobs/producers/producer.py"},{"path":"docker-compose.yaml","href":"https://github.com/karthik132007/Co_Founder/blob/212475de634efd86247e805be724068a7d8cd07f/docker-compose.yaml"}],"supabase":[{"path":"schemas/document_chunks.sql","href":"https://github.com/karthik132007/Co_Founder/blob/212475de634efd86247e805be724068a7d8cd07f/schemas/document_chunks.sql"},{"path":"RAG_Engine/rag.py","href":"https://github.com/karthik132007/Co_Founder/blob/212475de634efd86247e805be724068a7d8cd07f/RAG_Engine/rag.py"}],"openrouter":[{"path":"agents/helpers/choose_llm.py","href":"https://github.com/karthik132007/Co_Founder/blob/212475de634efd86247e805be724068a7d8cd07f/agents/helpers/choose_llm.py"},{"path":"agents/helpers/CreateLLM.py","href":"https://github.com/karthik132007/Co_Founder/blob/212475de634efd86247e805be724068a7d8cd07f/agents/helpers/CreateLLM.py"}],"providers":[{"path":"agents/researcher/researcher.py","href":"https://github.com/karthik132007/Co_Founder/blob/212475de634efd86247e805be724068a7d8cd07f/agents/researcher/researcher.py"},{"path":"agents/marketing/cmo_tools.py","href":"https://github.com/karthik132007/Co_Founder/blob/212475de634efd86247e805be724068a7d8cd07f/agents/marketing/cmo_tools.py"},{"path":"e2b_sandbox/codig_env.py","href":"https://github.com/karthik132007/Co_Founder/blob/212475de634efd86247e805be724068a7d8cd07f/e2b_sandbox/codig_env.py"}],"google_meta":[{"path":"connections/google/google_connection_manager.py","href":"https://github.com/karthik132007/Co_Founder/blob/212475de634efd86247e805be724068a7d8cd07f/connections/google/google_connection_manager.py"},{"path":"connections/meta/instagram/instagram_tools.py","href":"https://github.com/karthik132007/Co_Founder/blob/212475de634efd86247e805be724068a7d8cd07f/connections/meta/instagram/instagram_tools.py"}]}}</script>
     <div class="guided-views no-print" id="guided-views" hidden aria-label="Guided diagram views">
       <button id="guided-view-prev" type="button" aria-label="Previous guided view" title="Previous guided view ([)">&#8592;</button>
       <div class="guided-view-copy">
@@ -4883,8 +4883,8 @@
 
     <!-- Main Diagram -->
     <div class="diagram-container" data-detail-level="read">
-      <svg viewBox="0 0 1280 1000" role="img" aria-labelledby="archify-diagram-title archify-diagram-description" data-animation="trace" data-preset="classic" data-quality-profile="showcase">
-        <title id="archify-diagram-title">Co_Founder — Runtime Architecture</title>
+      <svg viewBox="0 0 1840 720" role="img" aria-labelledby="archify-diagram-title archify-diagram-description" data-animation="trace" data-preset="classic" data-quality-profile="showcase">
+        <title id="archify-diagram-title">Co-Founder — Runtime Architecture</title>
         <desc id="archify-diagram-description">A architecture diagram generated by Archify.</desc>
         <!-- Definitions -->
         <defs>
@@ -4909,258 +4909,264 @@
         <rect width="100%" height="100%" fill="url(#grid)" />
 
         <!-- Boundaries (behind everything) -->
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="region" data-composition-frame-id="0" x="204" y="264" width="862" height="680" rx="12" class="c-region" stroke-width="1"/>
-        <text x="212" y="282" class="t-cloud" font-size="9" font-weight="600">Local Docker Compose Stack</text>
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="region" data-composition-frame-id="0" x="224" y="266" width="242" height="122" rx="12" class="c-region" stroke-width="1"/>
+        <text x="232" y="284" class="t-cloud" font-size="9" font-weight="600">Vercel — Next.js 16 frontend</text>
 
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="security-group" data-composition-frame-id="1" x="434" y="384" width="622" height="360" rx="8" class="c-security-group" stroke-width="1"/>
-        <text x="442" y="402" class="t-security" font-size="9" font-weight="600">Secrets Trust Zone — .env API keys</text>
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="security-group" data-composition-frame-id="1" x="570" y="262" width="1160" height="126" rx="8" class="c-security-group" stroke-width="1"/>
+        <text x="578" y="280" class="t-security" font-size="9" font-weight="600">Backend trust zone — root .env secrets</text>
 
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="region" data-composition-frame-id="2" x="876" y="76" width="358" height="179" rx="12" class="c-region" stroke-width="1"/>
-        <text x="884" y="94" class="t-cloud" font-size="9" font-weight="600">External SaaS — API-key access</text>
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="region" data-composition-frame-id="2" x="1204" y="542" width="262" height="124" rx="12" class="c-region" stroke-width="1"/>
+        <text x="1212" y="560" class="t-cloud" font-size="9" font-weight="600">Supabase Cloud</text>
 
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="region" data-composition-frame-id="3" x="856" y="636" width="198" height="108" rx="12" class="c-region" stroke-width="1"/>
-        <text x="864" y="654" class="t-cloud" font-size="9" font-weight="600">Supabase Cloud</text>
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="region" data-composition-frame-id="3" x="857" y="12" width="871" height="118" rx="12" class="c-region" stroke-width="1"/>
+        <text x="865" y="30" class="t-cloud" font-size="9" font-weight="600">External SaaS — API-key access</text>
 
         <!-- Connection paths (before components for correct z-order) -->
-        <path data-edge-from="founder" data-edge-to="webapp" data-edge-label="HTTPS" data-edge-key="0" data-edge-id="founder-webapp" data-composition-points="140,430;230,430" d="M 140 430 L 230 430" class="a-emphasis" data-animate="edge" style="--step:0" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <path data-edge-from="webapp" data-edge-to="fastapi" data-edge-label="REST /chat · WS /chat/ws" data-edge-key="1" data-edge-id="webapp-fastapi" data-composition-points="380,432;450,432" d="M 380 432 L 450 432" class="a-emphasis" data-animate="edge" style="--step:1" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <path data-edge-from="fastapi" data-edge-to="ceo" data-edge-label="talk_to_ceo()" data-edge-key="2" data-edge-id="fastapi-ceo" data-composition-points="600,432;660,432" d="M 600 432 L 660 432" class="a-emphasis" data-animate="edge" style="--step:2" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <path data-edge-from="ceo" data-edge-to="openrouter" data-edge-label="LLM inference" data-edge-key="3" data-edge-id="ceo-openrouter" data-composition-points="800,432;850,432;850,130;900,130" d="M 800 432 L 842 432 Q 850 432 850 424 L 850 138 Q 850 130 858 130 L 900 130" class="a-emphasis" data-animate="edge" style="--step:3" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <path data-edge-from="ceo" data-edge-to="specialists" data-edge-label="delegate via tools" data-edge-key="4" data-edge-id="ceo-specialists" data-composition-points="800,432;880,432" d="M 800 432 L 880 432" class="a-emphasis" data-animate="edge" style="--step:4" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <path data-edge-from="specialists" data-edge-to="tavily" data-edge-label="web search" data-edge-key="5" data-edge-id="specialists-tavily" data-composition-points="1040,432;1060,432;1060,130;1080,130" d="M 1040 432 L 1052 432 Q 1060 432 1060 424 L 1060 138 Q 1060 130 1068 130 L 1080 130" class="a-default" data-animate="edge" style="--step:5" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="specialists" data-edge-to="e2b" data-edge-label="code execution" data-edge-key="6" data-edge-id="specialists-e2b" data-composition-points="960,464;960,500;1145,500;1145,235" d="M 960 464 L 960 492 Q 960 500 968 500 L 1137 500 Q 1145 500 1145 492 L 1145 235" class="a-default" data-animate="edge" style="--step:6" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="fastapi" data-edge-to="kafka" data-edge-label="queue async jobs" data-edge-key="7" data-edge-id="fastapi-kafka" data-composition-points="525,464;525,810;690,810;690,860" d="M 525 464 L 525 802 Q 525 810 533 810 L 682 810 Q 690 810 690 818 L 690 860" class="a-dashed" data-animate="edge" style="--step:7" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
-        <path data-edge-from="ceo" data-edge-to="rag" data-edge-label="memory &amp; knowledge lookup" data-edge-key="8" data-edge-id="ceo-rag" data-composition-points="730,464;730,660" d="M 730 464 L 730 660" class="a-default" data-animate="edge" style="--step:8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="ceo" data-edge-to="redis" data-edge-label="cache / session state" data-edge-key="9" data-edge-id="ceo-redis" data-composition-points="730,400;730,354" d="M 730 400 L 730 354" class="a-default" data-animate="edge" style="--step:9" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="rag" data-edge-to="supabase" data-edge-label="pgvector" data-edge-key="10" data-edge-id="rag-supabase" data-composition-points="800,692;880,692" d="M 800 692 L 880 692" class="a-default" data-animate="edge" style="--step:10" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="kafka" data-edge-to="supabase" data-edge-label="consumers persist" data-edge-key="11" data-edge-id="kafka-supabase" data-composition-points="760,892;955,892;955,724" d="M 760 892 L 947 892 Q 955 892 955 884 L 955 724" class="a-dashed" data-animate="edge" style="--step:11" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
+        <path data-edge-from="founder" data-edge-to="webapp" data-edge-label="HTTPS" data-edge-key="0" data-edge-id="founder-webapp" data-composition-points="180,330;250,330" d="M 180 330 L 250 330" class="a-emphasis" data-animate="edge" style="--step:0" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path data-edge-from="webapp" data-edge-to="fastapi" data-edge-label="REST /chat · WS /chat/ws" data-edge-key="1" data-edge-id="webapp-fastapi" data-composition-points="440,330;600,330" d="M 440 330 L 600 330" class="a-emphasis" data-animate="edge" style="--step:1" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path data-edge-from="fastapi" data-edge-to="ceo" data-edge-label="talk_to_ceo()" data-edge-key="2" data-edge-id="fastapi-ceo" data-composition-points="790,323;900,323" d="M 790 323 L 900 323" class="a-emphasis" data-animate="edge" style="--step:2" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path data-edge-from="ceo" data-edge-to="specialists" data-edge-label="delegate via 5 tools" data-edge-key="3" data-edge-id="ceo-specialists" data-composition-points="1090,330;1230,330" d="M 1090 330 L 1230 330" class="a-emphasis" data-animate="edge" style="--step:3" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path data-edge-from="ceo" data-edge-to="openrouter" data-edge-label="LLM inference" data-edge-key="4" data-edge-id="ceo-openrouter" data-composition-points="995,292;995,110" d="M 995 292 L 995 110" class="a-emphasis" data-animate="edge" style="--step:4" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path data-edge-from="specialists" data-edge-to="openrouter" data-edge-label="choose_llm() per task" data-edge-key="5" data-edge-id="specialists-openrouter" data-composition-points="1230,330;1167.5,330;1167.5,75;1105,75" d="M 1230 330 L 1175.5 330 Q 1167.5 330 1167.5 322 L 1167.5 83 Q 1167.5 75 1159.5 75 L 1105 75" class="a-default" data-animate="edge" style="--step:5" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="specialists" data-edge-to="providers" data-edge-label="Tavily · SerpAPI · E2B" data-edge-key="6" data-edge-id="specialists-providers" data-composition-points="1335,292;1335,110" d="M 1335 292 L 1335 110" class="a-default" data-animate="edge" style="--step:6" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="ceo" data-edge-to="tools" data-edge-label="connected-app tools" data-edge-key="7" data-edge-id="ceo-tools" data-composition-points="995,368;995,470;1590,470;1590,368" d="M 995 368 L 995 462 Q 995 470 1003 470 L 1582 470 Q 1590 470 1590 462 L 1590 368" class="a-default" data-animate="edge" style="--step:7" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="tools" data-edge-to="google_meta" data-edge-label="OAuth 2.0 tool calls" data-edge-key="8" data-edge-id="tools-google" data-composition-points="1590,292;1590,110" d="M 1590 292 L 1590 110" class="a-default" data-animate="edge" style="--step:8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="fastapi" data-edge-to="redis" data-edge-label="cache · query budgets" data-edge-key="9" data-edge-id="fastapi-redis" data-composition-points="695,368;695,570" d="M 695 368 L 695 570" class="a-default" data-animate="edge" style="--step:9" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="fastapi" data-edge-to="kafka" data-edge-label="queue async jobs" data-edge-key="10" data-edge-id="fastapi-kafka" data-composition-points="790,337;845,337;845,607;900,607" d="M 790 337 L 837 337 Q 845 337 845 345 L 845 599 Q 845 607 853 607 L 900 607" class="a-dashed" data-animate="edge" style="--step:10" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
+        <path data-edge-from="kafka" data-edge-to="supabase" data-edge-label="consumers persist" data-edge-key="11" data-edge-id="kafka-supabase" data-composition-points="1090,607;1230,607" d="M 1090 607 L 1230 607" class="a-dashed" data-animate="edge" style="--step:11" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
+        <path data-edge-from="ceo" data-edge-to="supabase" data-edge-label="pgvector RAG · chat memory" data-edge-key="12" data-edge-id="ceo-supabase" data-composition-points="1090,330;1160,330;1160,607;1230,607" d="M 1090 330 L 1152 330 Q 1160 330 1160 338 L 1160 599 Q 1160 607 1168 607 L 1230 607" class="a-default" data-animate="edge" style="--step:12" stroke-width="1.5" marker-end="url(#arrowhead)"/>
 
         <!-- Components -->
         <g id="node-founder" data-node-id="founder" data-node-label="Founder" tabindex="0" role="button" aria-label="Focus Founder, Browser, Architecture component" aria-pressed="false" data-node-kind="external" data-node-sublabel="Browser" data-node-context="Architecture component">
           <title>Founder · Browser · Architecture component</title>
-          <rect x="30" y="400" width="110" height="60" rx="6" class="c-mask"/>
-          <rect x="30" y="400" width="110" height="60" rx="6" class="c-external" data-animate="node" style="--step:0" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(36 406) scale(0.6875)">
+          <rect x="50" y="298" width="130" height="64" rx="6" class="c-mask"/>
+          <rect x="50" y="298" width="130" height="64" rx="6" class="c-external" data-animate="node" style="--step:0" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(56 304) scale(0.6875)">
             <rect x="2.5" y="5" width="8.5" height="8" rx="1.5"/>
             <path d="M8 2.5h5.5V8M13.5 2.5 7.5 8.5"/>
           </g>
-          <text data-detail-anchor x="85" y="428" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Founder</text>
-        <text data-detail="context" x="85" y="444" class="t-muted" font-size="9" text-anchor="middle">Browser</text>
+          <text data-detail-anchor x="115" y="328" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Founder</text>
+        <text data-detail="context" x="115" y="344" class="t-muted" font-size="9" text-anchor="middle">Browser</text>
         </g>
 
-        <g id="node-webapp" data-node-id="webapp" data-node-label="Web App" tabindex="0" role="button" aria-label="Focus Web App, Next.js 16 · :3000, Local Docker Compose Stack" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="Next.js 16 · :3000" data-node-tag="Chat UI + Agent Timeline" data-node-context="Local Docker Compose Stack">
-          <title>Web App · Next.js 16 · :3000 · Local Docker Compose Stack · Chat UI + Agent Timeline</title>
-          <rect x="230" y="400" width="150" height="64" rx="6" class="c-mask"/>
-          <rect x="230" y="400" width="150" height="64" rx="6" class="c-frontend" data-animate="node" style="--step:1" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="frontend" class="semantic-sigil s-frontend" transform="translate(236 406) scale(0.6875)">
+        <g id="node-webapp" data-node-id="webapp" data-node-label="Web App" tabindex="0" role="button" aria-label="Focus Web App, Next.js 16 · Vercel, Vercel — Next.js 16 frontend" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="Next.js 16 · Vercel" data-node-tag="Chat UI · agent trace timeline" data-node-context="Vercel — Next.js 16 frontend">
+          <title>Web App · Next.js 16 · Vercel · Vercel — Next.js 16 frontend · Chat UI · agent trace timeline</title>
+          <rect x="250" y="292" width="190" height="76" rx="6" class="c-mask"/>
+          <rect x="250" y="292" width="190" height="76" rx="6" class="c-frontend" data-animate="node" style="--step:1" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="frontend" class="semantic-sigil s-frontend" transform="translate(256 298) scale(0.6875)">
             <rect x="2" y="3" width="12" height="10" rx="2"/>
             <path d="M2 6.5h12"/>
             <circle cx="4.1" cy="4.8" r=".7" class="sigil-fill"/>
             <circle cx="6.3" cy="4.8" r=".7" class="sigil-fill"/>
           </g>
-          <text data-detail-anchor x="305" y="430" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Web App</text>
-        <text data-detail="context" x="305" y="446" class="t-muted" font-size="9" text-anchor="middle">Next.js 16 · :3000</text>
-        <text data-detail="fine" x="305" y="456" class="t-frontend" font-size="7" text-anchor="middle">Chat UI + Agent Timeline</text>
+          <text data-detail-anchor x="345" y="328" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Web App</text>
+        <text data-detail="context" x="345" y="344" class="t-muted" font-size="9" text-anchor="middle">Next.js 16 · Vercel</text>
+        <text data-detail="fine" x="345" y="360" class="t-frontend" font-size="7" text-anchor="middle">Chat UI · agent trace timeline</text>
         </g>
 
-        <g id="node-fastapi" data-node-id="fastapi" data-node-label="FastAPI Backend" tabindex="0" role="button" aria-label="Focus FastAPI Backend, uvicorn · :8000, Local Docker Compose Stack › Secrets Trust Zone — .env API keys" aria-pressed="false" data-node-kind="backend" data-node-sublabel="uvicorn · :8000" data-node-tag="REST + WebSocket" data-node-context="Local Docker Compose Stack › Secrets Trust Zone — .env API keys">
-          <title>FastAPI Backend · uvicorn · :8000 · Local Docker Compose Stack › Secrets Trust Zone — .env API keys · REST + WebSocket</title>
-          <rect x="450" y="400" width="150" height="64" rx="6" class="c-mask"/>
-          <rect x="450" y="400" width="150" height="64" rx="6" class="c-backend" data-animate="node" style="--step:2" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(456 406) scale(0.6875)">
+        <g id="node-fastapi" data-node-id="fastapi" data-node-label="FastAPI Backend" tabindex="0" role="button" aria-label="Focus FastAPI Backend, uvicorn :8000 · EC2, Backend trust zone — root .env secrets" aria-pressed="false" data-node-kind="backend" data-node-sublabel="uvicorn :8000 · EC2" data-node-tag="REST + WebSocket · nginx /api prefix" data-node-context="Backend trust zone — root .env secrets">
+          <title>FastAPI Backend · uvicorn :8000 · EC2 · Backend trust zone — root .env secrets · REST + WebSocket · nginx /api prefix</title>
+          <rect x="600" y="292" width="190" height="76" rx="6" class="c-mask"/>
+          <rect x="600" y="292" width="190" height="76" rx="6" class="c-backend" data-animate="node" style="--step:2" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(606 298) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-detail-anchor x="525" y="430" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">FastAPI Backend</text>
-        <text data-detail="context" x="525" y="446" class="t-muted" font-size="9" text-anchor="middle">uvicorn · :8000</text>
-        <text data-detail="fine" x="525" y="456" class="t-backend" font-size="7" text-anchor="middle">REST + WebSocket</text>
+          <text data-detail-anchor x="695" y="328" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">FastAPI Backend</text>
+        <text data-detail="context" x="695" y="344" class="t-muted" font-size="9" text-anchor="middle">uvicorn :8000 · EC2</text>
+        <text data-detail="fine" x="695" y="360" class="t-backend" font-size="7" text-anchor="middle">REST + WebSocket · nginx /api prefix</text>
         </g>
 
-        <g id="node-ceo" data-node-id="ceo" data-node-label="CEO Agent" tabindex="0" role="button" aria-label="Focus CEO Agent, LangChain orchestrator, Local Docker Compose Stack › Secrets Trust Zone — .env API keys" aria-pressed="false" data-node-kind="backend" data-node-sublabel="LangChain orchestrator" data-node-tag="effort: flash · mid · max" data-node-context="Local Docker Compose Stack › Secrets Trust Zone — .env API keys">
-          <title>CEO Agent · LangChain orchestrator · Local Docker Compose Stack › Secrets Trust Zone — .env API keys · effort: flash · mid · max</title>
-          <rect x="660" y="400" width="140" height="64" rx="6" class="c-mask"/>
-          <rect x="660" y="400" width="140" height="64" rx="6" class="c-backend" data-animate="node" style="--step:3" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(666 406) scale(0.6875)">
+        <g id="node-ceo" data-node-id="ceo" data-node-label="CEO Agent" tabindex="0" role="button" aria-label="Focus CEO Agent, LangChain create_agent, Backend trust zone — root .env secrets" aria-pressed="false" data-node-kind="backend" data-node-sublabel="LangChain create_agent" data-node-tag="effort: flash · mid · max" data-node-context="Backend trust zone — root .env secrets">
+          <title>CEO Agent · LangChain create_agent · Backend trust zone — root .env secrets · effort: flash · mid · max</title>
+          <rect x="900" y="292" width="190" height="76" rx="6" class="c-mask"/>
+          <rect x="900" y="292" width="190" height="76" rx="6" class="c-backend" data-animate="node" style="--step:3" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(906 298) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-detail-anchor x="730" y="430" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">CEO Agent</text>
-        <text data-detail="context" x="730" y="446" class="t-muted" font-size="9" text-anchor="middle">LangChain orchestrator</text>
-        <text data-detail="fine" x="730" y="456" class="t-backend" font-size="7" text-anchor="middle">effort: flash · mid · max</text>
+          <text data-detail-anchor x="995" y="328" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">CEO Agent</text>
+        <text data-detail="context" x="995" y="344" class="t-muted" font-size="9" text-anchor="middle">LangChain create_agent</text>
+        <text data-detail="fine" x="995" y="360" class="t-backend" font-size="7" text-anchor="middle">effort: flash · mid · max</text>
         </g>
 
-        <g id="node-specialists" data-node-id="specialists" data-node-label="Specialist Agents" tabindex="0" role="button" aria-label="Focus Specialist Agents, 6 roles · spawned via CEO tools, Local Docker Compose Stack › Secrets Trust Zone — .env API keys" aria-pressed="false" data-node-kind="backend" data-node-sublabel="6 roles · spawned via CEO tools" data-node-context="Local Docker Compose Stack › Secrets Trust Zone — .env API keys">
-          <title>Specialist Agents · 6 roles · spawned via CEO tools · Local Docker Compose Stack › Secrets Trust Zone — .env API keys</title>
-          <rect x="880" y="400" width="160" height="64" rx="6" class="c-mask"/>
-          <rect x="880" y="400" width="160" height="64" rx="6" class="c-backend" data-animate="node" style="--step:5" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(886 406) scale(0.6875)">
+        <g id="node-specialists" data-node-id="specialists" data-node-label="Specialist Agents" tabindex="0" role="button" aria-label="Focus Specialist Agents, 5 roles · spawned by CEO tools, Backend trust zone — root .env secrets" aria-pressed="false" data-node-kind="backend" data-node-sublabel="5 roles · spawned by CEO tools" data-node-context="Backend trust zone — root .env secrets">
+          <title>Specialist Agents · 5 roles · spawned by CEO tools · Backend trust zone — root .env secrets</title>
+          <rect x="1230" y="292" width="210" height="76" rx="6" class="c-mask"/>
+          <rect x="1230" y="292" width="210" height="76" rx="6" class="c-backend" data-animate="node" style="--step:4" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(1236 298) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-detail-anchor x="960" y="430" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Specialist Agents</text>
-        <text data-detail="context" x="960" y="446" class="t-muted" font-size="8.1" text-anchor="middle">6 roles · spawned via CEO tools</text>
+          <text data-detail-anchor x="1335" y="328" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Specialist Agents</text>
+        <text data-detail="context" x="1335" y="344" class="t-muted" font-size="9" text-anchor="middle">5 roles · spawned by CEO tools</text>
         </g>
 
-        <g id="node-rag" data-node-id="rag" data-node-label="RAG Engine" tabindex="0" role="button" aria-label="Focus RAG Engine, pgvector + chat memory, Local Docker Compose Stack › Secrets Trust Zone — .env API keys" aria-pressed="false" data-node-kind="backend" data-node-sublabel="pgvector + chat memory" data-node-tag="embeddings via OpenRouter" data-node-context="Local Docker Compose Stack › Secrets Trust Zone — .env API keys">
-          <title>RAG Engine · pgvector + chat memory · Local Docker Compose Stack › Secrets Trust Zone — .env API keys · embeddings via OpenRouter</title>
-          <rect x="660" y="660" width="140" height="64" rx="6" class="c-mask"/>
-          <rect x="660" y="660" width="140" height="64" rx="6" class="c-backend" data-animate="node" style="--step:9" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(666 666) scale(0.6875)">
+        <g id="node-tools" data-node-id="tools" data-node-label="Connected Apps" tabindex="0" role="button" aria-label="Focus Connected Apps, ToolManager registry (MCP-style), Backend trust zone — root .env secrets" aria-pressed="false" data-node-kind="backend" data-node-sublabel="ToolManager registry (MCP-style)" data-node-tag="31 tools · Gmail · Sheets · Drive · Calendar · Instagram" data-node-context="Backend trust zone — root .env secrets">
+          <title>Connected Apps · ToolManager registry (MCP-style) · Backend trust zone — root .env secrets · 31 tools · Gmail · Sheets · Drive · Calendar · Instagram</title>
+          <rect x="1480" y="292" width="220" height="76" rx="6" class="c-mask"/>
+          <rect x="1480" y="292" width="220" height="76" rx="6" class="c-backend" data-animate="node" style="--step:8" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(1486 298) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-detail-anchor x="730" y="690" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">RAG Engine</text>
-        <text data-detail="context" x="730" y="706" class="t-muted" font-size="9" text-anchor="middle">pgvector + chat memory</text>
-        <text data-detail="fine" x="730" y="716" class="t-backend" font-size="7" text-anchor="middle">embeddings via OpenRouter</text>
+          <text data-detail-anchor x="1590" y="328" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Connected Apps</text>
+        <text data-detail="context" x="1590" y="344" class="t-muted" font-size="9" text-anchor="middle">ToolManager registry (MCP-style)</text>
+        <text data-detail="fine" x="1590" y="360" class="t-backend" font-size="6.3" text-anchor="middle">31 tools · Gmail · Sheets · Drive · Calendar · Instagram</text>
         </g>
 
-        <g id="node-redis" data-node-id="redis" data-node-label="Redis" tabindex="0" role="button" aria-label="Focus Redis, cache · session state, Local Docker Compose Stack" aria-pressed="false" data-node-kind="database" data-node-sublabel="cache · session state" data-node-tag="embeddings · CEO resources" data-node-context="Local Docker Compose Stack">
-          <title>Redis · cache · session state · Local Docker Compose Stack · embeddings · CEO resources</title>
-          <rect x="660" y="290" width="140" height="64" rx="6" class="c-mask"/>
-          <rect x="660" y="290" width="140" height="64" rx="6" class="c-database" data-animate="node" style="--step:10" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(666 296) scale(0.6875)">
+        <g id="node-redis" data-node-id="redis" data-node-label="Redis" tabindex="0" role="button" aria-label="Focus Redis, cache · budgets · OAuth state, Architecture component" aria-pressed="false" data-node-kind="database" data-node-sublabel="cache · budgets · OAuth state" data-node-tag="60 s credit cache · 1 h query budgets" data-node-context="Architecture component">
+          <title>Redis · cache · budgets · OAuth state · Architecture component · 60 s credit cache · 1 h query budgets</title>
+          <rect x="600" y="570" width="190" height="74" rx="6" class="c-mask"/>
+          <rect x="600" y="570" width="190" height="74" rx="6" class="c-database" data-animate="node" style="--step:10" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(606 576) scale(0.6875)">
             <ellipse cx="8" cy="4" rx="5" ry="2"/>
             <path d="M3 4v8c0 1.1 2.2 2 5 2s5-.9 5-2V4M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/>
           </g>
-          <text data-detail-anchor x="730" y="320" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Redis</text>
-        <text data-detail="context" x="730" y="336" class="t-muted" font-size="9" text-anchor="middle">cache · session state</text>
-        <text data-detail="fine" x="730" y="346" class="t-database" font-size="7" text-anchor="middle">embeddings · CEO resources</text>
+          <text data-detail-anchor x="695" y="605" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Redis</text>
+        <text data-detail="context" x="695" y="621" class="t-muted" font-size="9" text-anchor="middle">cache · budgets · OAuth state</text>
+        <text data-detail="fine" x="695" y="636" class="t-database" font-size="7" text-anchor="middle">60 s credit cache · 1 h query budgets</text>
         </g>
 
-        <g id="node-supabase" data-node-id="supabase" data-node-label="Supabase" tabindex="0" role="button" aria-label="Focus Supabase, Postgres + pgvector + Storage, Supabase Cloud" aria-pressed="false" data-node-kind="database" data-node-sublabel="Postgres + pgvector + Storage" data-node-tag="companies · sessions · files" data-node-context="Supabase Cloud">
-          <title>Supabase · Postgres + pgvector + Storage · Supabase Cloud · companies · sessions · files</title>
-          <rect x="880" y="660" width="150" height="64" rx="6" class="c-mask"/>
-          <rect x="880" y="660" width="150" height="64" rx="6" class="c-database" data-animate="node" style="--step:11" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(886 666) scale(0.6875)">
-            <ellipse cx="8" cy="4" rx="5" ry="2"/>
-            <path d="M3 4v8c0 1.1 2.2 2 5 2s5-.9 5-2V4M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/>
-          </g>
-          <text data-detail-anchor x="955" y="690" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Supabase</text>
-        <text data-detail="context" x="955" y="706" class="t-muted" font-size="8.1" text-anchor="middle">Postgres + pgvector + Storage</text>
-        <text data-detail="fine" x="955" y="716" class="t-database" font-size="7" text-anchor="middle">companies · sessions · files</text>
-        </g>
-
-        <g id="node-kafka" data-node-id="kafka" data-node-label="Kafka" tabindex="0" role="button" aria-label="Focus Kafka, broker + 3 consumers, Local Docker Compose Stack" aria-pressed="false" data-node-kind="messagebus" data-node-sublabel="broker + 3 consumers" data-node-tag="titles · memory · messages" data-node-context="Local Docker Compose Stack">
-          <title>Kafka · broker + 3 consumers · Local Docker Compose Stack · titles · memory · messages</title>
-          <rect x="620" y="860" width="140" height="64" rx="6" class="c-mask"/>
-          <rect x="620" y="860" width="140" height="64" rx="6" class="c-messagebus" data-animate="node" style="--step:8" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="messagebus" class="semantic-sigil s-messagebus" transform="translate(626 866) scale(0.6875)">
+        <g id="node-kafka" data-node-id="kafka" data-node-label="Kafka" tabindex="0" role="button" aria-label="Focus Kafka, KRaft broker + 4 consumer groups, Architecture component" aria-pressed="false" data-node-kind="messagebus" data-node-sublabel="KRaft broker + 4 consumer groups" data-node-tag="titles · memory · messages · credits" data-node-context="Architecture component">
+          <title>Kafka · KRaft broker + 4 consumer groups · Architecture component · titles · memory · messages · credits</title>
+          <rect x="900" y="570" width="190" height="74" rx="6" class="c-mask"/>
+          <rect x="900" y="570" width="190" height="74" rx="6" class="c-messagebus" data-animate="node" style="--step:11" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="messagebus" class="semantic-sigil s-messagebus" transform="translate(906 576) scale(0.6875)">
             <path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"/>
             <circle cx="5" cy="4.5" r="1" class="sigil-fill"/>
             <circle cx="10.5" cy="8" r="1" class="sigil-fill"/>
             <circle cx="7" cy="11.5" r="1" class="sigil-fill"/>
           </g>
-          <text data-detail-anchor x="690" y="890" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Kafka</text>
-        <text data-detail="context" x="690" y="906" class="t-muted" font-size="9" text-anchor="middle">broker + 3 consumers</text>
-        <text data-detail="fine" x="690" y="916" class="t-messagebus" font-size="7" text-anchor="middle">titles · memory · messages</text>
+          <text data-detail-anchor x="995" y="605" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Kafka</text>
+        <text data-detail="context" x="995" y="621" class="t-muted" font-size="9" text-anchor="middle">KRaft broker + 4 consumer groups</text>
+        <text data-detail="fine" x="995" y="636" class="t-messagebus" font-size="7" text-anchor="middle">titles · memory · messages · credits</text>
         </g>
 
-        <g id="node-openrouter" data-node-id="openrouter" data-node-label="OpenRouter" tabindex="0" role="button" aria-label="Focus OpenRouter, LLM gateway, External SaaS — API-key access" aria-pressed="false" data-node-kind="external" data-node-sublabel="LLM gateway" data-node-tag="DeepSeek · GLM · Gemma" data-node-context="External SaaS — API-key access">
-          <title>OpenRouter · LLM gateway · External SaaS — API-key access · DeepSeek · GLM · Gemma</title>
-          <rect x="900" y="100" width="140" height="60" rx="6" class="c-mask"/>
-          <rect x="900" y="100" width="140" height="60" rx="6" class="c-external" data-animate="node" style="--step:4" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(906 106) scale(0.6875)">
+        <g id="node-supabase" data-node-id="supabase" data-node-label="Supabase" tabindex="0" role="button" aria-label="Focus Supabase, Postgres + pgvector + Storage, Supabase Cloud" aria-pressed="false" data-node-kind="database" data-node-sublabel="Postgres + pgvector + Storage" data-node-tag="12 tables · pgvector HNSW" data-node-context="Supabase Cloud">
+          <title>Supabase · Postgres + pgvector + Storage · Supabase Cloud · 12 tables · pgvector HNSW</title>
+          <rect x="1230" y="568" width="210" height="78" rx="6" class="c-mask"/>
+          <rect x="1230" y="568" width="210" height="78" rx="6" class="c-database" data-animate="node" style="--step:12" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(1236 574) scale(0.6875)">
+            <ellipse cx="8" cy="4" rx="5" ry="2"/>
+            <path d="M3 4v8c0 1.1 2.2 2 5 2s5-.9 5-2V4M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/>
+          </g>
+          <text data-detail-anchor x="1335" y="605" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Supabase</text>
+        <text data-detail="context" x="1335" y="621" class="t-muted" font-size="9" text-anchor="middle">Postgres + pgvector + Storage</text>
+        <text data-detail="fine" x="1335" y="638" class="t-database" font-size="7" text-anchor="middle">12 tables · pgvector HNSW</text>
+        </g>
+
+        <g id="node-openrouter" data-node-id="openrouter" data-node-label="OpenRouter" tabindex="0" role="button" aria-label="Focus OpenRouter, LLM gateway, External SaaS — API-key access" aria-pressed="false" data-node-kind="external" data-node-sublabel="LLM gateway" data-node-tag="DeepSeek · GLM · GPT-OSS · Gemma · Seedream" data-node-context="External SaaS — API-key access">
+          <title>OpenRouter · LLM gateway · External SaaS — API-key access · DeepSeek · GLM · GPT-OSS · Gemma · Seedream</title>
+          <rect x="885" y="40" width="220" height="70" rx="6" class="c-mask"/>
+          <rect x="885" y="40" width="220" height="70" rx="6" class="c-external" data-animate="node" style="--step:5" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(891 46) scale(0.6875)">
             <rect x="2.5" y="5" width="8.5" height="8" rx="1.5"/>
             <path d="M8 2.5h5.5V8M13.5 2.5 7.5 8.5"/>
           </g>
-          <text data-detail-anchor x="970" y="128" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">OpenRouter</text>
-        <text data-detail="context" x="970" y="144" class="t-muted" font-size="9" text-anchor="middle">LLM gateway</text>
-        <text data-detail="fine" x="970" y="152" class="t-external" font-size="7" text-anchor="middle">DeepSeek · GLM · Gemma</text>
+          <text data-detail-anchor x="995" y="73" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">OpenRouter</text>
+        <text data-detail="context" x="995" y="89" class="t-muted" font-size="9" text-anchor="middle">LLM gateway</text>
+        <text data-detail="fine" x="995" y="102" class="t-external" font-size="7" text-anchor="middle">DeepSeek · GLM · GPT-OSS · Gemma · Seedream</text>
         </g>
 
-        <g id="node-tavily" data-node-id="tavily" data-node-label="Tavily" tabindex="0" role="button" aria-label="Focus Tavily, web search API, External SaaS — API-key access" aria-pressed="false" data-node-kind="external" data-node-sublabel="web search API" data-node-context="External SaaS — API-key access">
-          <title>Tavily · web search API · External SaaS — API-key access</title>
-          <rect x="1080" y="100" width="130" height="60" rx="6" class="c-mask"/>
-          <rect x="1080" y="100" width="130" height="60" rx="6" class="c-external" data-animate="node" style="--step:6" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(1086 106) scale(0.6875)">
+        <g id="node-providers" data-node-id="providers" data-node-label="Tool APIs" tabindex="0" role="button" aria-label="Focus Tool APIs, Tavily · SerpAPI · E2B, External SaaS — API-key access" aria-pressed="false" data-node-kind="external" data-node-sublabel="Tavily · SerpAPI · E2B" data-node-tag="search · market data · code sandbox" data-node-context="External SaaS — API-key access">
+          <title>Tool APIs · Tavily · SerpAPI · E2B · External SaaS — API-key access · search · market data · code sandbox</title>
+          <rect x="1220" y="40" width="230" height="70" rx="6" class="c-mask"/>
+          <rect x="1220" y="40" width="230" height="70" rx="6" class="c-external" data-animate="node" style="--step:7" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(1226 46) scale(0.6875)">
             <rect x="2.5" y="5" width="8.5" height="8" rx="1.5"/>
             <path d="M8 2.5h5.5V8M13.5 2.5 7.5 8.5"/>
           </g>
-          <text data-detail-anchor x="1145" y="128" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Tavily</text>
-        <text data-detail="context" x="1145" y="144" class="t-muted" font-size="9" text-anchor="middle">web search API</text>
+          <text data-detail-anchor x="1335" y="73" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Tool APIs</text>
+        <text data-detail="context" x="1335" y="89" class="t-muted" font-size="9" text-anchor="middle">Tavily · SerpAPI · E2B</text>
+        <text data-detail="fine" x="1335" y="102" class="t-external" font-size="7" text-anchor="middle">search · market data · code sandbox</text>
         </g>
 
-        <g id="node-e2b" data-node-id="e2b" data-node-label="E2B" tabindex="0" role="button" aria-label="Focus E2B, code sandbox, External SaaS — API-key access" aria-pressed="false" data-node-kind="external" data-node-sublabel="code sandbox" data-node-tag="data analysis" data-node-context="External SaaS — API-key access">
-          <title>E2B · code sandbox · External SaaS — API-key access · data analysis</title>
-          <rect x="1080" y="175" width="130" height="60" rx="6" class="c-mask"/>
-          <rect x="1080" y="175" width="130" height="60" rx="6" class="c-external" data-animate="node" style="--step:7" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(1086 181) scale(0.6875)">
+        <g id="node-google_meta" data-node-id="google_meta" data-node-label="Google &amp; Meta APIs" tabindex="0" role="button" aria-label="Focus Google &amp; Meta APIs, Gmail · Sheets · Drive · Calendar · IG Graph, External SaaS — API-key access" aria-pressed="false" data-node-kind="external" data-node-sublabel="Gmail · Sheets · Drive · Calendar · IG Graph" data-node-tag="OAuth 2.0 grants per company" data-node-context="External SaaS — API-key access">
+          <title>Google &amp; Meta APIs · Gmail · Sheets · Drive · Calendar · IG Graph · External SaaS — API-key access · OAuth 2.0 grants per company</title>
+          <rect x="1480" y="40" width="220" height="70" rx="6" class="c-mask"/>
+          <rect x="1480" y="40" width="220" height="70" rx="6" class="c-external" data-animate="node" style="--step:9" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(1486 46) scale(0.6875)">
             <rect x="2.5" y="5" width="8.5" height="8" rx="1.5"/>
             <path d="M8 2.5h5.5V8M13.5 2.5 7.5 8.5"/>
           </g>
-          <text data-detail-anchor x="1145" y="203" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">E2B</text>
-        <text data-detail="context" x="1145" y="219" class="t-muted" font-size="9" text-anchor="middle">code sandbox</text>
-        <text data-detail="fine" x="1145" y="227" class="t-external" font-size="7" text-anchor="middle">data analysis</text>
+          <text data-detail-anchor x="1590" y="73" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Google &amp; Meta APIs</text>
+        <text data-detail="context" x="1590" y="89" class="t-muted" font-size="8" text-anchor="middle">Gmail · Sheets · Drive · Calendar · IG Graph</text>
+        <text data-detail="fine" x="1590" y="102" class="t-external" font-size="7" text-anchor="middle">OAuth 2.0 grants per company</text>
         </g>
 
         <!-- Connection labels -->
         <g data-detail="context" data-edge-from="founder" data-edge-to="webapp" data-edge-label="HTTPS" data-edge-key="0" data-edge-id="founder-webapp">
-          <rect x="168" y="410" width="34" height="14" rx="3" class="c-mask"/>
-          <text x="185" y="420" class="t-backend" font-size="8" text-anchor="middle">HTTPS</text>
+          <rect x="198" y="310" width="34" height="14" rx="3" class="c-mask"/>
+          <text x="215" y="320" class="t-backend" font-size="8" text-anchor="middle">HTTPS</text>
         </g>
         <g data-detail="context" data-edge-from="webapp" data-edge-to="fastapi" data-edge-label="REST /chat · WS /chat/ws" data-edge-key="1" data-edge-id="webapp-fastapi">
-          <rect x="352.4" y="490" width="125.19999999999999" height="14" rx="3" class="c-mask"/>
-          <text x="415" y="500" class="t-backend" font-size="8" text-anchor="middle">REST /chat · WS /chat/ws</text>
+          <rect x="457.4" y="310" width="125.19999999999999" height="14" rx="3" class="c-mask"/>
+          <text x="520" y="320" class="t-backend" font-size="8" text-anchor="middle">REST /chat · WS /chat/ws</text>
         </g>
         <g data-detail="context" data-edge-from="fastapi" data-edge-to="ceo" data-edge-label="talk_to_ceo()" data-edge-key="2" data-edge-id="fastapi-ceo">
-          <rect x="593.8" y="490" width="72.4" height="14" rx="3" class="c-mask"/>
-          <text x="630" y="500" class="t-backend" font-size="8" text-anchor="middle">talk_to_ceo()</text>
+          <rect x="808.8" y="303" width="72.4" height="14" rx="3" class="c-mask"/>
+          <text x="845" y="313" class="t-backend" font-size="8" text-anchor="middle">talk_to_ceo()</text>
         </g>
-        <g data-detail="context" data-edge-from="ceo" data-edge-to="openrouter" data-edge-label="LLM inference" data-edge-key="3" data-edge-id="ceo-openrouter">
-          <rect x="813.8" y="270" width="72.4" height="14" rx="3" class="c-mask"/>
-          <text x="850" y="280" class="t-backend" font-size="8" text-anchor="middle">LLM inference</text>
+        <g data-detail="context" data-edge-from="ceo" data-edge-to="specialists" data-edge-label="delegate via 5 tools" data-edge-key="3" data-edge-id="ceo-specialists">
+          <rect x="1027" y="378" width="106" height="14" rx="3" class="c-mask"/>
+          <text x="1080" y="388" class="t-backend" font-size="8" text-anchor="middle">delegate via 5 tools</text>
         </g>
-        <g data-detail="context" data-edge-from="ceo" data-edge-to="specialists" data-edge-label="delegate via tools" data-edge-key="4" data-edge-id="ceo-specialists">
-          <rect x="791.8" y="490" width="96.39999999999999" height="14" rx="3" class="c-mask"/>
-          <text x="840" y="500" class="t-backend" font-size="8" text-anchor="middle">delegate via tools</text>
+        <g data-detail="context" data-edge-from="ceo" data-edge-to="openrouter" data-edge-label="LLM inference" data-edge-key="4" data-edge-id="ceo-openrouter">
+          <rect x="958.8" y="272" width="72.4" height="14" rx="3" class="c-mask"/>
+          <text x="995" y="282" class="t-backend" font-size="8" text-anchor="middle">LLM inference</text>
         </g>
-        <g data-detail="context" data-edge-from="specialists" data-edge-to="tavily" data-edge-label="web search" data-edge-key="5" data-edge-id="specialists-tavily">
-          <rect x="1031" y="290" width="58" height="14" rx="3" class="c-mask"/>
-          <text x="1060" y="300" class="t-muted" font-size="8" text-anchor="middle">web search</text>
+        <g data-detail="context" data-edge-from="specialists" data-edge-to="openrouter" data-edge-label="choose_llm() per task" data-edge-key="5" data-edge-id="specialists-openrouter">
+          <rect x="1112.1" y="182.5" width="110.8" height="14" rx="3" class="c-mask"/>
+          <text x="1167.5" y="192.5" class="t-muted" font-size="8" text-anchor="middle">choose_llm() per task</text>
         </g>
-        <g data-detail="context" data-edge-from="specialists" data-edge-to="e2b" data-edge-label="code execution" data-edge-key="6" data-edge-id="specialists-e2b">
-          <rect x="1011.4" y="490" width="77.2" height="14" rx="3" class="c-mask"/>
-          <text x="1050" y="500" class="t-muted" font-size="8" text-anchor="middle">code execution</text>
+        <g data-detail="context" data-edge-from="specialists" data-edge-to="providers" data-edge-label="Tavily · SerpAPI · E2B" data-edge-key="6" data-edge-id="specialists-providers">
+          <rect x="1277.2" y="272" width="115.6" height="14" rx="3" class="c-mask"/>
+          <text x="1335" y="282" class="t-muted" font-size="8" text-anchor="middle">Tavily · SerpAPI · E2B</text>
         </g>
-        <g data-detail="context" data-edge-from="fastapi" data-edge-to="kafka" data-edge-label="queue async jobs" data-edge-key="7" data-edge-id="fastapi-kafka">
-          <rect x="481.6" y="620" width="86.8" height="14" rx="3" class="c-mask"/>
-          <text x="525" y="630" class="t-messagebus" font-size="8" text-anchor="middle">queue async jobs</text>
+        <g data-detail="context" data-edge-from="ceo" data-edge-to="tools" data-edge-label="connected-app tools" data-edge-key="7" data-edge-id="ceo-tools">
+          <rect x="1241.9" y="450" width="101.2" height="14" rx="3" class="c-mask"/>
+          <text x="1292.5" y="460" class="t-muted" font-size="8" text-anchor="middle">connected-app tools</text>
         </g>
-        <g data-detail="context" data-edge-from="ceo" data-edge-to="rag" data-edge-label="memory &amp; knowledge lookup" data-edge-key="8" data-edge-id="ceo-rag">
-          <rect x="665" y="550" width="130" height="14" rx="3" class="c-mask"/>
-          <text x="730" y="560" class="t-muted" font-size="8" text-anchor="middle">memory &amp; knowledge lookup</text>
+        <g data-detail="context" data-edge-from="tools" data-edge-to="google_meta" data-edge-label="OAuth 2.0 tool calls" data-edge-key="8" data-edge-id="tools-google">
+          <rect x="1537" y="272" width="106" height="14" rx="3" class="c-mask"/>
+          <text x="1590" y="282" class="t-muted" font-size="8" text-anchor="middle">OAuth 2.0 tool calls</text>
         </g>
-        <g data-detail="context" data-edge-from="ceo" data-edge-to="redis" data-edge-label="cache / session state" data-edge-key="9" data-edge-id="ceo-redis">
-          <rect x="624.6" y="367" width="110.8" height="14" rx="3" class="c-mask"/>
-          <text x="680" y="377" class="t-muted" font-size="8" text-anchor="middle">cache / session state</text>
+        <g data-detail="context" data-edge-from="fastapi" data-edge-to="redis" data-edge-label="cache · query budgets" data-edge-key="9" data-edge-id="fastapi-redis">
+          <rect x="639.6" y="460" width="110.8" height="14" rx="3" class="c-mask"/>
+          <text x="695" y="470" class="t-muted" font-size="8" text-anchor="middle">cache · query budgets</text>
         </g>
-        <g data-detail="context" data-edge-from="rag" data-edge-to="supabase" data-edge-label="pgvector" data-edge-key="10" data-edge-id="rag-supabase">
-          <rect x="815.8" y="682" width="48.4" height="14" rx="3" class="c-mask"/>
-          <text x="840" y="692" class="t-muted" font-size="8" text-anchor="middle">pgvector</text>
+        <g data-detail="context" data-edge-from="fastapi" data-edge-to="kafka" data-edge-label="queue async jobs" data-edge-key="10" data-edge-id="fastapi-kafka">
+          <rect x="801.6" y="452" width="86.8" height="14" rx="3" class="c-mask"/>
+          <text x="845" y="462" class="t-messagebus" font-size="8" text-anchor="middle">queue async jobs</text>
         </g>
         <g data-detail="context" data-edge-from="kafka" data-edge-to="supabase" data-edge-label="consumers persist" data-edge-key="11" data-edge-id="kafka-supabase">
-          <rect x="811.7" y="882" width="91.6" height="14" rx="3" class="c-mask"/>
-          <text x="857.5" y="892" class="t-messagebus" font-size="8" text-anchor="middle">consumers persist</text>
+          <rect x="1114.2" y="665" width="91.6" height="14" rx="3" class="c-mask"/>
+          <text x="1160" y="675" class="t-messagebus" font-size="8" text-anchor="middle">consumers persist</text>
+        </g>
+        <g data-detail="context" data-edge-from="ceo" data-edge-to="supabase" data-edge-label="pgvector RAG · chat memory" data-edge-key="12" data-edge-id="ceo-supabase">
+          <rect x="1092.6" y="448.5" width="134.8" height="14" rx="3" class="c-mask"/>
+          <text x="1160" y="458.5" class="t-muted" font-size="8" text-anchor="middle">pgvector RAG · chat memory</text>
         </g>
 
         <!-- Legend -->
         <g data-legend data-legend-bridge>
-          <text x="40" y="964" class="t-primary" font-size="12" font-weight="650">Legend</text>
-          <g data-legend-semantic-kind="frontend" data-legend-kind="frontend" data-legend-label="Frontend" data-legend-x="40" data-legend-baseline="984" data-legend-width="83">
-            <rect x="40" y="975" width="16" height="10" rx="2.5" class="c-frontend" stroke-width="1"/>
-            <text x="62" y="984" class="t-muted" font-size="10" font-weight="500">Frontend</text>
+          <text x="40" y="684" class="t-primary" font-size="12" font-weight="650">Legend</text>
+          <g data-legend-semantic-kind="frontend" data-legend-kind="frontend" data-legend-label="Frontend" data-legend-x="40" data-legend-baseline="704" data-legend-width="83">
+            <rect x="40" y="695" width="16" height="10" rx="2.5" class="c-frontend" stroke-width="1"/>
+            <text x="62" y="704" class="t-muted" font-size="10" font-weight="500">Frontend</text>
           </g>
-          <g data-legend-semantic-kind="backend" data-legend-kind="backend" data-legend-label="Backend" data-legend-x="145" data-legend-baseline="984" data-legend-width="78">
-            <rect x="145" y="975" width="16" height="10" rx="2.5" class="c-backend" stroke-width="1"/>
-            <text x="167" y="984" class="t-muted" font-size="10" font-weight="500">Backend</text>
+          <g data-legend-semantic-kind="backend" data-legend-kind="backend" data-legend-label="Backend" data-legend-x="145" data-legend-baseline="704" data-legend-width="78">
+            <rect x="145" y="695" width="16" height="10" rx="2.5" class="c-backend" stroke-width="1"/>
+            <text x="167" y="704" class="t-muted" font-size="10" font-weight="500">Backend</text>
           </g>
-          <g data-legend-semantic-kind="database" data-legend-kind="database" data-legend-label="Database" data-legend-x="245" data-legend-baseline="984" data-legend-width="83">
-            <rect x="245" y="975" width="16" height="10" rx="2.5" class="c-database" stroke-width="1"/>
-            <text x="267" y="984" class="t-muted" font-size="10" font-weight="500">Database</text>
+          <g data-legend-semantic-kind="database" data-legend-kind="database" data-legend-label="Database" data-legend-x="245" data-legend-baseline="704" data-legend-width="83">
+            <rect x="245" y="695" width="16" height="10" rx="2.5" class="c-database" stroke-width="1"/>
+            <text x="267" y="704" class="t-muted" font-size="10" font-weight="500">Database</text>
           </g>
-          <g data-legend-semantic-kind="messagebus" data-legend-kind="messagebus" data-legend-label="Message bus" data-legend-x="350" data-legend-baseline="984" data-legend-width="98">
-            <rect x="350" y="975" width="16" height="10" rx="2.5" class="c-messagebus" stroke-width="1"/>
-            <text x="372" y="984" class="t-muted" font-size="10" font-weight="500">Message bus</text>
+          <g data-legend-semantic-kind="messagebus" data-legend-kind="messagebus" data-legend-label="Message bus" data-legend-x="350" data-legend-baseline="704" data-legend-width="98">
+            <rect x="350" y="695" width="16" height="10" rx="2.5" class="c-messagebus" stroke-width="1"/>
+            <text x="372" y="704" class="t-muted" font-size="10" font-weight="500">Message bus</text>
           </g>
-          <g data-legend-semantic-kind="external" data-legend-kind="external" data-legend-label="External" data-legend-x="470" data-legend-baseline="984" data-legend-width="83">
-            <rect x="470" y="975" width="16" height="10" rx="2.5" class="c-external" stroke-width="1"/>
-            <text x="492" y="984" class="t-muted" font-size="10" font-weight="500">External</text>
+          <g data-legend-semantic-kind="external" data-legend-kind="external" data-legend-label="External" data-legend-x="470" data-legend-baseline="704" data-legend-width="83">
+            <rect x="470" y="695" width="16" height="10" rx="2.5" class="c-external" stroke-width="1"/>
+            <text x="492" y="704" class="t-muted" font-size="10" font-weight="500">External</text>
           </g>
         </g>
       </svg>
@@ -5352,59 +5358,52 @@
           <h3>Primary runtime path</h3>
         </div>
         <ul>
-          <li>&bull; POST /chat is synchronous: FastAPI → CEO agent → reply</li>
-          <li>&bull; WS /chat/ws streams tool calls, subagent spawns, and LLM tokens live</li>
-          <li>&bull; effort tiers — flash / mid / max — control reflection depth and models</li>
+          <li>&bull; POST /chat is synchronous: FastAPI → CEO → reply</li>
+          <li>&bull; WS /chat/ws streams tool and token events with replay</li>
         </ul>
       </div>
 
       <div class="card">
         <div class="card-header">
           <div class="card-dot emerald"></div>
-          <h3>Specialist line-up</h3>
+          <h3>Agent system</h3>
         </div>
         <ul>
-          <li>&bull; Researcher (budget-aware Tavily web search)</li>
-          <li>&bull; Writer · CMO (SerpAPI market data) · Data Analyst (E2B code)</li>
-          <li>&bull; Graphic Designer (image generation) · Judge (LLM-as-judge)</li>
-          <li>&bull; Each specialist routes its own model calls via OpenRouter (choose_llm)</li>
+          <li>&bull; CEO spawns Researcher, Writer, CMO, Analyst, Designer</li>
+          <li>&bull; Judge reviews Writer output; flash / mid / max set budgets</li>
         </ul>
       </div>
 
       <div class="card">
         <div class="card-header">
           <div class="card-dot violet"></div>
-          <h3>Persistence &amp; async</h3>
+          <h3>Connected apps</h3>
         </div>
         <ul>
-          <li>&bull; FastAPI persists sessions &amp; messages synchronously to Supabase (insert_to_sql)</li>
-          <li>&bull; Supabase: companies, sessions, messages, files, pgvector embeddings</li>
-          <li>&bull; Redis: company cache, session state, embedding cache (TTL 1h), CEO resources</li>
-          <li>&bull; Kafka topics: session_title_creation · chat_memory · add_message_to_session — drained by three consumer containers</li>
+          <li>&bull; ToolManager exposes 31 tools over 5 providers</li>
+          <li>&bull; Gmail · Sheets · Drive · Calendar share one Google grant</li>
         </ul>
       </div>
 
       <div class="card">
         <div class="card-header">
           <div class="card-dot amber"></div>
-          <h3>External dependencies</h3>
+          <h3>Data &amp; async</h3>
         </div>
         <ul>
-          <li>&bull; OpenRouter: DeepSeek, GLM, Gemma, GPT-OSS + text-embedding-3-small</li>
-          <li>&bull; Tavily Search API · SerpAPI (Google Trends / News / Shopping)</li>
-          <li>&bull; E2B code-interpreter sandbox · Supabase Storage (S3-compatible)</li>
+          <li>&bull; Supabase Postgres + pgvector + Storage is the system of record</li>
+          <li>&bull; Kafka drains titles, memory, messages and credit retries</li>
         </ul>
       </div>
 
       <div class="card">
         <div class="card-header">
           <div class="card-dot rose"></div>
-          <h3>Trust boundaries &amp; security</h3>
+          <h3>Billing &amp; secrets</h3>
         </div>
         <ul>
-          <li>&bull; API keys from root .env — never baked into images</li>
-          <li>&bull; CORS restricted to configured origins; rate limits on /auth, /chat, /upload</li>
-          <li>&bull; Argon2id password hashing; Supabase service-role key used server-side only</li>
+          <li>&bull; 1 credit = ₹1; Razorpay checkout, 2.5× markup at ₹100/USD</li>
+          <li>&bull; Argon2id logins, HMAC session cookie, AES-256-GCM tokens</li>
         </ul>
       </div>
     </div>

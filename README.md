@@ -28,6 +28,7 @@
 
 ---
 
+
 ## Overview
 
 AI Co-Founder simulates a startup team around a CEO agent. A founder describes the business through chat; the CEO decides whether to answer directly, ask a clarification question, retrieve company knowledge, or delegate to a specialist.
@@ -47,7 +48,7 @@ Key highlights:
 
 ## Architecture
 
-![System Architecture](docs/co_founder-runtime.webp)
+![Saas Video](docs/co-founder-1080.mp4)
 
 ## Tech Stack
 
