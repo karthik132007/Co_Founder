@@ -1,5 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CookieSettingsButton } from "@/components/CookieSettingsButton";
+import {
+  PRIVACY_GITHUB_URL,
+  RECOMMENDED_PRIVACY_EMAIL,
+  getPrivacyEmail,
+} from "@/lib/privacy";
 
 export const metadata: Metadata = {
   title: "Privacy Policy — Co-Founder AI",
@@ -7,71 +13,9 @@ export const metadata: Metadata = {
     "How Co-Founder AI collects, uses, stores, and deletes your account, company, chat, file, and payment data.",
 };
 
-const SECTIONS = [
-  {
-    id: "data-we-collect",
-    title: "1. Data we collect",
-    body: [
-      "Account: email address, Argon2id password hash (plaintext is never stored), display name, Google OAuth identity (Supabase user ID) when you sign in with Google.",
-      "Company profile: company name, description, industry, brand tone, and logo image (stored as {company_id}/logo.png in Supabase Storage).",
-      "Content you provide: chat messages, uploaded files (PDF, image, CSV, Excel, JSON, Parquet), file descriptions and embeddings (1536-dim vectors in document_chunks), chat memories and session titles derived from conversations.",
-      "Connections (only if you connect them): Instagram long-lived token, Google OAuth grant (access + refresh token, granted scopes, Google account sub/email) shared by Gmail and Google Sheets. Tokens are stored server-side and never sent to the browser.",
-      "Billing: company credit balance, Razorpay order/payment IDs, amounts, and payment status history. Card details go directly to Razorpay Checkout — we never see or store them.",
-      "Technical: HMAC-signed httpOnly session cookie (cofounder_session), IP-based rate-limit counters, Redis cache keys, Kafka job payloads, and application logs.",
-    ],
-  },
-  {
-    id: "how-we-use",
-    title: "2. How we use data",
-    body: [
-      "Operate the product: authenticate you, resolve your company, run the CEO + specialist agent pipeline, retrieve relevant document chunks and chat memories, and stream answers and agent traces.",
-      "Billing: price token usage per model (2x markup, $1 = ₹100 selling price), deduct company credits, verify Razorpay HMAC-SHA256 signatures, and record payment history.",
-      "Improve reliability: buffered WebSocket trace replay, Redis caching (company, sessions, embeddings, credits), and async Kafka jobs for message persistence, memory extraction, and title generation.",
-      "We do not sell your personal data. Prompts and retrieved chunks are sent to the LLM, search, and OCR providers needed to answer (OpenRouter models, Tavily, SerpAPI, Google vision/embedding endpoints) — that is processing on your behalf, not a sale.",
-    ],
-  },
-  {
-    id: "sharing",
-    title: "3. Third parties",
-    body: [
-      "Supabase (Auth, Postgres/pgvector, Storage), OpenRouter (chat, embedding, image models), Tavily and SerpAPI (web research), Razorpay (payments), Google (OAuth, Gmail, Sheets APIs), Meta/Instagram (OAuth), and e2b (sandboxed Python execution).",
-      "Each provider receives only what it needs for its function and is governed by its own privacy terms.",
-      "While Google connectors are in Testing mode: refresh tokens expire after ~7 days and reconnect is required; only Test Users allowlisted on the Google consent screen can connect.",
-    ],
-  },
-  {
-    id: "retention",
-    title: "4. Retention and deletion",
-    body: [
-      "Chat sessions, messages, files, logos, and connections persist until you delete them: DELETE /chat/sessions/{id}, DELETE /file/{id}, disconnect via /connections pages.",
-      "Deleting a file removes the Storage object; document chunks for that file are removed from retrieval. Chat memories derived from deleted sessions are not used for new answers once removed.",
-      "Session cookies expire per SESSION_MAX_AGE_DAYS (default 30 days); logout clears the cookie. There is not yet a self-serve Delete Account / GDPR export button — contact us (see below) and we will delete or export your account data.",
-      "Backups, Kafka redelivery (at-least-once), and Redis TTLs (e.g. credits 60s, embeddings 1h, sessions list 2min) may retain copies briefly after deletion.",
-    ],
-  },
-  {
-    id: "security",
-    title: "5. Security",
-    body: [
-      "Argon2id password hashing with fail-closed verification and legacy plaintext rehash on login; 10/min login/signup rate limit per IP.",
-      "Razorpay key secret never leaves the backend; frontend uses only the public key ID. Payment verification uses constant-time HMAC compare plus authoritative order.fetch and Redis idempotency.",
-      "OAuth tokens are kept server-side; connect flows use expiring single-use Redis state and validated redirect targets (no open redirects).",
-      "Connector credentials (Google, Instagram) are encrypted at rest with AES-256-GCM before they reach the database, so a leaked database row does not by itself yield a usable token.",
-      "No system is perfectly secure — do not upload secrets, credentials, or data you lack rights to process.",
-    ],
-  },
-  {
-    id: "rights",
-    title: "6. Your rights and contact",
-    body: [
-      "You can access and correct your company profile from the Profile page, list/download files from Drive, review payment history from Billing, and disconnect Gmail/Sheets/Instagram from Plugins at any time.",
-      "For access, correction, export, or deletion requests, open an issue or contact via the GitHub repository: https://github.com/karthik132007/Co_Founder",
-      "We will respond to verified requests from the account email address.",
-    ],
-  },
-];
-
 export default function PrivacyPage() {
+  const privacyEmail = getPrivacyEmail();
+
   return (
     <main className="min-h-screen bg-[#fdfcf8] text-[#0f2214]">
       <div className="mx-auto max-w-3xl px-6 py-16">
@@ -79,21 +23,262 @@ export default function PrivacyPage() {
           ← Back to home
         </Link>
         <h1 className="mt-4 text-3xl font-semibold tracking-tight">Privacy Policy</h1>
-        <p className="mt-2 text-sm text-[#5f6f63]">Last updated: 20 September 2026 · Co-Founder AI</p>
+        <p className="mt-2 text-sm text-[#5f6f63]">
+          Last updated: 24 September 2026 · Co-Founder AI
+        </p>
+
         <div className="mt-8 space-y-8">
-          {SECTIONS.map((s) => (
-            <section key={s.id} id={s.id} className="card p-6">
-              <h2 className="text-lg font-semibold">{s.title}</h2>
-              <ul className="mt-3 list-disc space-y-2 pl-5 text-[14px] leading-relaxed text-[#2f3e32]">
-                {s.body.map((p) => (
-                  <li key={p.slice(0, 32)}>{p}</li>
-                ))}
-              </ul>
-            </section>
-          ))}
+          <section id="data-we-collect" className="card p-6">
+            <h2 className="text-lg font-semibold">1. Data we collect — and why</h2>
+            <ul className="mt-3 list-disc space-y-2 pl-5 text-[14px] leading-relaxed text-[#2f3e32]">
+              <li>
+                <strong>Account information:</strong> email address, password hash, and
+                display name. Used to create your account, sign you in, and identify
+                your workspace. Google sign-in additionally stores the OAuth identity
+                needed to recognise a returning Google account.
+              </li>
+              <li>
+                <strong>Company / workspace information:</strong> company name,
+                description, industry, brand tone, and logo image. Used to personalise
+                the workspace and agent outputs. You provide this during onboarding and
+                can edit it on the Profile page.
+              </li>
+              <li>
+                <strong>Content you provide:</strong> chat messages, uploaded files and
+                their descriptions. Used to answer your questions, retrieve relevant
+                document passages, and generate requested outputs.
+              </li>
+              <li>
+                <strong>AI prompts, outputs and derived data:</strong> conversation
+                history, session titles, chat memories, and document embeddings. Used to
+                keep context across messages, retrieve relevant knowledge, and operate
+                the agent pipeline.
+              </li>
+              <li>
+                <strong>Authentication and session data:</strong> a signed, httpOnly
+                session cookie plus cached sign-in state in the browser. Used to keep
+                you signed in securely without exposing the session token to JavaScript.
+              </li>
+              <li>
+                <strong>Connected integrations (only if you connect them):</strong>{" "}
+                Google OAuth grant (account identifier, email, granted scopes, access
+                and refresh tokens) shared by Gmail and Google Sheets connectors, and
+                the Instagram long-lived token. Tokens are stored server-side, kept out
+                of the browser, and used only to act on the connected account on your
+                behalf.
+              </li>
+              <li>
+                <strong>Billing information:</strong> credit balance, order and payment
+                identifiers, amounts, and payment status. Used to top up credits, verify
+                payments server-side, and keep a payment history. Card details go
+                directly to Razorpay Checkout — we never see or store them.
+              </li>
+              <li>
+                <strong>Technical and log information:</strong> IP-address-based rate
+                limiting, error and application logs (which may include account
+                identifiers such as email or company name), and aggregate usage /
+                performance measurement when you consent to analytics. Used for
+                security, abuse prevention, debugging, and reliability.
+              </li>
+            </ul>
+          </section>
+
+          <section id="how-we-use" className="card p-6">
+            <h2 className="text-lg font-semibold">2. How we use data</h2>
+            <ul className="mt-3 list-disc space-y-2 pl-5 text-[14px] leading-relaxed text-[#2f3e32]">
+              <li>Operate the product: authenticate you, resolve your workspace, run the agent pipeline, and stream answers.</li>
+              <li>Provide connected features you request, such as reading connected mail or sheets and publishing content you approve.</li>
+              <li>Process payments: create and verify Razorpay orders server-side, credit your balance, and record payment history.</li>
+              <li>Keep the service safe and reliable: rate limiting, fraud and abuse prevention, debugging, and aggregate performance analytics (only with your consent).</li>
+              <li>
+                We do not sell your personal information. Prompts and retrieved context
+                are sent to the AI, search, and execution providers needed to answer
+                (such as OpenRouter-hosted models, Tavily, SerpAPI, and the e2b code
+                sandbox) — that is processing on your behalf, not a sale.
+              </li>
+            </ul>
+          </section>
+
+          <section id="sharing" className="card p-6">
+            <h2 className="text-lg font-semibold">3. Third-party processors</h2>
+            <ul className="mt-3 list-disc space-y-2 pl-5 text-[14px] leading-relaxed text-[#2f3e32]">
+              <li>Supabase (authentication, database, file storage).</li>
+              <li>OpenRouter-hosted AI models (chat, embeddings, image generation).</li>
+              <li>Tavily and SerpAPI (web research when the agents need it).</li>
+              <li>e2b (isolated code execution for data analysis).</li>
+              <li>Razorpay (payments — receives order details; card details go directly to Razorpay).</li>
+              <li>Google (OAuth, Gmail and Sheets APIs — only when you connect them).</li>
+              <li>Meta / Instagram (OAuth and publishing — only when you connect it).</li>
+              <li>Vercel (hosting, plus optional analytics and performance measurement only with your consent).</li>
+            </ul>
+            <p className="mt-3 text-[14px] leading-relaxed text-[#2f3e32]">
+              Each provider receives only what it needs for its function and is
+              governed by its own privacy terms. While Google connectors are in
+              Testing mode, reconnect may be required periodically and only allowlisted
+              test users can connect.
+            </p>
+          </section>
+
+          <section id="cookies" className="card p-6">
+            <h2 className="text-lg font-semibold">4. Cookies and tracking</h2>
+            <ul className="mt-3 list-disc space-y-2 pl-5 text-[14px] leading-relaxed text-[#2f3e32]">
+              <li>Essential sign-in and product storage is always on; the app cannot work without it.</li>
+              <li>Optional analytics (Vercel Analytics + Speed Insights) load only after you consent.</li>
+              <li>We use no advertising cookies, no Google Analytics, and no Meta Pixel.</li>
+            </ul>
+            <p className="mt-3 text-[14px] leading-relaxed text-[#2f3e32]">
+              Details are in our{" "}
+              <Link href="/cookies" className="underline hover:text-[#0f2214]">
+                Cookie Policy
+              </Link>
+              . You can change your choice anytime:
+            </p>
+            <div className="mt-3">
+              <CookieSettingsButton />
+            </div>
+          </section>
+
+          <section id="retention" className="card p-6">
+            <h2 className="text-lg font-semibold">5. Retention and deletion</h2>
+            <ul className="mt-3 list-disc space-y-2 pl-5 text-[14px] leading-relaxed text-[#2f3e32]">
+              <li>Chat sessions, messages, files, logos, and connections persist until you delete them.</li>
+              <li>You can delete a chat session, delete a file, or disconnect an integration at any time from the product; deleting a file removes it from storage and from retrieval.</li>
+              <li>Signing out clears the session cookie; sessions also expire automatically.</li>
+              <li>
+                There is not yet a self-serve Delete Account button. For account export
+                or full deletion, contact us (see below) and we will handle your request.
+              </li>
+              <li>Backups and queued background work may retain copies briefly after deletion.</li>
+            </ul>
+          </section>
+
+          <section id="security" className="card p-6">
+            <h2 className="text-lg font-semibold">6. Security</h2>
+            <ul className="mt-3 list-disc space-y-2 pl-5 text-[14px] leading-relaxed text-[#2f3e32]">
+              <li>Passwords are stored as Argon2 hashes — plaintext passwords are never stored.</li>
+              <li>Sign-in uses short-lived, single-use OAuth state, validated redirect targets, and per-IP rate limiting.</li>
+              <li>Payment secrets stay on the backend; payment verification runs server-side.</li>
+              <li>Connected OAuth tokens are kept server-side and stored encrypted at rest.</li>
+              <li>No system is perfectly secure — do not upload secrets, credentials, or data you lack rights to process.</li>
+            </ul>
+          </section>
+
+          <section id="transfers" className="card p-6">
+            <h2 className="text-lg font-semibold">7. International data transfers</h2>
+            <p className="mt-3 text-[14px] leading-relaxed text-[#2f3e32]">
+              We and our processors may store and process data in countries other than
+              your own (for example where our hosting, database, AI, payment, or OAuth
+              providers operate). Where required, we rely on appropriate safeguards for
+              such transfers — <em>requires legal review to confirm the transfer
+              mechanism for each provider</em>.
+            </p>
+          </section>
+
+          <section id="rights" className="card p-6">
+            <h2 className="text-lg font-semibold">8. Your rights and how to request</h2>
+            <ul className="mt-3 list-disc space-y-2 pl-5 text-[14px] leading-relaxed text-[#2f3e32]">
+              <li>You can access and correct your company profile from the Profile page, list and download files from Drive, review payment history from Billing, and disconnect integrations from Plugins at any time.</li>
+              <li>
+                For access, correction, export, or deletion requests, contact us
+                {privacyEmail ? (
+                  <>
+                    {" "}at{" "}
+                    <a
+                      href={`mailto:${privacyEmail}`}
+                      className="underline hover:text-[#0f2214]"
+                    >
+                      {privacyEmail}
+                    </a>
+                  </>
+                ) : (
+                  <>
+                    {" "}via the GitHub repository:{" "}
+                    <a
+                      href={PRIVACY_GITHUB_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline hover:text-[#0f2214]"
+                    >
+                      {PRIVACY_GITHUB_URL}
+                    </a>
+                  </>
+                )}
+                .
+              </li>
+              <li>We verify requests using your account email address before acting on them.</li>
+            </ul>
+            {!privacyEmail && (
+              <p className="mt-3 rounded-lg bg-[rgba(180,120,20,0.08)] p-3 text-[13px] leading-relaxed text-[#5f6f63]">
+                Owner note: no dedicated privacy email is configured yet. Set
+                NEXT_PUBLIC_PRIVACY_EMAIL (recommended: {RECOMMENDED_PRIVACY_EMAIL})
+                to publish one here.
+              </p>
+            )}
+          </section>
+
+          <section id="eu-uk" className="card p-6">
+            <h2 className="text-lg font-semibold">9. EU / EEA / UK information</h2>
+            <p className="mt-3 text-[14px] leading-relaxed text-[#2f3e32]">
+              If you are in the EU, EEA, or UK, you have the following rights (subject
+              to applicable law and exceptions): right of access, right to
+              rectification, right to erasure, right to data portability, right to
+              restriction of processing, right to object, right to withdraw consent at
+              any time (for processing based on consent, such as optional analytics or
+              connected integrations you authorised), and the right to complain to your
+              supervisory authority.
+            </p>
+            <p className="mt-3 text-[14px] leading-relaxed text-[#2f3e32]">
+              Our understood legal basis for major processing —{" "}
+              <em>requires legal review to confirm</em>:
+            </p>
+            <ul className="mt-2 list-disc space-y-2 pl-5 text-[14px] leading-relaxed text-[#2f3e32]">
+              <li>Account, workspace, content, and billing processing: performance of the service you requested (contract) — requires legal review.</li>
+              <li>Connected Google / Instagram integrations: consent you give when you authorise the connection (withdrawable by disconnecting) — requires legal review.</li>
+              <li>Optional analytics: consent via the cookie banner — requires legal review.</li>
+              <li>Security, fraud prevention, rate limiting, and debugging: legitimate interests — requires legal review.</li>
+              <li>Payment and tax records: legal obligations — requires legal review.</li>
+            </ul>
+          </section>
+
+          <section id="california" className="card p-6">
+            <h2 className="text-lg font-semibold">10. California privacy information</h2>
+            <ul className="mt-3 list-disc space-y-2 pl-5 text-[14px] leading-relaxed text-[#2f3e32]">
+              <li>Depending on applicable law, California residents may have the right to know / access, delete, and correct personal information.</li>
+              <li>You may have the right to opt out of any sale or sharing of personal information. We do not sell personal information.</li>
+              <li>We will not discriminate against you for exercising your privacy rights.</li>
+              <li>
+                To exercise these rights, use the contact method in section 8. We verify
+                requests via your account email. An authorised agent may submit a
+                request on your behalf with appropriate authorisation —{" "}
+                <em>requires legal review to confirm the agent-verification procedure</em>.
+              </li>
+            </ul>
+            <p className="mt-3 text-[13px] leading-relaxed text-[#5f6f63]">
+              This notice does not claim Co-Founder meets any specific California
+              applicability threshold — <em>requires legal/business review</em>.
+            </p>
+          </section>
+
+          <section id="changes" className="card p-6">
+            <h2 className="text-lg font-semibold">11. Changes to this policy</h2>
+            <p className="mt-3 text-[14px] leading-relaxed text-[#2f3e32]">
+              We may update this policy as the product evolves; material changes will be
+              reflected in the Last updated date above. Continued use after changes
+              constitutes acceptance.
+            </p>
+          </section>
         </div>
+
         <p className="mt-8 text-[13px] text-[#5f6f63]">
-          Also see our <Link href="/terms" className="underline hover:text-[#0f2214]">Terms and Conditions</Link>.
+          Also see our{" "}
+          <Link href="/terms" className="underline hover:text-[#0f2214]">
+            Terms and Conditions
+          </Link>{" "}
+          and{" "}
+          <Link href="/cookies" className="underline hover:text-[#0f2214]">
+            Cookie Policy
+          </Link>
+          .
         </p>
       </div>
     </main>

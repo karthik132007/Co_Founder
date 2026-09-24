@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Inter, Instrument_Serif, JetBrains_Mono, Caveat } from "next/font/google";
 import { MobileGate } from "@/components/landing/MobileGate";
+import { CookieConsent } from "@/components/CookieConsent";
+import { ConsentAnalytics } from "@/components/ConsentAnalytics";
 import "./globals.css";
 import "./landing.css";
 
@@ -60,8 +60,8 @@ export default function RootLayout({
       <body className="antialiased">
         {children}
         <MobileGate />
-        <Analytics />
-        <SpeedInsights />
+        <CookieConsent />
+        <ConsentAnalytics />
       </body>
     </html>
   );
