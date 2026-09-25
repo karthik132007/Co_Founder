@@ -385,6 +385,14 @@ export default function AppLayout({ children }: Props) {
                   <CreditCard className="w-4 h-4 text-[#8d9d94]" />
                   Billing &amp; Credits
                 </Link>
+                <Link
+                  href="/contact"
+                  onClick={() => setProfileOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium text-[#2f3e32] hover:bg-[rgba(16,36,24,0.05)] transition-colors"
+                >
+                  <HelpCircle className="w-4 h-4 text-[#8d9d94]" />
+                  Help
+                </Link>
                 <button
                   onClick={() => { setProfileOpen(false); handleLogout(); }}
                   className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium text-red-500 hover:bg-red-50 transition-colors border-t border-[rgba(15,34,20,0.06)]"

@@ -196,15 +196,13 @@ export function CTA() {
                   </a>
                 </li>
                 <li>
-                  <a
-                    href="https://github.com/karthik132007/Co_Founder"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <Link
+                    href="/contact"
                     className="transition hover:text-white"
                     data-cursor="hover"
                   >
                     Contact
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </nav>

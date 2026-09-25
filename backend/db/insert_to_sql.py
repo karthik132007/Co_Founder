@@ -707,3 +707,27 @@ def add_message_to_session(session_id: str, role: str, message: str) -> _ChatMes
         )
     logger.error("Failed to insert chat message for session_id=%s", session_id)
     raise RuntimeError("Failed to insert chat message")
+
+
+def create_ticket(
+    company_id: int | None,
+    email: str,
+    title: str,
+    message: str,
+) -> Dict[str, Any]:
+    """Insert a contact/support ticket. company_id may be None (guest)."""
+    if not email or not title or not message:
+        raise ValueError("email, title and message are required.")
+    payload: Dict[str, Any] = {
+        "company_id": company_id,
+        "email": email,
+        "title": title,
+        "message": message,
+    }
+    response = _client.table("tickets").insert(payload).execute()
+    if response.data:
+        row = cast(Dict[str, Any], response.data[0])
+        logger.info("Ticket created — id=%s, email=%s, company_id=%s", row.get("id"), email, company_id)
+        return row
+    logger.error("Failed to insert ticket — email=%s", email)
+    raise RuntimeError("Failed to insert ticket")

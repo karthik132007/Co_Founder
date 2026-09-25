@@ -113,3 +113,26 @@ class FileCreate(BaseModel):
     file_extension: Optional[str] = None
     file_size: Optional[int] = None
     status: str = "ready"
+
+
+class Ticket(Base):
+    __tablename__ = "tickets"
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    # NULL for guest contact-form tickets (no account / no company yet).
+    company_id = Column(BigInteger, ForeignKey("companies.id", ondelete="CASCADE"), nullable=True)
+    email = Column(Text, nullable=False)
+    title = Column(Text, nullable=False)
+    message = Column(Text, nullable=False)
+    status = Column(Text, nullable=False, server_default="raised")
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class ContactCreate(BaseModel):
+    """Mirrors the `tickets` table write columns: email, title, message."""
+
+    email: EmailStr
+    title: str = Field(min_length=3, max_length=200)
+    message: str = Field(min_length=10, max_length=5000)
+    user_id: Optional[int] = None

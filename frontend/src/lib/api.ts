@@ -607,3 +607,54 @@ export async function deleteChatSession(
   }
   return res.json() as Promise<{ status: string; message: string }>;
 }
+
+/* ── Contact / support tickets ── */
+
+/** Payload mirrors the `tickets` table write columns: email, title, message. */
+export type ContactPayload = {
+  email: string;
+  title: string;
+  message: string;
+  user_id?: number;
+};
+
+export type ContactTicket = {
+  id: number;
+  company_id: number | null;
+  email: string;
+  title: string;
+  message: string;
+  status: "raised" | "closed";
+  created_at: string;
+  updated_at: string;
+};
+
+/** Raise a support ticket from the public contact form. */
+export async function submitContactTicket(
+  payload: ContactPayload,
+): Promise<{ status: string; ticket_id: number; message: string }> {
+  const res = await fetch(`${API_BASE_URL}/contact`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    throw new Error(await readApiError(res, "Could not send your message"));
+  }
+  return res.json();
+}
+
+/** List tickets for the small ticketing view (by user or guest email). */
+export async function fetchMyTickets(
+  params: { userId?: number; email?: string; limit?: number },
+): Promise<{ tickets: ContactTicket[]; total: number }> {
+  const search = new URLSearchParams();
+  if (params.userId) search.set("user_id", String(params.userId));
+  if (params.email) search.set("email", params.email);
+  if (params.limit) search.set("limit", String(params.limit));
+  const res = await fetch(`${API_BASE_URL}/contact/mine?${search.toString()}`);
+  if (!res.ok) {
+    throw new Error(await readApiError(res, "Failed to load tickets"));
+  }
+  return res.json();
+}

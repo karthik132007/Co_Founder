@@ -313,3 +313,42 @@ def invalidate_session_msgs(session_id: str) -> None:
         logger.info("Invalidated session_msgs cache for session_id=%s", session_id[:8])
     except Exception:
         logger.info("Redis invalidation failed for session_msgs session_id=%s", session_id[:8])
+
+
+# ── Contact / support tickets ─────────────────────────────────────────────
+
+_TICKET_COLUMNS = "id,company_id,email,title,message,status,created_at,updated_at"
+
+
+def list_tickets_by_company(company_id: int, limit: int = 20) -> List[Dict[str, Any]]:
+    """Newest-first tickets for a company (the founder's ticking view)."""
+    try:
+        response = (
+            supabase_client.table("tickets")
+            .select(_TICKET_COLUMNS)
+            .eq("company_id", company_id)
+            .order("created_at", desc=True)
+            .limit(max(1, min(limit, 100)))
+            .execute()
+        )
+        return response.data or []
+    except Exception:
+        logger.exception("Failed to list tickets — company_id=%s", company_id)
+        return []
+
+
+def list_tickets_by_email(email: str, limit: int = 20) -> List[Dict[str, Any]]:
+    """Newest-first tickets for a guest email address."""
+    try:
+        response = (
+            supabase_client.table("tickets")
+            .select(_TICKET_COLUMNS)
+            .eq("email", email)
+            .order("created_at", desc=True)
+            .limit(max(1, min(limit, 100)))
+            .execute()
+        )
+        return response.data or []
+    except Exception:
+        logger.exception("Failed to list tickets — email=%s", email)
+        return []
