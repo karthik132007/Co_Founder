@@ -99,7 +99,7 @@ export type CreditBalanceResponse = {
   balance: number;
 };
 
-/** Current credit balance for a company (1 credit = ₹1 of selling value). */
+/** Current credit balance for a company. */
 export async function fetchCreditBalance(
   companyId: number,
 ): Promise<CreditBalanceResponse> {

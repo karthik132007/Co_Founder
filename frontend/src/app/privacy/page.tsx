@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CookieSettingsButton } from "@/components/CookieSettingsButton";
 import {
   PRIVACY_GITHUB_URL,
   RECOMMENDED_PRIVACY_EMAIL,
@@ -77,7 +76,7 @@ export default function PrivacyPage() {
                 <strong>Technical and log information:</strong> IP-address-based rate
                 limiting, error and application logs (which may include account
                 identifiers such as email or company name), and aggregate usage /
-                performance measurement when you consent to analytics. Used for
+                performance measurement on every visit. Used for
                 security, abuse prevention, debugging, and reliability.
               </li>
             </ul>
@@ -89,7 +88,7 @@ export default function PrivacyPage() {
               <li>Operate the product: authenticate you, resolve your workspace, run the agent pipeline, and stream answers.</li>
               <li>Provide connected features you request, such as reading connected mail or sheets and publishing content you approve.</li>
               <li>Process payments: create and verify Razorpay orders server-side, credit your balance, and record payment history.</li>
-              <li>Keep the service safe and reliable: rate limiting, fraud and abuse prevention, debugging, and aggregate performance analytics (only with your consent).</li>
+              <li>Keep the service safe and reliable: rate limiting, fraud and abuse prevention, debugging, and aggregate performance analytics.</li>
               <li>
                 We do not sell your personal information. Prompts and retrieved context
                 are sent to the AI, search, and execution providers needed to answer
@@ -109,7 +108,8 @@ export default function PrivacyPage() {
               <li>Razorpay (payments — receives order details; card details go directly to Razorpay).</li>
               <li>Google (OAuth, Gmail and Sheets APIs — only when you connect them).</li>
               <li>Meta / Instagram (OAuth and publishing — only when you connect it).</li>
-              <li>Vercel (hosting, plus optional analytics and performance measurement only with your consent).</li>
+              <li>Vercel (hosting, plus analytics and performance measurement).</li>
+              <li>Google Analytics (page-view and usage measurement).</li>
             </ul>
             <p className="mt-3 text-[14px] leading-relaxed text-[#2f3e32]">
               Each provider receives only what it needs for its function and is
@@ -123,19 +123,16 @@ export default function PrivacyPage() {
             <h2 className="text-lg font-semibold">4. Cookies and tracking</h2>
             <ul className="mt-3 list-disc space-y-2 pl-5 text-[14px] leading-relaxed text-[#2f3e32]">
               <li>Essential sign-in and product storage is always on; the app cannot work without it.</li>
-              <li>Optional analytics (Vercel Analytics + Speed Insights) load only after you consent.</li>
-              <li>We use no advertising cookies, no Google Analytics, and no Meta Pixel.</li>
+              <li>Analytics (Vercel Analytics + Speed Insights + Google Analytics) load on every page for all visitors.</li>
+              <li>We use no advertising cookies and no Meta Pixel.</li>
             </ul>
             <p className="mt-3 text-[14px] leading-relaxed text-[#2f3e32]">
               Details are in our{" "}
               <Link href="/cookies" className="underline hover:text-[#0f2214]">
                 Cookie Policy
               </Link>
-              . You can change your choice anytime:
+              .
             </p>
-            <div className="mt-3">
-              <CookieSettingsButton />
-            </div>
           </section>
 
           <section id="retention" className="card p-6">
@@ -223,7 +220,7 @@ export default function PrivacyPage() {
               to applicable law and exceptions): right of access, right to
               rectification, right to erasure, right to data portability, right to
               restriction of processing, right to object, right to withdraw consent at
-              any time (for processing based on consent, such as optional analytics or
+              any time (for processing based on consent, such as
               connected integrations you authorised), and the right to complain to your
               supervisory authority.
             </p>
@@ -234,7 +231,7 @@ export default function PrivacyPage() {
             <ul className="mt-2 list-disc space-y-2 pl-5 text-[14px] leading-relaxed text-[#2f3e32]">
               <li>Account, workspace, content, and billing processing: performance of the service you requested (contract) — requires legal review.</li>
               <li>Connected Google / Instagram integrations: consent you give when you authorise the connection (withdrawable by disconnecting) — requires legal review.</li>
-              <li>Optional analytics: consent via the cookie banner — requires legal review.</li>
+              <li>Analytics (Vercel + Google Analytics page-view and usage measurement): legitimate interests — requires legal review.</li>
               <li>Security, fraud prevention, rate limiting, and debugging: legitimate interests — requires legal review.</li>
               <li>Payment and tax records: legal obligations — requires legal review.</li>
             </ul>

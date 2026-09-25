@@ -45,7 +45,7 @@ export default function DemoOverviewPage() {
     {
       eyebrow: "Credits",
       value: DEMO_STATS.credits.toLocaleString("en-IN"),
-      sub: "available · 1 credit = ₹1",
+      sub: "available",
       icon: Coins,
       href: null as string | null,
       accent: false,

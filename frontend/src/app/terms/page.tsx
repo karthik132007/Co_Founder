@@ -38,7 +38,7 @@ const SECTIONS = [
     id: "credits",
     title: "4. Credits and payments",
     body: [
-      "1 credit = ₹1 of selling value. Token usage is priced per model, marked up 2x at $1 = ₹100. Multi-model requests are summed; unpriceable models are skipped.",
+      "Token usage is priced per model, marked up 2x at $1 = ₹100. Multi-model requests are summed; unpriceable models are skipped.",
       "Top-ups go through Razorpay Standard Checkout with a ₹100 (10000 paise) minimum. Supported currencies: INR, USD, EUR, AED, GBP. The browser uses only the public key ID; verification (HMAC-SHA256 + authoritative order.fetch + 24h idempotency) runs server-side.",
       "Credits are consumed as agents run. Failed verifications record a failed payment-history row and grant nothing. Duplicate verify calls return the balance without double-crediting.",
       "Credits are non-transferable between companies. Refunds are handled case-by-case via payment-history status (pending | completed | failed | refunded) — contact us with order/payment IDs. Chargebacks or fraud may lead to suspension.",

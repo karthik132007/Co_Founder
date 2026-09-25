@@ -725,7 +725,7 @@ export default function BillingPage() {
                         {currency === "INR" ? MIN_AMOUNT : Number((MIN_AMOUNT / usdInrRate).toFixed(2))} {currency}
                       </>
                     ) : (
-                      <>Minimum top-up is {formatINR(MIN_AMOUNT)} • {formatUSD(MIN_AMOUNT)} — 1 credit = ₹1</>
+                      <>Minimum top-up is {formatINR(MIN_AMOUNT)} • {formatUSD(MIN_AMOUNT)}</>
                     )}
                   </p>
                 </div>

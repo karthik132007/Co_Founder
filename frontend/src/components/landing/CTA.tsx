@@ -164,16 +164,6 @@ export function CTA() {
                 <li><Link href="/privacy" className="transition hover:text-white" data-cursor="hover">Privacy Policy</Link></li>
                 <li><Link href="/terms" className="transition hover:text-white" data-cursor="hover">Terms of Service</Link></li>
                 <li><Link href="/cookies" className="transition hover:text-white" data-cursor="hover">Cookie Policy</Link></li>
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => window.dispatchEvent(new Event("cofounder:open-cookie-preferences"))}
-                    className="transition hover:text-white"
-                    data-cursor="hover"
-                  >
-                    Cookie settings
-                  </button>
-                </li>
               </ul>
             </nav>
 

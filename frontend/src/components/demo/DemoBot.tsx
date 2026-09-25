@@ -54,7 +54,7 @@ const HOME_STEPS: BotStep[] = [
   },
   {
     title: "This is your workspace",
-    text: "Overview, Chat, Drive and Plugins on the left. Every conversation lands in Recent Chats with the credits it cost — 1 credit = ₹1, so you always know what a task is worth.",
+    text: "Overview, Chat, Drive and Plugins on the left. Every conversation lands in Recent Chats with the credits it cost.",
     voice: "home-3",
   },
   {

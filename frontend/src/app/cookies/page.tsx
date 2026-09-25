@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CookieSettingsButton } from "@/components/CookieSettingsButton";
 
 export const metadata: Metadata = {
   title: "Cookie Policy — Co-Founder AI",
   description:
-    "Which cookies and local storage Co-Founder AI actually uses, why, and how to control optional analytics.",
+    "Which cookies and local storage Co-Founder AI actually uses, and what its analytics tools collect.",
 };
 
 type Row = {
@@ -46,15 +45,6 @@ const ESSENTIAL_ROWS: Row[] = [
     duration:
       "Managed by Supabase Auth (persist + auto-refresh); cleared on sign-out or when site data is cleared. Exact lifetime is governed by the Supabase project settings.",
     provider: "Supabase Auth",
-  },
-  {
-    name: "cofounder.consent.v1 (localStorage)",
-    category: "Essential · privacy choice",
-    essential: true,
-    purpose:
-      "Remembers your cookie choice (analytics on/off and when you decided) so we do not ask again on every visit.",
-    duration: "Persists until you change it or clear site data.",
-    provider: "Co-Founder (frontend)",
   },
   {
     name: "cofounder-landing-theme (localStorage)",
@@ -104,13 +94,23 @@ const ESSENTIAL_ROWS: Row[] = [
 const OPTIONAL_ROWS: Row[] = [
   {
     name: "Vercel Analytics + Speed Insights",
-    category: "Optional · analytics",
+    category: "Analytics (always on)",
     essential: false,
     purpose:
-      "Aggregate page-view and web-performance measurement. Loads only after you choose “Accept all” or enable Analytics in preferences.",
+      "Aggregate page-view and web-performance measurement. Loads on every page.",
     duration:
-      "No cookies are set by Co-Founder for this. Measurement requests go to Vercel when enabled; retention on Vercel's side is governed by Vercel's policies (not verified in our code).",
+      "No cookies are set by Co-Founder for this. Measurement requests go to Vercel; retention on Vercel's side is governed by Vercel's policies (not verified in our code).",
     provider: "Vercel",
+  },
+  {
+    name: "_ga · _ga_<container-id> (Google Analytics 4)",
+    category: "Analytics (always on)",
+    essential: false,
+    purpose:
+      "Aggregate page-view and usage measurement via gtag.js (measurement ID G-W5TRPHEGJD). Loads on every page.",
+    duration:
+      "_ga persists up to 2 years, _ga_<container-id> up to 2 years in this browser; governed by Google's policies. Requests go to www.googletagmanager.com / www.google-analytics.com.",
+    provider: "Google Analytics",
   },
 ];
 
@@ -169,23 +169,19 @@ export default function CookiePolicyPage() {
 
         <div className="mt-8 space-y-8">
           <section className="card p-6">
-            <h2 className="text-lg font-semibold">1. How we ask for consent</h2>
+            <h2 className="text-lg font-semibold">1. Analytics notice</h2>
             <ul className="mt-3 list-disc space-y-2 pl-5 text-[14px] leading-relaxed text-[#2f3e32]">
-              <li>First-time visitors see a banner with Accept all, Reject optional, and Manage preferences.</li>
               <li>Essential sign-in and product storage always stays on — the app cannot work without it.</li>
-              <li>Optional analytics (Vercel Analytics + Speed Insights) never load before you consent.</li>
-              <li>You can change your mind anytime with the button below or the “Cookie settings” link in the footer.</li>
+              <li>Analytics (Vercel Analytics + Speed Insights + Google Analytics) load on every page for all visitors.</li>
+              <li>Our footer links to this policy on every page.</li>
             </ul>
-            <div className="mt-4">
-              <CookieSettingsButton />
-            </div>
           </section>
 
           <section className="card p-6">
             <h2 className="text-lg font-semibold">2. Essential and functional storage (always on)</h2>
             <p className="mt-2 text-[14px] leading-relaxed text-[#2f3e32]">
-              These keep you signed in, remember product settings, and remember your
-              privacy choice. The frontend never reads the httpOnly session cookie with
+              These keep you signed in and remember product settings.
+              The frontend never reads the httpOnly session cookie with
               JavaScript — it only asks the backend who is signed in.
             </p>
             <div className="mt-4">
@@ -194,13 +190,13 @@ export default function CookiePolicyPage() {
           </section>
 
           <section className="card p-6">
-            <h2 className="text-lg font-semibold">3. Optional analytics (off until you allow)</h2>
+            <h2 className="text-lg font-semibold">3. Analytics (always on)</h2>
             <div className="mt-4">
               <Table rows={OPTIONAL_ROWS} />
             </div>
             <ul className="mt-4 list-disc space-y-2 pl-5 text-[14px] leading-relaxed text-[#2f3e32]">
-              <li>Rejecting optional analytics does not break sign-in, chat, files, billing, or OAuth.</li>
-              <li>Changing preferences takes effect on subsequent page views; already-collected aggregate counts cannot be “un-sent”.</li>
+              <li>Analytics do not break sign-in, chat, files, billing, or OAuth — they only measure usage.</li>
+              <li>You can block analytics with a browser content blocker or by disabling JavaScript; the product still works.</li>
             </ul>
           </section>
 
@@ -218,7 +214,7 @@ export default function CookiePolicyPage() {
           <section className="card p-6">
             <h2 className="text-lg font-semibold">5. What we do not use</h2>
             <ul className="mt-3 list-disc space-y-2 pl-5 text-[14px] leading-relaxed text-[#2f3e32]">
-              <li>No Google Analytics, no Meta Pixel, and no advertising or cross-site tracking cookies.</li>
+              <li>No Meta Pixel, and no advertising or cross-site tracking cookies.</li>
               <li>No JavaScript access to the session cookie (no document.cookie reads/writes for auth).</li>
               <li>No sale of personal information (see Privacy Policy).</li>
             </ul>
@@ -227,8 +223,7 @@ export default function CookiePolicyPage() {
           <section className="card p-6">
             <h2 className="text-lg font-semibold">6. Managing storage yourself</h2>
             <ul className="mt-3 list-disc space-y-2 pl-5 text-[14px] leading-relaxed text-[#2f3e32]">
-              <li>Use “Cookie settings” on this page or in the footer to allow or block optional analytics.</li>
-              <li>Clearing site data / cookies in your browser signs you out and resets theme, tour, and consent choices.</li>
+              <li>Clearing site data / cookies in your browser signs you out and resets theme and tour choices.</li>
               <li>Blocking essential storage will break sign-in and core product features.</li>
             </ul>
           </section>

@@ -73,7 +73,7 @@ export const SPROUT_LINES: Record<SproutVoiceKey, string> = {
   "home-2":
     "One prompt, a whole team. Co-Founder AI is a single CEO agent that plans the work and delegates to five specialists: Researcher, Writer, CMO, Data Analyst and Graphic Designer. You only ever talk to the CEO.",
   "home-3":
-    "This is your workspace. Overview, Chat, Drive and Plugins on the left. Every conversation lands in Recent Chats, with the credits it cost — one credit equals one rupee, so you always know what a task is worth.",
+    "This is your workspace. Overview, Chat, Drive and Plugins on the left. Every conversation lands in Recent Chats, with the credits it cost.",
   "home-4":
     "Your tools are already connected. Instagram, Gmail, Sheets, Drive and Calendar are connected to the company once. That's how a chat can end with a published post, a drafted email, or a booked meeting.",
   "home-5":

@@ -216,7 +216,7 @@ export default function DashboardPage() {
               {
                 eyebrow: "Credits",
                 value: credits !== null ? credits.toLocaleString("en-IN") : "—",
-                sub: credits !== null ? "available · 1 credit = ₹1" : "billing → top up",
+                sub: credits !== null ? "available" : "billing → top up",
                 icon: Coins,
                 href: "/billing" as const,
                 accent: false,
