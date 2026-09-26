@@ -139,7 +139,7 @@ export function CTA() {
                 className="mt-5 inline-block"
               >
                 <img
-                  alt="Co-Founder AI - Agentify you business | Product Hunt"
+                  alt="Co-Founder AI - Agentify your business | Product Hunt"
                   width="160"
                   height="35"
                   src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1259828&theme=light&t=1790227355405"

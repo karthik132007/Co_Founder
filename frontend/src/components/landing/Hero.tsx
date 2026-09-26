@@ -126,6 +126,7 @@ export function Hero() {
         <div className="w-full max-w-[1120px] flex flex-col items-center">
           {/* Large refined serif headline - wide and prominent */}
           <h1 className="hero-serif text-[#0e2115] text-[clamp(3.5rem,7.8vw,6.2rem)] leading-[0.95] tracking-[-0.035em] [text-wrap:balance]">
+            <span className="sr-only">Co-Founder AI — AI team for founders: </span>
             <span className="block overflow-hidden py-0.5">
               <span className="hero-line-a block font-[400]">One idea.</span>
             </span>

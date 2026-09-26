@@ -5,6 +5,9 @@ export const metadata: Metadata = {
   title: "Cookie Policy — Co-Founder AI",
   description:
     "Which cookies and local storage Co-Founder AI actually uses, and what its analytics tools collect.",
+  alternates: {
+    canonical: "/cookies",
+  },
 };
 
 type Row = {
