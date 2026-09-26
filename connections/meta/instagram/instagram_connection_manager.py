@@ -1,8 +1,11 @@
 import os
+import logging
 import httpx
 from backend.db.connections import put_to_insta_table, get_from_insta_table
 #TODO from agents.util_agents.image_description import get_image_description #needs image bytes
 from datetime import datetime, timezone, timedelta
+
+logger = logging.getLogger(__name__)
 class Instagram_Connection_Manager():
     def __init__(self):
         self.INSTAGRAM_APP_ID = os.getenv("INSTAGRAM_APP_ID")
@@ -95,7 +98,14 @@ class Instagram_Connection_Manager():
                 params=params,
             )
 
-        response.raise_for_status()
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError:
+            # Meta returns the real reason in the body (e.g. invalid token,
+            # app mode, permission). Log it without the query params so the
+            # secret/access token never land in the logs.
+            logger.exception("Long-lived token exchange failed: status=%s body=%s", response.status_code, response.text[:500])
+            raise
 
         return response.json()
 

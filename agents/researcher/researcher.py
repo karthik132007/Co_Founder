@@ -113,7 +113,17 @@ def spawn_researcher(prompt_from_CEO: str, max_reflections: int = 1, pass_score:
             reflection_prompt = get_researcher_reflection_prompt(prompt_from_CEO, draft, critique, suggestions)
             # Rebuild agent for reflection — budget may have changed
             agent = _build_researcher_agent(effort=effort, session_id=session_id)
-            draft = _run_research_agent(agent, reflection_prompt)
+            try:
+                draft = _run_research_agent(agent, reflection_prompt)
+            except WebSearchBudgetExhausted:
+                # Reflection needs web searches but the shared CEO budget is
+                # spent. Keep the draft from the first pass (it already holds
+                # real results) instead of discarding it for an error string.
+                logger.info(
+                    "Reflection %d skipped — web-search budget exhausted, keeping draft",
+                    i + 1,
+                )
+                break
         logger.info("Research task completed successfully")
         return draft
     except WebSearchBudgetExhausted:
