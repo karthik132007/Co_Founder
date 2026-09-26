@@ -71,6 +71,14 @@ const OAUTH_NOTICE_PARAMS: Record<string, string> = {
 /** Connectors that share the single Google OAuth grant. */
 const GOOGLE_CONNECTORS = new Set(["gmail", "google_sheets", "google_calendar", "google_drive"]);
 
+/**
+ * Server-side connection work is in progress (OAuth / token fixes).
+ * While true, every connector tile shows "Under maintenance" and all
+ * connect / disconnect actions are disabled. Flip back to false once the
+ * backend fixes are verified.
+ */
+const CONNECTIONS_UNDER_MAINTENANCE = true;
+
 /** Read the OAuth outcome from the URL once, during the initial client render. */
 function readOAuthNotice(params: URLSearchParams): Notice {
   for (const [param, label] of Object.entries(OAUTH_NOTICE_PARAMS)) {
@@ -172,6 +180,13 @@ export default function PluginsPage() {
   if (!session || !userId) return null;
 
   const handleConnect = async (connector: ConnectorDef) => {
+    if (CONNECTIONS_UNDER_MAINTENANCE) {
+      setNotice({
+        type: "error",
+        text: `${connector.name} is under maintenance while we fix connection issues. Please try again soon.`,
+      });
+      return;
+    }
     if (connectingId) return;
     setConnectingId(connector.id);
     setNotice(null);
@@ -198,6 +213,13 @@ export default function PluginsPage() {
   };
 
   const handleDisconnect = async (connector: ConnectorDef) => {
+    if (CONNECTIONS_UNDER_MAINTENANCE) {
+      setNotice({
+        type: "error",
+        text: `${connector.name} is under maintenance while we fix connection issues. Please try again soon.`,
+      });
+      return;
+    }
     const isGoogle = GOOGLE_CONNECTORS.has(connector.id);
     if (connector.id !== "instagram" && !isGoogle) return;
     const prompt = isGoogle
@@ -232,6 +254,12 @@ export default function PluginsPage() {
       </div>
 
       {/* Notice banner */}
+      {CONNECTIONS_UNDER_MAINTENANCE && (
+        <div className="flex items-center gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <CircleAlert className="h-4 w-4 shrink-0" />
+          All connections are under maintenance while we fix issues server side. Connecting and disconnecting are temporarily disabled.
+        </div>
+      )}
       {notice && (
         <div
           className={`flex items-center gap-2.5 rounded-xl border px-4 py-3 text-sm ${
@@ -377,7 +405,14 @@ export default function PluginsPage() {
 
                 {/* Action */}
                 <div className="shrink-0">
-                  {connected ? (
+                  {CONNECTIONS_UNDER_MAINTENANCE ? (
+                    <span
+                      title="Under maintenance while we fix connection issues server side"
+                      className="rounded-lg bg-amber-50 px-3 py-1.5 text-[12px] font-medium text-amber-700 border border-amber-200"
+                    >
+                      Maintenance
+                    </span>
+                  ) : connected ? (
                     <button
                       onClick={() => handleDisconnect(c)}
                       className="rounded-lg border border-[rgba(15,34,20,0.08)] px-3 py-1.5 text-[12px] font-medium text-[#5f6f63] hover:border-red-200 hover:bg-red-50 hover:text-red-500 transition-colors"
