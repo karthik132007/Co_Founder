@@ -93,9 +93,9 @@ class Instagram_Connection_Manager():
         }
 
         async with httpx.AsyncClient() as client:
-            response = await client.get(
+            response = await client.post(
                 "https://graph.instagram.com/access_token",
-                params=params,
+                data=params,
             )
 
         try:
