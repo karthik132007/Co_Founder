@@ -31,6 +31,36 @@ body {
   color: #0f2214;
 }
 
+/* ========== Legal pages (privacy / terms / cookies) theme ========== */
+
+[data-legal-theme="dark"] {
+  --legal-bg: #000000;
+  --legal-fg: #ffffff;
+  --legal-body: #d4d4d4;
+  --legal-muted: #a3a3a3;
+  --legal-faint: #737373;
+  --legal-panel: rgba(255, 255, 255, 0.03);
+  --legal-border: rgba(255, 255, 255, 0.1);
+  --legal-chip: rgba(255, 255, 255, 0.1);
+  --legal-hover: rgba(255, 255, 255, 0.05);
+  --legal-bar: rgba(0, 0, 0, 0.9);
+  --legal-link-dec: #737373;
+}
+
+[data-legal-theme="light"] {
+  --legal-bg: #fdfcf8;
+  --legal-fg: #0f2214;
+  --legal-body: #2f3e32;
+  --legal-muted: #5f6f63;
+  --legal-faint: #8d9d94;
+  --legal-panel: #ffffff;
+  --legal-border: rgba(15, 34, 20, 0.1);
+  --legal-chip: rgba(20, 54, 32, 0.07);
+  --legal-hover: rgba(15, 34, 20, 0.05);
+  --legal-bar: rgba(253, 252, 248, 0.9);
+  --legal-link-dec: #8d9d94;
+}
+
 /* ========== Surfaces ========== */
 
 .card {
