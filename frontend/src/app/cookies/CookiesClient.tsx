@@ -1,10 +1,17 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import LegalPageShell, {
   LEGAL_BODY,
   LEGAL_LIST,
   type LegalPanel,
 } from "@/components/legal/LegalPageShell";
+import {
+  CONSENT_EVENT,
+  getConsent,
+  setConsent,
+  type ConsentChoice,
+} from "@/lib/consent";
 
 type Row = {
   name: string;
@@ -18,7 +25,7 @@ type Row = {
 const ESSENTIAL_ROWS: Row[] = [
   {
     name: "cofounder_session",
-    category: "Essential · authentication",
+    category: "Necessary · authentication",
     essential: true,
     purpose:
       "Keeps you signed in. HMAC-signed, httpOnly session cookie set and read only by the backend; JavaScript cannot read it.",
@@ -28,7 +35,7 @@ const ESSENTIAL_ROWS: Row[] = [
   },
   {
     name: "cofounder.session (localStorage)",
-    category: "Essential · authentication",
+    category: "Necessary · authentication",
     essential: true,
     purpose:
       "Caches your signed-in user id, email, display name and onboarding state so the app shell loads without an extra round-trip.",
@@ -37,7 +44,7 @@ const ESSENTIAL_ROWS: Row[] = [
   },
   {
     name: "Supabase auth session (localStorage)",
-    category: "Essential · authentication",
+    category: "Necessary · authentication",
     essential: true,
     purpose:
       "Stores the Supabase PKCE session used only for Google sign-in and the /auth/callback exchange. The backend verifies it and never trusts profile fields sent from the browser.",
@@ -46,10 +53,28 @@ const ESSENTIAL_ROWS: Row[] = [
     provider: "Supabase Auth",
   },
   {
+    name: "cofounder-consent (localStorage)",
+    category: "Necessary · preferences",
+    essential: true,
+    purpose:
+      "Remembers your analytics choice (accept or reject) so the cookie banner does not ask again and analytics stay in the state you chose.",
+    duration: "Persists until you clear site data; change it anytime in section 7.",
+    provider: "Co-Founder (frontend)",
+  },
+  {
     name: "cofounder-landing-theme (localStorage)",
     category: "Functional · preferences",
     essential: true,
     purpose: "Remembers your landing-page theme choice.",
+    duration: "Persists until cleared.",
+    provider: "Co-Founder (frontend)",
+  },
+  {
+    name: "cofounder-legal-theme (localStorage)",
+    category: "Functional · preferences",
+    essential: true,
+    purpose:
+      "Remembers your light/dark theme choice on the Privacy, Terms, and Cookie pages.",
     duration: "Persists until cleared.",
     provider: "Co-Founder (frontend)",
   },
@@ -88,34 +113,25 @@ const ESSENTIAL_ROWS: Row[] = [
     duration: "Persists until cleared.",
     provider: "Co-Founder (frontend)",
   },
-  {
-    name: "cofounder-legal-theme (localStorage)",
-    category: "Functional · preferences",
-    essential: true,
-    purpose:
-      "Remembers your light/dark theme choice on the Privacy, Terms, and Cookie pages.",
-    duration: "Persists until cleared.",
-    provider: "Co-Founder (frontend)",
-  },
 ];
 
 const OPTIONAL_ROWS: Row[] = [
   {
     name: "Vercel Analytics + Speed Insights",
-    category: "Analytics (always on)",
+    category: "Analytics (optional)",
     essential: false,
     purpose:
-      "Aggregate page-view and web-performance measurement. Loads on every page.",
+      "Aggregate page-view and web-performance measurement. Loads only after you accept analytics (cookie banner or section 7 below) — never before.",
     duration:
       "No cookies are set by Co-Founder for this. Measurement requests go to Vercel; retention on Vercel's side is governed by Vercel's policies (not verified in our code).",
     provider: "Vercel",
   },
   {
     name: "_ga · _ga_<container-id> (Google Analytics 4)",
-    category: "Analytics (always on)",
+    category: "Analytics (optional)",
     essential: false,
     purpose:
-      "Aggregate page-view and usage measurement via gtag.js (measurement ID G-W5TRPHEGJD). Loads on every page.",
+      "Aggregate page-view and usage measurement via gtag.js (measurement ID G-W5TRPHEGJD unless NEXT_PUBLIC_GA_ID is set). Loads only after you accept analytics — never before.",
     duration:
       "_ga persists up to 2 years, _ga_<container-id> up to 2 years in this browser; governed by Google's policies. Requests go to www.googletagmanager.com / www.google-analytics.com.",
     provider: "Google Analytics",
@@ -147,7 +163,7 @@ function Table({ rows }: { rows: Row[] }) {
                       : "bg-amber-500/10 text-[#b45309]"
                   }`}
                 >
-                  {r.essential ? "Essential" : "Optional"}
+                  {r.essential ? "Necessary" : "Optional"}
                 </span>
               </td>
               <td className="border-b border-[var(--legal-border)] py-3 pr-4">{r.category}</td>
@@ -162,30 +178,80 @@ function Table({ rows }: { rows: Row[] }) {
   );
 }
 
+/** Live analytics toggle: shows the stored choice and lets it be changed. */
+function ConsentSettings() {
+  const [choice, setChoice] = useState<ConsentChoice | null>(() => getConsent());
+
+  useEffect(() => {
+    const onUpdate = (e: Event) => setChoice((e as CustomEvent<ConsentChoice>).detail);
+    window.addEventListener(CONSENT_EVENT, onUpdate);
+    return () => window.removeEventListener(CONSENT_EVENT, onUpdate);
+  }, []);
+
+  return (
+    <div className="rounded-2xl border border-[var(--legal-border)] bg-[var(--legal-panel)] p-5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-[14px] font-semibold text-[var(--legal-fg)]">Analytics</p>
+        <span
+          className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+            choice === "accepted"
+              ? "bg-emerald-500/15 text-emerald-500"
+              : choice === "rejected"
+                ? "bg-[var(--legal-chip)] text-[var(--legal-muted)]"
+                : "bg-amber-500/10 text-[#b45309]"
+          }`}
+        >
+          {choice === "accepted" ? "On" : choice === "rejected" ? "Off" : "Not decided yet"}
+        </span>
+      </div>
+      <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--legal-body)]">
+        Vercel Analytics, Speed Insights, and Google Analytics. Necessary
+        functionality — sign-in, dashboard, payments, agents — works the same
+        either way.
+      </p>
+      <div className="mt-4 flex flex-col gap-2.5 sm:flex-row">
+        <button
+          onClick={() => setConsent("rejected")}
+          className="flex-1 rounded-xl border border-[var(--legal-border)] bg-transparent px-4 py-2.5 text-[13px] font-semibold text-[var(--legal-fg)] hover:bg-[var(--legal-hover)] transition-colors"
+        >
+          Reject analytics
+        </button>
+        <button
+          onClick={() => setConsent("accepted")}
+          className="flex-1 rounded-xl bg-white px-4 py-2.5 text-[13px] font-bold text-black hover:bg-neutral-200 transition-colors"
+        >
+          Accept analytics
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function CookiesClient() {
   const panels: LegalPanel[] = [
     {
       id: "analytics-notice",
       num: 1,
-      short: "Analytics notice",
-      title: "1. Analytics notice",
+      short: "How consent works",
+      title: "1. How consent works",
       body: (
         <ul className={LEGAL_LIST}>
-          <li>Essential sign-in and product storage always stays on — the app cannot work without it.</li>
-          <li>Analytics (Vercel Analytics + Speed Insights + Google Analytics) load on every page for all visitors.</li>
-          <li>Our footer links to this policy on every page.</li>
+          <li><strong className="text-[var(--legal-fg)]">Necessary</strong> storage (sign-in, security, preferences) is always on — the app cannot work without it.</li>
+          <li><strong className="text-[var(--legal-fg)]">Analytics</strong> (Vercel Analytics + Speed Insights + Google Analytics) are optional and off by default. A cookie banner asks on your first visit; nothing optional loads until you choose Accept.</li>
+          <li>You can change your choice anytime in section 7. Rejecting analytics never breaks sign-in, chat, files, billing, or OAuth.</li>
         </ul>
       ),
     },
     {
       id: "essential-storage",
       num: 2,
-      short: "Essential storage",
-      title: "2. Essential and functional storage (always on)",
+      short: "Necessary storage",
+      title: "2. Necessary storage (always on)",
       body: (
         <>
           <p className={LEGAL_BODY}>
-            These keep you signed in and remember product settings.
+            These keep you signed in, secure, and remember product settings —
+            including your cookie choice itself.
             The frontend never reads the httpOnly session cookie with
             JavaScript — it only asks the backend who is signed in.
           </p>
@@ -199,15 +265,15 @@ export default function CookiesClient() {
       id: "analytics",
       num: 3,
       short: "Analytics",
-      title: "3. Analytics (always on)",
+      title: "3. Analytics (optional)",
       body: (
         <>
           <div className="mt-1">
             <Table rows={OPTIONAL_ROWS} />
           </div>
           <ul className={LEGAL_LIST}>
-            <li>Analytics do not break sign-in, chat, files, billing, or OAuth — they only measure usage.</li>
-            <li>You can block analytics with a browser content blocker or by disabling JavaScript; the product still works.</li>
+            <li>Optional analytics load only after you accept — via the cookie banner or section 7. Until then, no analytics requests, cookies, or beacons from these providers run in your browser.</li>
+            <li>Analytics only measure aggregate usage; they do not gate any feature. You can also block them with a browser content blocker or by disabling JavaScript; the product still works.</li>
           </ul>
         </>
       ),
@@ -246,9 +312,27 @@ export default function CookiesClient() {
       title: "6. Managing storage yourself",
       body: (
         <ul className={LEGAL_LIST}>
-          <li>Clearing site data / cookies in your browser signs you out and resets theme and tour choices.</li>
-          <li>Blocking essential storage will break sign-in and core product features.</li>
+          <li>Clearing site data / cookies in your browser signs you out and resets theme, tour, and analytics choices.</li>
+          <li>Blocking necessary storage will break sign-in and core product features.</li>
         </ul>
+      ),
+    },
+    {
+      id: "choices",
+      num: 7,
+      short: "Your choices",
+      title: "7. Your cookie choices",
+      body: (
+        <>
+          <p className={LEGAL_BODY}>
+            Your choice is stored on this device only and the banner never asks
+            again afterwards. Change it here anytime — the analytics on this page
+            load or stop on your next navigation.
+          </p>
+          <div className="mt-4">
+            <ConsentSettings />
+          </div>
+        </>
       ),
     },
   ];

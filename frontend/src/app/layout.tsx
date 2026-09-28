@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Instrument_Serif, JetBrains_Mono, Caveat } from "next/font/google";
 import { MobileGate } from "@/components/landing/MobileGate";
 import { ConsentAnalytics } from "@/components/ConsentAnalytics";
+import CookieBanner from "@/components/CookieBanner";
 import "./globals.css";
 import "./landing.css";
 
@@ -126,6 +127,7 @@ export default function RootLayout({
         />
         {children}
         <MobileGate />
+        <CookieBanner />
         <ConsentAnalytics />
       </body>
     </html>

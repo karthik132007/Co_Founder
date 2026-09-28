@@ -629,6 +629,9 @@ export default function PrivacyPolicyClient() {
                   <h2 className="text-xl font-semibold tracking-tight text-[var(--legal-fg)]">
                     {viewIntro[view].title}
                   </h2>
+                  <p className="mt-3 text-[15px] font-bold leading-relaxed text-[var(--legal-fg)]">
+                    All tokens are encrypted before they are stored in the database.
+                  </p>
                   <p className="mt-3 text-[15px] leading-relaxed text-[var(--legal-body)]">
                     {viewIntro[view].body}
                   </p>
