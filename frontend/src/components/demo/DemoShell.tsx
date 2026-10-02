@@ -8,18 +8,16 @@ import {
   HardDrive,
   Puzzle,
   Plus,
-  Clock,
   Coins,
   ChevronRight,
   ChevronUp,
-  Bell,
   Menu,
   ArrowLeft,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { DEMO_CHATS, DEMO_COMPANY, chatDateLabel, getDemoChat } from "./demoChats";
+import { DEMO_CHATS, DEMO_COMPANY } from "./demoChats";
 import DemoBot from "./DemoBot";
 
 const ACCENT = "#143620";
@@ -51,7 +49,7 @@ export default function DemoShell({ children }: { children: React.ReactNode }) {
   const activeChatId = pathname.startsWith("/demo/chat/")
     ? pathname.slice("/demo/chat/".length)
     : null;
-  const activeChat = activeChatId ? getDemoChat(activeChatId) : undefined;
+
 
   return (
     <div className="min-h-screen bg-[#fdfcf8] flex text-[#0f2214]">
@@ -89,7 +87,7 @@ export default function DemoShell({ children }: { children: React.ReactNode }) {
             </Link>
             <button
               onClick={() => setSidebarCollapsed((v) => !v)}
-              aria-label="Collapse sidebar"
+              aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
               className="hidden lg:flex w-6 h-6 rounded-md hover:bg-[rgba(16,36,24,0.05)] items-center justify-center shrink-0"
             >
               <ChevronRight className={`w-3.5 h-3.5 text-[#8d9d94] transition-transform ${sidebarCollapsed ? "" : "rotate-180"}`} />
@@ -105,7 +103,7 @@ export default function DemoShell({ children }: { children: React.ReactNode }) {
             className={`w-full btn-primary py-2 text-[13px] ${sidebarCollapsed ? "lg:px-0" : "px-3.5"}`}
           >
             <Plus className="w-4 h-4 shrink-0" />
-            <span className={sidebarCollapsed ? "lg:hidden" : ""}>New Chat</span>
+            <span className={sidebarCollapsed ? "lg:hidden" : ""}>All conversations</span>
           </Link>
         </div>
 
@@ -143,7 +141,7 @@ export default function DemoShell({ children }: { children: React.ReactNode }) {
 
         {/* Recent chats — the six recorded conversations */}
         <div className={`flex-1 overflow-y-auto px-3 pb-3 ${sidebarCollapsed ? "lg:hidden" : ""}`}>
-          <p className="text-[10px] font-semibold text-[#8d9d94] uppercase tracking-wider px-3 py-2">Recent Chats</p>
+          <p className="text-[10px] font-semibold text-[#8d9d94] uppercase tracking-wider px-3 py-2">Conversations</p>
           <div className="space-y-0.5">
             {DEMO_CHATS.map((chat) => {
               const active = activeChatId === chat.id;
@@ -161,13 +159,7 @@ export default function DemoShell({ children }: { children: React.ReactNode }) {
                     <div className={`text-[13px] font-medium truncate ${active ? "text-[#143620]" : "text-[#2f3e32]"}`}>
                       {chat.title}
                     </div>
-                    <div className="text-[10px] text-[#8d9d94] flex items-center gap-1">
-                      <Clock className="w-2.5 h-2.5" />
-                      {chatDateLabel(chat)}
-                      <span className="text-[#c6d0c9]">·</span>
-                      <Coins className="w-2.5 h-2.5" />
-                      {chat.creditsUsed.toFixed(2)}
-                    </div>
+
                   </div>
                 </Link>
               );
@@ -210,16 +202,6 @@ export default function DemoShell({ children }: { children: React.ReactNode }) {
           </button>
           <div className="flex-1" />
 
-          {activeChat && (
-            <span
-              className="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-[rgba(15,34,20,0.08)] bg-white px-2.5 py-1 text-[12px] font-medium text-[#2f3e32]"
-              title="Total credits used in this chat"
-            >
-              <Coins className="h-3.5 w-3.5" style={{ color: ACCENT }} />
-              {activeChat.creditsUsed.toFixed(2)} credits
-            </span>
-          )}
-
           <span className="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-[rgba(20,54,32,0.14)] bg-[rgba(20,54,32,0.06)] px-2.5 py-1 text-[12px] font-semibold text-[#143620]">
             <span className="h-1.5 w-1.5 rounded-full bg-[#143620] animate-pulse" />
             Demo · read-only
@@ -233,13 +215,7 @@ export default function DemoShell({ children }: { children: React.ReactNode }) {
             <span className="hidden sm:inline">Exit demo</span>
           </Link>
 
-          <button
-            aria-label="Notifications"
-            className="w-9 h-9 rounded-lg border border-[rgba(15,34,20,0.08)] bg-white flex items-center justify-center relative"
-          >
-            <Bell className="w-4 h-4 text-[#5f6f63]" />
-            <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full" style={{ background: ACCENT }} />
-          </button>
+
         </header>
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-[#fdfcf8]">{children}</main>

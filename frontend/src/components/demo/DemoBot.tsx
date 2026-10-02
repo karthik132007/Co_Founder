@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -244,14 +244,12 @@ export default function DemoBot() {
 
   // Restart the tour when the visitor moves to another demo page. Adjusting
   // state during render (instead of in an effect) is the React-recommended way
-  // to reset derived state on a prop/route change. `dismissed` is reset too, so
-  // Sprout introduces himself again on every page instead of waiting to be
-  // re-invited (hiding him only silences the current page).
+  // to reset derived state on a route change. Show Sprout on entry and
+  // preserve dismissal while visitors browse conversations.
   if (route !== pathname) {
     setRoute(pathname);
     setIndex(0);
     setPlaying(true);
-    setDismissed(false);
   }
 
   const step = steps[index] ?? steps[0];
@@ -324,7 +322,6 @@ export default function DemoBot() {
       cancelled = true;
       audio.pause();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [voiceOn, voiceKey, unlockNonce, dismissed, voiceAvailable]);
 
   // One tap or keypress anywhere unblocks autoplay, then Sprout carries on.
@@ -368,10 +365,10 @@ export default function DemoBot() {
   // Walk the transcript to the message the step is talking about.
   useEffect(() => {
     const target = steps[index]?.scrollTo;
-    if (!target) return;
+    if (dismissed || !target) return;
     const el = document.querySelector(`[data-demo-msg="${target}"]`);
     el?.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, [index, steps]);
+  }, [dismissed, index, steps]);
 
   if (!steps.length) return null;
 

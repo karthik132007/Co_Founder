@@ -5,7 +5,6 @@ import {
   HardDrive,
   MessageSquare,
   Coins,
-  Clock,
   Upload,
   FileText,
   Image as ImageIcon,
@@ -19,11 +18,9 @@ import {
   DEMO_COMPANY,
   DEMO_FILES,
   DEMO_STATS,
-  chatDateLabel,
   type DemoFile,
 } from "@/components/demo/demoChats";
 
-const ACCENT = "#143620";
 
 function fileIcon(kind: DemoFile["kind"]) {
   if (kind === "image") return ImageIcon;
@@ -186,7 +183,7 @@ export default function DemoOverviewPage() {
                   {DEMO_STATS.chats}
                 </span>
               </h3>
-              <span className="text-[12px] font-medium text-[#8d9d94]">Read-only replay</span>
+              <Link href="/demo/chat" className="text-xs font-medium text-[#143620] hover:underline">View all</Link>
             </div>
 
             <div className="mt-4 divide-y divide-[rgba(15,34,20,0.06)]">
@@ -203,14 +200,7 @@ export default function DemoOverviewPage() {
                     <span className="block truncate text-[13px] font-medium text-[#0f2214] group-hover:text-[#143620]">
                       {chat.title}
                     </span>
-                    <span className="flex items-center gap-1.5 text-[11px] text-[#8d9d94]">
-                      <Clock className="h-3 w-3" /> {chatDateLabel(chat)}
-                      <span className="inline-flex items-center gap-1 text-[#143620]">
-                        <span className="text-[#c6d0c9]">·</span>
-                        <Coins className="h-3 w-3" />
-                        {chat.creditsUsed.toFixed(2)} credits
-                      </span>
-                    </span>
+                    <span className="mt-1 block truncate text-xs text-[#718076]">{chat.subtitle}</span>
                   </span>
                   <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-[#aab8b0] opacity-0 transition-all group-hover:opacity-100 group-hover:text-[#143620]" />
                 </Link>
